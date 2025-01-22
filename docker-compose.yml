@@ -1,0 +1,34 @@
+version: "3.8"
+services:
+  python-llm-service:
+    build: ./python-llm-service
+    container_name: python-llm-service
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "5001:5001"
+
+  node-llm-service:
+    build: ./node-llm-service
+    container_name: node-llm-service
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "5002:5002"
+
+  orchestrator:
+    build: ./orchestrator
+    container_name: orchestrator
+    depends_on:
+      - python-llm-service
+      - node-llm-service
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    depends_on:
+      - orchestrator
+    ports:
+      - "8080:80"
