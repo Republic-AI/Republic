@@ -255,8 +255,85 @@ const getModelProvider = (model) => {
   return 'openai'; // default
 };
 
+// Handle input node execution
+const executeInputNode = async (input, config) => {
+  try {
+    switch (config.inputType) {
+      case 'text':
+        return input;
+
+      case 'file':
+        // Files are handled by the frontend and passed as base64
+        // Here we just pass through the file data
+        return config.fileUpload;
+
+      case 'api':
+        const response = await axios({
+          method: config.apiMethod,
+          url: config.apiEndpoint,
+          headers: JSON.parse(config.apiHeaders || '{}'),
+          data: JSON.parse(config.apiBody || '{}')
+        });
+        return JSON.stringify(response.data);
+
+      default:
+        return input;
+    }
+  } catch (error) {
+    console.error('Error executing input node:', error);
+    return `Error: ${error.message}`;
+  }
+};
+
+// Handle output node execution
+const executeOutputNode = async (input, config) => {
+  try {
+    let formattedOutput = input;
+
+    // Format the output if needed
+    if (config.formatOutput && config.formatOutput !== 'raw') {
+      switch (config.formatOutput) {
+        case 'json':
+          formattedOutput = typeof input === 'string' ? JSON.parse(input) : input;
+          formattedOutput = JSON.stringify(formattedOutput, null, 2);
+          break;
+        case 'xml':
+          // Add XML formatting if needed
+          formattedOutput = `<?xml version="1.0"?><root>${input}</root>`;
+          break;
+        case 'yaml':
+          // Add YAML formatting if needed
+          formattedOutput = input;
+          break;
+      }
+    }
+
+    // Send to API if configured
+    if (config.outputType === 'api' || config.outputType === 'both') {
+      try {
+        await axios({
+          method: config.apiMethod,
+          url: config.apiEndpoint,
+          headers: JSON.parse(config.apiHeaders || '{}'),
+          data: formattedOutput
+        });
+      } catch (apiError) {
+        console.error('Error sending to API:', apiError);
+        formattedOutput = `${formattedOutput}\n\nAPI Error: ${apiError.message}`;
+      }
+    }
+
+    return formattedOutput;
+  } catch (error) {
+    console.error('Error executing output node:', error);
+    return `Error: ${error.message}`;
+  }
+};
+
 // Update agent handlers
 const agentHandlers = {
+  'input': executeInputNode,
+  'output': executeOutputNode,
   'zerepy': executeZerePyAgent,
   'eliza': executeElizaAgent,
   'langchain': executeLangChainAgent,

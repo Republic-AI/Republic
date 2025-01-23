@@ -1,6 +1,117 @@
 // Available AI Agent Frameworks
 export const agentFrameworks = [
   {
+    id: 'input',
+    name: 'Input Node',
+    description: 'Input node for providing data through text, file upload, or API import',
+    configFields: [
+      {
+        name: 'inputType',
+        label: 'Input Type',
+        type: 'select',
+        options: [
+          { value: 'text', label: 'Text Input' },
+          { value: 'file', label: 'File Upload' },
+          { value: 'api', label: 'API Import' }
+        ]
+      },
+      {
+        name: 'fileUpload',
+        label: 'Upload Files',
+        type: 'file',
+        accept: '*/*',
+        multiple: true,
+        showWhen: { field: 'inputType', value: 'file' }
+      },
+      {
+        name: 'apiEndpoint',
+        label: 'API Endpoint',
+        type: 'text',
+        placeholder: 'https://api.example.com/data',
+        showWhen: { field: 'inputType', value: 'api' }
+      },
+      {
+        name: 'apiMethod',
+        label: 'HTTP Method',
+        type: 'select',
+        options: [
+          { value: 'GET', label: 'GET' },
+          { value: 'POST', label: 'POST' },
+          { value: 'PUT', label: 'PUT' },
+          { value: 'DELETE', label: 'DELETE' }
+        ],
+        showWhen: { field: 'inputType', value: 'api' }
+      },
+      {
+        name: 'apiHeaders',
+        label: 'Headers',
+        type: 'json',
+        placeholder: '{\n  "Authorization": "Bearer token",\n  "Content-Type": "application/json"\n}',
+        showWhen: { field: 'inputType', value: 'api' }
+      },
+      {
+        name: 'apiBody',
+        label: 'Request Body',
+        type: 'json',
+        placeholder: '{\n  "key": "value"\n}',
+        showWhen: { field: 'inputType', value: 'api' }
+      }
+    ]
+  },
+  {
+    id: 'output',
+    name: 'Output Node',
+    description: 'Output node for displaying results and exporting data through API',
+    configFields: [
+      {
+        name: 'outputType',
+        label: 'Output Type',
+        type: 'select',
+        options: [
+          { value: 'display', label: 'Display Only' },
+          { value: 'api', label: 'API Export' },
+          { value: 'both', label: 'Display & Export' }
+        ]
+      },
+      {
+        name: 'apiEndpoint',
+        label: 'API Endpoint',
+        type: 'text',
+        placeholder: 'https://api.example.com/webhook',
+        showWhen: { field: 'outputType', values: ['api', 'both'] }
+      },
+      {
+        name: 'apiMethod',
+        label: 'HTTP Method',
+        type: 'select',
+        options: [
+          { value: 'POST', label: 'POST' },
+          { value: 'PUT', label: 'PUT' }
+        ],
+        showWhen: { field: 'outputType', values: ['api', 'both'] }
+      },
+      {
+        name: 'apiHeaders',
+        label: 'Headers',
+        type: 'json',
+        placeholder: '{\n  "Authorization": "Bearer token",\n  "Content-Type": "application/json"\n}',
+        showWhen: { field: 'outputType', values: ['api', 'both'] }
+      },
+      {
+        name: 'formatOutput',
+        label: 'Format Output',
+        type: 'select',
+        options: [
+          { value: 'raw', label: 'Raw Text' },
+          { value: 'json', label: 'JSON' },
+          { value: 'xml', label: 'XML' },
+          { value: 'yaml', label: 'YAML' }
+        ],
+        showWhen: { field: 'outputType', values: ['api', 'both'] }
+      }
+    ]
+  },
+  {
     id: 'eliza',
     name: 'Eliza Agent',
     description: 'Create autonomous agents using Eliza OS framework with multi-client support and advanced memory capabilities',

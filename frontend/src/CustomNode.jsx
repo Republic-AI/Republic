@@ -66,6 +66,18 @@ export default function CustomNode({ data, isConnectable }) {
 
   const renderConfigField = (field) => {
     const value = data.config?.[field.name];
+    
+    // Check if field should be shown based on conditions
+    if (field.showWhen) {
+      const conditionField = data.config?.[field.showWhen.field];
+      const conditionValues = Array.isArray(field.showWhen.values) 
+        ? field.showWhen.values 
+        : [field.showWhen.value];
+      
+      if (!conditionValues.includes(conditionField)) {
+        return null;
+      }
+    }
 
     switch (field.type) {
       case 'select':
@@ -102,6 +114,40 @@ export default function CustomNode({ data, isConnectable }) {
               </div>
             ))}
           </div>
+        );
+
+      case 'file':
+        return (
+          <input
+            type="file"
+            onChange={(e) => {
+              const files = Array.from(e.target.files);
+              handleConfigChange(field.name, files);
+            }}
+            accept={field.accept}
+            multiple={field.multiple}
+            className="node-file-input"
+          />
+        );
+
+      case 'json':
+        return (
+          <textarea
+            value={value || field.placeholder || ''}
+            onChange={(e) => {
+              try {
+                // Validate JSON but store as string
+                JSON.parse(e.target.value);
+                handleConfigChange(field.name, e.target.value);
+              } catch (err) {
+                // Still update even if invalid JSON
+                handleConfigChange(field.name, e.target.value);
+              }
+            }}
+            placeholder={field.placeholder}
+            className="node-textarea json-textarea"
+            rows={5}
+          />
         );
 
       case 'textarea':
@@ -166,11 +212,12 @@ export default function CustomNode({ data, isConnectable }) {
   };
 
   return (
-    <div className={`custom-node ${isConfigOpen ? 'expanded' : ''}`}>
+    <div className={`custom-node ${data.type === 'input' ? 'input-node' : ''} ${data.type === 'output' ? 'output-node' : ''} ${isConfigOpen ? 'expanded' : ''}`}>
       <Handle
         type="target"
         position="left"
         isConnectable={isConnectable}
+        style={{ visibility: data.type === 'input' ? 'hidden' : 'visible' }}
       />
 
       {/* Node Header */}
@@ -180,12 +227,26 @@ export default function CustomNode({ data, isConnectable }) {
           onChange={(e) => handleTypeChange(e.target.value)}
           className="node-type-select"
         >
-          <option value="">Select Agent Framework</option>
-          {agentFrameworks.map(framework => (
-            <option key={framework.id} value={framework.id}>
-              {framework.name}
-            </option>
-          ))}
+          {data.type === 'input' || data.type === 'output' ? (
+            // For Input/Output nodes, only show Data Flow options
+            <>
+              <option value="">Select Node Type</option>
+              <option value="input">Input Node</option>
+              <option value="output">Output Node</option>
+            </>
+          ) : (
+            // For AI agent nodes, only show AI agent options
+            <>
+              <option value="">Select Agent Type</option>
+              {agentFrameworks
+                .filter(framework => !['input', 'output'].includes(framework.id))
+                .map(framework => (
+                  <option key={framework.id} value={framework.id}>
+                    {framework.name}
+                  </option>
+              ))}
+            </>
+          )}
         </select>
         <button 
           onClick={() => setIsConfigOpen(!isConfigOpen)}
@@ -219,8 +280,11 @@ export default function CustomNode({ data, isConnectable }) {
         <textarea
           value={data.inputText || ''}
           onChange={(e) => data.onChange({ ...data, inputText: e.target.value })}
-          placeholder="Enter your prompt or task description..."
+          placeholder={data.type === 'input' ? 'Enter input data or upload files...' : 
+                      data.type === 'output' ? 'Output will appear here...' :
+                      'Enter your prompt or task description...'}
           className="node-textarea"
+          readOnly={data.type === 'output'}
         />
       </div>
 
@@ -228,6 +292,7 @@ export default function CustomNode({ data, isConnectable }) {
         type="source"
         position="right"
         isConnectable={isConnectable}
+        style={{ visibility: data.type === 'output' ? 'hidden' : 'visible' }}
       />
     </div>
   );

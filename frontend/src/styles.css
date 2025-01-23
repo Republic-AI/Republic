@@ -91,6 +91,36 @@ html, body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.custom-node.input-node {
+  border-color: #28a745;
+  border-width: 2px;
+  background: linear-gradient(to bottom, #f8fff9, #ffffff);
+}
+
+.custom-node.input-node .node-type-select {
+  border-color: #28a745;
+}
+
+.custom-node.input-node .node-textarea {
+  border-color: #28a745;
+}
+
+.custom-node.output-node {
+  border-color: #dc3545;
+  border-width: 2px;
+  background: linear-gradient(to bottom, #fff8f8, #ffffff);
+}
+
+.custom-node.output-node .node-type-select {
+  border-color: #dc3545;
+}
+
+.custom-node.output-node .node-textarea {
+  border-color: #dc3545;
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+}
+
 .custom-node.expanded {
   min-height: 200px;
 }
@@ -162,6 +192,28 @@ html, body {
   border: 1px solid #ddd;
   border-radius: 3px;
   font-size: 12px;
+}
+
+.node-file-input {
+  width: 100%;
+  padding: 8px;
+  border: 2px dashed #ddd;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.node-file-input:hover {
+  border-color: #aaa;
+  background: #f8f8f8;
+}
+
+.json-textarea {
+  font-family: monospace;
+  font-size: 11px;
+  white-space: pre;
+  min-height: 80px;
 }
 
 .node-multiselect {
@@ -255,6 +307,24 @@ html, body {
   background: #777;
 }
 
+.react-flow__handle-left {
+  left: -4px;
+}
+
+.react-flow__handle-right {
+  right: -4px;
+}
+
+/* Input node specific handles */
+.input-node .react-flow__handle-right {
+  background: #28a745;
+}
+
+/* Output node specific handles */
+.output-node .react-flow__handle-left {
+  background: #dc3545;
+}
+
 /* App Layout */
 .app-container {
   width: 100vw;
@@ -281,10 +351,20 @@ html, body {
   font-size: 18px;
 }
 
+.node-buttons-group {
+  margin-bottom: 20px;
+}
+
+.node-buttons-group h4 {
+  margin: 0 0 10px 0;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .add-node-button {
   width: 100%;
-  padding: 12px;
-  background: #28a745;
+  padding: 10px;
   color: white;
   border: none;
   border-radius: 6px;
@@ -294,16 +374,36 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 12px;
-  transition: background-color 0.2s;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
 }
 
-.add-node-button:hover {
+.add-node-button.input-button {
+  background: #28a745;
+}
+
+.add-node-button.input-button:hover {
   background: #218838;
 }
 
+.add-node-button.output-button {
+  background: #dc3545;
+}
+
+.add-node-button.output-button:hover {
+  background: #c82333;
+}
+
+.add-node-button.agent-button {
+  background: #6f42c1;
+}
+
+.add-node-button.agent-button:hover {
+  background: #5a32a3;
+}
+
 .button-icon {
-  font-size: 18px;
+  font-size: 16px;
   margin-right: 8px;
   font-weight: bold;
 }
@@ -318,6 +418,7 @@ html, body {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
+  margin-top: 20px;
   transition: background-color 0.2s;
 }
 

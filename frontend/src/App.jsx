@@ -37,7 +37,7 @@ export default function App() {
     );
   };
 
-  const handleAddNode = () => {
+  const handleAddNode = (type) => {
     const newNode = {
       id: `node-${nodes.length + 1}`,
       type: 'custom',
@@ -46,7 +46,8 @@ export default function App() {
         y: 100 + Math.random() * 100 
       },
       data: {
-        type: '',
+        type: type || '',
+        framework: type || '',
         inputText: '',
         config: {}
       }
@@ -84,13 +85,39 @@ export default function App() {
       <div className="sidebar">
         <div className="sidebar-content">
           <h3>AI Agent Flow</h3>
-          <button 
-            onClick={handleAddNode}
-            className="add-node-button"
-          >
-            <span className="button-icon">+</span>
-            Add AI Agent
-          </button>
+          
+          {/* Data Flow Nodes */}
+          <div className="node-buttons-group">
+            <h4>Data Flow</h4>
+            <button 
+              onClick={() => handleAddNode('input')}
+              className="add-node-button input-button"
+            >
+              <span className="button-icon">⇥</span>
+              Add Input Node
+            </button>
+            <button 
+              onClick={() => handleAddNode('output')}
+              className="add-node-button output-button"
+            >
+              <span className="button-icon">⇤</span>
+              Add Output Node
+            </button>
+          </div>
+
+          {/* AI Agent Node */}
+          <div className="node-buttons-group">
+            <h4>AI Agent</h4>
+            <button 
+              onClick={() => handleAddNode()}
+              className="add-node-button agent-button"
+            >
+              <span className="button-icon">+</span>
+              Add AI Agent
+            </button>
+          </div>
+
+          {/* Run Flow Button */}
           <button 
             onClick={handleRunFlow}
             className="run-flow-button"
