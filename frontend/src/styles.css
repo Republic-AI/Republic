@@ -79,3 +79,254 @@ html, body {
   .react-flow__renderer {
     background-color: #f0f0f0;
   }
+
+.custom-node {
+  padding: 10px;
+  border-radius: 5px;
+  background: white;
+  border: 1px solid #ccc;
+  width: 280px;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.custom-node.expanded {
+  min-height: 200px;
+}
+
+.node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.node-type-select {
+  flex: 1;
+  margin-right: 8px;
+  padding: 4px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f8f8f8;
+}
+
+.config-toggle {
+  padding: 2px 6px;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.config-toggle:hover {
+  background: #e8e8e8;
+}
+
+.framework-description {
+  font-size: 11px;
+  color: #666;
+  margin: 4px 0;
+  padding: 4px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  line-height: 1.3;
+}
+
+.node-config {
+  margin: 8px 0;
+  padding: 8px;
+  background: #f8f8f8;
+  border-radius: 4px;
+  border: 1px solid #eee;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.config-field {
+  margin-bottom: 10px;
+}
+
+.config-field label {
+  display: block;
+  margin-bottom: 4px;
+  color: #555;
+  font-weight: 500;
+}
+
+.node-select,
+.node-input {
+  width: 100%;
+  padding: 4px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.node-multiselect {
+  max-height: 100px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 4px;
+  background: white;
+}
+
+.node-checkbox {
+  display: flex;
+  align-items: center;
+  margin: 2px 0;
+}
+
+.node-checkbox input {
+  margin-right: 4px;
+}
+
+.node-checkbox label {
+  font-size: 11px;
+  color: #333;
+}
+
+.node-input-area {
+  margin-top: 8px;
+}
+
+.node-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.config-textarea {
+  min-height: 40px;
+  margin-bottom: 4px;
+}
+
+.api-keys-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.api-key-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.api-key-field input {
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
+.model-params-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.param-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.param-field input {
+  width: 100%;
+  padding: 4px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+/* Handle styles */
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background: #555;
+}
+
+.react-flow__handle:hover {
+  background: #777;
+}
+
+/* App Layout */
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+}
+
+.sidebar {
+  width: 240px;
+  background: #f8f9fa;
+  border-right: 1px solid #dee2e6;
+  display: flex;
+  flex-direction: column;
+  z-index: 5;
+}
+
+.sidebar-content {
+  padding: 20px;
+}
+
+.sidebar h3 {
+  margin: 0 0 20px 0;
+  color: #2c3e50;
+  font-size: 18px;
+}
+
+.add-node-button {
+  width: 100%;
+  padding: 12px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  transition: background-color 0.2s;
+}
+
+.add-node-button:hover {
+  background: #218838;
+}
+
+.button-icon {
+  font-size: 18px;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+.run-flow-button {
+  width: 100%;
+  padding: 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.run-flow-button:hover {
+  background: #0056b3;
+}
+
+.flow-container {
+  flex: 1;
+  height: 100%;
+  background: #f0f2f5;
+}

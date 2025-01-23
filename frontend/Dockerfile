@@ -1,34 +1,28 @@
-# 构建阶段
-FROM node:18-alpine AS builder
+# 使用官方的 Node.js 运行时作为基础镜像
+FROM node:18-alpine
 
 # 设置工作目录
 WORKDIR /app
 
-# 复制 package.json 和 package-lock.json（如果存在）
+# 将 package.json 和 package-lock.json 复制到工作目录
 COPY package*.json ./
 
 # 安装依赖
 RUN npm install
 
-# 复制项目文件
+# 复制项目的所有文件到容器中
 COPY . .
 
-# 设置生产环境变量
-ENV NODE_ENV=production
-
-# 构建静态文件
+# 构建项目（将 React 应用打包为静态文件）
 RUN npm run build
 
-# 运行阶段
-FROM nginx:alpine
+# 使用 Nginx 作为静态文件服务器
+FROM nginx:stable-alpine
 
-# 删除默认 Nginx 配置（可选）
-RUN rm /etc/nginx/conf.d/default.conf
+# 复制构建输出到 Nginx 的默认静态文件目录
+COPY --from=0 /app/build /usr/share/nginx/html
 
-# 复制构建产物到 Nginx 默认路径
-COPY --from=builder /app/build /usr/share/nginx/html
-
-# 暴露端口
+# 暴露 Nginx 默认端口
 EXPOSE 80
 
 # 启动 Nginx

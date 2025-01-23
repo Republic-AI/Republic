@@ -4,7 +4,8 @@ export const initialNodes = [
       position: { x: 200, y: 100 },
       data: {
         type: 'python-llm',
-        inputText: 'Hello from the Python node'
+        inputText: 'Hello from the Python node',
+        config: {}
       }
     },
     {
@@ -12,7 +13,8 @@ export const initialNodes = [
       position: { x: 600, y: 100 },
       data: {
         type: 'node-llm',
-        inputText: 'Previously we got: {PREV_RESULT}'
+        inputText: 'Previously we got: {PREV_RESULT}',
+        config: {}
       }
     }
   ];
