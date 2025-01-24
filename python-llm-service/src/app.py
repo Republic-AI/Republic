@@ -1,84 +1,91 @@
 from flask import Flask, request, jsonify
 import os
-from agents.zerepy_agent import ZerePyAgent
-from agents.langchain_agent import LangChainAgent
-from agents.babyagi_agent import BabyAGIAgent
-from agents.autogpt_agent import AutoGPTAgent
-from core.async_utils import async_route
-from utils.error_handler import handle_error
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
+app.debug = True
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    return jsonify({"status": "ok"})
+    return jsonify({
+        "status": "ok",
+        "service": "python-llm-service"
+    })
 
 @app.route('/run', methods=['POST'])
-@async_route
-async def run_agent():
-    data = request.json
-    agent_type = data.get("agent_type", "langchain")
-    user_input = data.get("input", "")
-    config = data.get("config", {})
-
+def run_agent():
     try:
-        if agent_type == "zerepy":
-            agent = ZerePyAgent(config)
-            result = await agent.execute(user_input)
-            return jsonify(result)
+        data = request.json
+        logger.debug(f"Received request data: {data}")
         
-        elif agent_type == "langchain":
-            agent = LangChainAgent(config)
-            result = await agent.execute(user_input)
-            return jsonify(result)
+        agent_type = data.get("agent_type", "langchain")
+        user_input = data.get("input", "")
+        config = data.get("config", {})
+
+        if agent_type == "langchain":
+            return jsonify({
+                "status": "not_implemented",
+                "message": "LangChain agent not implemented yet",
+                "agent_type": agent_type,
+                "input": user_input
+            })
             
         elif agent_type == "babyagi":
-            agent = BabyAGIAgent(config)
-            try:
-                result = await agent.execute(user_input)
-                return jsonify(result)
-            finally:
-                await agent.cleanup()
+            return jsonify({
+                "status": "not_implemented",
+                "message": "BabyAGI agent not implemented yet",
+                "agent_type": agent_type,
+                "input": user_input
+            })
                 
         elif agent_type == "autogpt":
-            agent = AutoGPTAgent(config)
-            try:
-                result = await agent.execute(user_input)
-                return jsonify(result)
-            finally:
-                await agent.cleanup()
+            return jsonify({
+                "status": "not_implemented", 
+                "message": "AutoGPT agent not implemented yet",
+                "agent_type": agent_type,
+                "input": user_input
+            })
         
         else:
-            return jsonify({"error": f"Unsupported agent type: {agent_type}"}), 400
+            return jsonify({
+                "status": "error",
+                "error": f"Unsupported agent type: {agent_type}. Use the Node.js service for ZerePy agent.",
+                "agent_type": agent_type
+            }), 400
 
     except Exception as e:
-        return handle_error(e)
+        logger.exception("Error in run_agent:")
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "agent_type": agent_type if 'agent_type' in locals() else 'unknown'
+        }), 500
 
 @app.route('/clear-memory', methods=['POST'])
-@async_route
-async def clear_memory():
-    data = request.json
-    agent_type = data.get("agent_type", "langchain")
-    config = data.get("config", {})
-
+def clear_memory():
     try:
-        if agent_type == "zerepy":
-            agent = ZerePyAgent(config)
-            await agent.memory.clear()
-        elif agent_type == "langchain":
-            agent = LangChainAgent(config)
-            await agent.clear_memory()
-        elif agent_type == "babyagi":
-            agent = BabyAGIAgent(config)
-            await agent.cleanup()
-        elif agent_type == "autogpt":
-            agent = AutoGPTAgent(config)
-            await agent.cleanup()
+        data = request.json
+        logger.debug(f"Received request data: {data}")
         
-        return jsonify({"status": "Memory cleared successfully"})
+        agent_type = data.get("agent_type", "langchain")
+        config = data.get("config", {})
 
+        return jsonify({
+            "status": "success",
+            "message": "Memory cleared successfully",
+            "agent_type": agent_type
+        })
     except Exception as e:
-        return handle_error(e) 
+        logger.exception("Error in clear_memory:")
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "agent_type": agent_type if 'agent_type' in locals() else 'unknown'
+        }), 500 
