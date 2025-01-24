@@ -82,37 +82,86 @@ A powerful visual flow-based platform for orchestrating AI agents. Republic enab
 ## 🛠 Setup
 
 ### Prerequisites
-- Node.js v18+
 - Docker and Docker Compose
+- Node.js v18+ (for local development only)
 - API Keys:
-  - OpenAI API key
-  - Anthropic API key (for Claude models)
-  - Social platform API keys (as needed)
+  - OpenAI API key (required)
+  - Anthropic API key (optional, for Claude models)
 
-### Quick Start
+### Installation
 
-1. **Clone & Setup**
+#### Option 1: Using Docker (Recommended)
+
+1. **Clone the Repository**
 ```bash
 git clone https://github.com/yourusername/republic.git
 cd republic
-cp .env.example .env
 ```
 
 2. **Configure Environment**
-Edit `.env` with your API keys and preferences:
+Create a `.env` file in the root directory:
 ```env
-OPENAI_API_KEY=your_key_here
-ANTHROPIC_API_KEY=your_key_here
-DISCORD_BOT_TOKEN=your_token_here
-# Add other API keys as needed
+OPENAI_API_KEY=your_openai_key_here
+ANTHROPIC_API_KEY=your_anthropic_key_here  # Optional
 ```
 
-3. **Launch**
+3. **Build and Run with Docker Compose**
 ```bash
+docker-compose build
 docker-compose up -d
 ```
 
-Access the platform at `http://localhost:3000`
+4. **Access the Application**
+- Frontend UI: http://localhost:3000
+- Orchestrator API: http://localhost:8080
+- Python LLM Service: http://localhost:5001
+- Node LLM Service: http://localhost:5002
+
+To stop the services:
+```bash
+docker-compose down
+```
+
+#### Option 2: Local Development
+
+1. **Install Dependencies**
+
+Frontend:
+```bash
+cd frontend
+npm install
+npm start
+```
+Frontend will be available at http://localhost:3000
+
+Orchestrator:
+```bash
+cd orchestrator
+npm install
+npm start
+```
+Orchestrator will run on http://localhost:8080
+
+Node LLM Service:
+```bash
+cd node-llm-service
+npm install
+npm start
+```
+Node LLM Service will run on http://localhost:5002
+
+Python LLM Service:
+```bash
+cd python-llm-service
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
+```
+Python LLM Service will run on http://localhost:5001
+
+2. **Environment Setup**
+Create `.env` files in each service directory with the required API keys.
 
 ## 📚 Usage Examples
 
@@ -329,7 +378,6 @@ v
      ```
 2. **Build and run**:
    ```bash
-   docker-compose build
    docker-compose up -d
    ```
 

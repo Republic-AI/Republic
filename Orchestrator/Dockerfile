@@ -1,24 +1,33 @@
 FROM node:18-alpine
 
-# Install dependencies required for Puppeteer
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    nodejs \
-    yarn
+# Install build dependencies
+RUN apk update && \
+    apk add --no-cache \
+    python3 \
+    py3-pip \
+    make \
+    g++ \
+    gcc \
+    git \
+    libc6-compat
 
-# Tell Puppeteer to skip installing Chrome. We'll be using the installed package.
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+# Set Python as default
+RUN ln -sf python3 /usr/bin/python
 
+# Create app directory
 WORKDIR /app
+
+# Copy package files
 COPY package*.json ./
-RUN npm install
+
+# Install dependencies with verbose logging to see errors
+RUN npm install --verbose
+
+# Copy source code
 COPY . .
+
+# Expose port
 EXPOSE 3000
+
+# Start the service
 CMD ["npm", "start"]

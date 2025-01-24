@@ -1,31 +1,102 @@
-const { BaseAgent } = require('@elizaos/core');
-const { RetrievableMemory, DocumentStore } = require('@elizaos/memory');
-const { ToolManager, PluginSystem } = require('@elizaos/tools');
-const { ClientManager } = require('@elizaos/clients');
+const { OpenAI } = require('langchain/llms/openai');
+const BaseAgent = require('../core/BaseAgent');
+
+// Simple memory management class
+class Memory {
+  constructor(type = 'conversation') {
+    this.type = type;
+    this.history = [];
+    this.maxHistory = 10;
+  }
+
+  async initialize() {
+    return true;
+  }
+
+  async loadMemoryVariables() {
+    return { history: this.history };
+  }
+
+  async saveContext(input, output) {
+    this.history.push({ input, output });
+    if (this.history.length > this.maxHistory) {
+      this.history.shift();
+    }
+  }
+
+  async cleanup() {
+    this.history = [];
+  }
+}
+
+// Simple tool management class
+class ToolManager {
+  constructor() {
+    this.tools = new Map();
+  }
+
+  async initialize() {
+    return true;
+  }
+
+  loadTool(tool) {
+    this.tools.set(tool.name, tool);
+  }
+
+  getTools() {
+    return Array.from(this.tools.values());
+  }
+
+  async cleanup() {
+    this.tools.clear();
+  }
+}
+
+// Simple client management class
+class ClientManager {
+  constructor() {
+    this.clients = new Map();
+  }
+
+  async initialize() {
+    return true;
+  }
+
+  addClient(platform, config) {
+    this.clients.set(platform, {
+      platform,
+      config,
+      post: async (content) => {
+        console.log(`[${platform}] Would post: ${content}`);
+        return { platform, status: 'simulated', content };
+      }
+    });
+  }
+
+  getClients() {
+    return Object.fromEntries(this.clients);
+  }
+
+  async cleanup() {
+    this.clients.clear();
+  }
+}
 
 class ElizaAgent extends BaseAgent {
   constructor(config) {
-    // Initialize with Eliza OS core configuration
-    super({
-      name: config.agentName,
-      description: config.agentDescription,
-      systemPrompt: config.systemPrompt,
-      model: {
-        provider: config.foundationModel?.startsWith('claude') ? 'anthropic' : 'openai',
-        name: config.foundationModel,
-        apiKey: config.apiKeys?.[config.foundationModel?.startsWith('claude') ? 'anthropic' : 'openai'],
-        parameters: config.modelParams
-      }
-    });
-
-    // Initialize Eliza OS components
-    this.memory = new RetrievableMemory({
-      documentStore: new DocumentStore(),
-      type: config.memoryType || 'conversation'
-    });
-
+    super(config);
+    
+    // Core configuration
+    this.name = config.agentName || 'Eliza';
+    this.description = config.agentDescription || '';
+    this.systemPrompt = config.systemPrompt || '';
+    this.modelName = config.modelName || 'gpt-4';
+    this.temperature = config.temperature || 0.7;
+    this.maxTokens = config.maxTokens || 2000;
+    
+    // Initialize components
+    this.memory = new Memory(config.memoryType);
     this.toolManager = new ToolManager();
-    this.pluginSystem = new PluginSystem();
     this.clientManager = new ClientManager();
 
     // Initialize social clients if configured
@@ -40,7 +111,7 @@ class ElizaAgent extends BaseAgent {
       });
     }
 
-    // Load tools and plugins
+    // Load tools
     if (config.tools) {
       config.tools.forEach(tool => {
         this.toolManager.loadTool(tool);
@@ -49,42 +120,72 @@ class ElizaAgent extends BaseAgent {
   }
 
   async initialize() {
-    await super.initialize();
+    // Initialize LLM
+    if (!this.config.apiKeys?.openai) {
+      throw new Error('OpenAI API key is required but not provided in configuration');
+    }
+
+    this.llm = new OpenAI({
+      modelName: this.modelName,
+      temperature: this.temperature,
+      maxTokens: this.maxTokens,
+      openAIApiKey: this.config.apiKeys.openai
+    });
+
+    // Initialize components
     await this.memory.initialize();
     await this.toolManager.initialize();
-    await this.pluginSystem.initialize();
     await this.clientManager.initialize();
+
+    // Add default tools
+    this.toolManager.loadTool({
+      name: 'search',
+      description: 'Search the web for information',
+      func: async (query) => `Search results for: ${query}`
+    });
+
+    this.toolManager.loadTool({
+      name: 'calculator',
+      description: 'Perform mathematical calculations',
+      func: async (expression) => eval(expression).toString()
+    });
+
     return true;
   }
 
   async execute(input) {
     try {
-      // Initialize if not already done
-      if (!this.initialized) {
-        await this.initialize();
-      }
-
-      // Load context from memory
-      const context = await this.memory.retrieve(input);
+      await this.initialize();
       
-      // Prepare execution context
-      const executionContext = {
-        input,
-        context,
-        tools: this.toolManager.getTools(),
-        plugins: this.pluginSystem.getPlugins(),
-        clients: this.clientManager.getClients()
-      };
+      // Load context from memory
+      const context = await this.memory.loadMemoryVariables();
+      
+      // Construct the prompt
+      const prompt = `System: You are ${this.name}, an AI assistant with the following traits:
+${this.description}
+
+System Instructions:
+${this.systemPrompt}
+
+Previous Context:
+${JSON.stringify(context.history)}
+
+Current Input: ${input}
+
+Provide a response that:
+1. Aligns with your system instructions
+2. Takes into account the conversation history
+3. Addresses the current input directly
+4. Maintains a consistent personality`;
 
       // Execute with full context
-      const result = await super.execute(executionContext);
-
-      // Store interaction in memory
-      await this.memory.store({
-        input,
-        output: result,
-        timestamp: new Date().toISOString()
-      });
+      const result = await this.llm.call(prompt);
+      
+      // Store in memory
+      await this.memory.saveContext(
+        { input },
+        { output: result }
+      );
 
       // Post to social platforms if configured
       const socialResults = await Promise.all(
@@ -96,8 +197,10 @@ class ElizaAgent extends BaseAgent {
         )
       );
 
+      // Return the result
       return {
         content: result,
+        type: 'eliza_response',
         socialResults: socialResults.filter(Boolean),
         context: context
       };
@@ -111,7 +214,6 @@ class ElizaAgent extends BaseAgent {
   async cleanup() {
     await this.memory.cleanup();
     await this.toolManager.cleanup();
-    await this.pluginSystem.cleanup();
     await this.clientManager.cleanup();
   }
 }
@@ -119,12 +221,9 @@ class ElizaAgent extends BaseAgent {
 // Handler function for Eliza agent
 const executeElizaAgent = async (input, config) => {
   const agent = new ElizaAgent(config);
-  try {
-    const result = await agent.execute(input);
-    return result;
-  } finally {
-    await agent.cleanup();
-  }
+  const result = await agent.execute(input);
+  await agent.cleanup();
+  return result;
 };
 
 module.exports = {

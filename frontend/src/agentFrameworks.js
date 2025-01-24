@@ -114,97 +114,41 @@ export const agentFrameworks = [
   {
     id: 'eliza',
     name: 'Eliza Agent',
-    description: 'Create autonomous agents using Eliza OS framework with multi-client support and advanced memory capabilities',
+    description: 'Create autonomous agents using Eliza framework',
     configFields: [
       {
         name: 'agentName',
         label: 'Agent Name',
         type: 'text',
-        placeholder: 'Enter a name for your agent'
+        required: true,
+        description: 'Name of your Eliza agent'
       },
       {
         name: 'agentDescription',
         label: 'Agent Description',
         type: 'textarea',
-        placeholder: 'Describe what your agent does'
+        required: true,
+        description: 'Description of your agent\'s personality and capabilities'
       },
       {
         name: 'systemPrompt',
         label: 'System Prompt',
         type: 'textarea',
-        placeholder: 'Enter the system prompt that defines your agent\'s behavior'
-      },
-      {
-        name: 'foundationModel',
-        label: 'Foundation Model',
-        type: 'select',
-        options: [
-          { value: 'gpt-4', label: 'GPT-4' },
-          { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
-          { value: 'claude-3-opus', label: 'Claude 3 Opus' },
-          { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet' },
-          { value: 'llama', label: 'Llama' },
-          { value: 'grok', label: 'Grok' },
-          { value: 'gemini', label: 'Gemini' }
-        ]
+        required: true,
+        description: 'System instructions for the agent'
       },
       {
         name: 'apiKeys',
         label: 'API Keys',
-        type: 'apiKeys',
+        type: 'object',
         fields: [
-          { name: 'openai', label: 'OpenAI API Key' },
-          { name: 'anthropic', label: 'Anthropic API Key' },
-          { name: 'google', label: 'Google API Key' }
-        ]
-      },
-      {
-        name: 'modelParams',
-        label: 'Model Parameters',
-        type: 'modelParams',
-        params: [
-          { name: 'temperature', label: 'Temperature', default: 0.7, min: 0, max: 1, step: 0.1 },
-          { name: 'maxTokens', label: 'Max Tokens', default: 2048, min: 1, max: 8192 },
-          { name: 'topP', label: 'Top P', default: 0.9, min: 0, max: 1, step: 0.1 }
-        ]
-      },
-      {
-        name: 'clients',
-        label: 'Client Connections',
-        type: 'multiselect',
-        options: [
-          { value: 'discord', label: 'Discord' },
-          { value: 'twitter', label: 'Twitter/X' },
-          { value: 'telegram', label: 'Telegram' }
-        ]
-      },
-      {
-        name: 'memory',
-        label: 'Memory Type',
-        type: 'select',
-        options: [
-          { value: 'retrievable', label: 'Retrievable Memory' },
-          { value: 'document', label: 'Document Store' }
-        ]
-      },
-      {
-        name: 'tools',
-        label: 'Tools',
-        type: 'multiselect',
-        options: [
-          { value: 'web-search', label: 'Web Search' },
-          { value: 'document-interaction', label: 'Document Interaction' },
-          { value: 'code-execution', label: 'Code Execution' },
-          { value: 'file-operations', label: 'File Operations' }
-        ]
-      },
-      {
-        name: 'roomConfig',
-        label: 'Room Configuration',
-        type: 'select',
-        options: [
-          { value: 'single', label: 'Single Agent' },
-          { value: 'multi', label: 'Multi-Agent Room' }
+          {
+            name: 'openai',
+            label: 'OpenAI API Key',
+            type: 'password',
+            required: true,
+            description: 'Your OpenAI API key'
+          }
         ]
       }
     ]
@@ -401,6 +345,20 @@ export const agentFrameworks = [
         required: false,
         showIf: { field: 'vectorStore', value: 'pinecone' },
         description: 'Name of the Pinecone index to use'
+      },
+      {
+        name: 'apiKeys',
+        label: 'API Keys',
+        type: 'object',
+        fields: [
+          {
+            name: 'openai',
+            label: 'OpenAI API Key',
+            type: 'password',
+            required: true,
+            description: 'Your OpenAI API key'
+          }
+        ]
       }
     ]
   },

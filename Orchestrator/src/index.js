@@ -54,6 +54,7 @@ app.post('/execute-flow', async (req, res) => {
     while (queue.length > 0) {
       const current = queue.shift();
       const nodeId = current.id;
+      const nodeType = current.type || (current.data && current.data.type);
       console.log(`Processing node ${nodeId}`);
 
       try {
@@ -77,7 +78,6 @@ app.post('/execute-flow', async (req, res) => {
 
         console.log(`Node ${nodeId} input:`, inputString);
 
-        const nodeType = current.type || (current.data && current.data.type);
         const nodeConfig = current.config || (current.data && current.data.config) || {};
         
         let result;

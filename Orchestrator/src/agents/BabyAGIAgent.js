@@ -1,7 +1,40 @@
 const { OpenAI } = require('langchain/llms/openai');
-const { PineconeClient } = require('@pinecone-database/pinecone');
-const { ChromaClient } = require('chromadb');
 const BaseAgent = require('../core/BaseAgent');
+
+// Simple in-memory vector store
+class SimpleVectorStore {
+  constructor() {
+    this.vectors = new Map();
+  }
+
+  async upsert(id, vector, metadata) {
+    this.vectors.set(id, { vector, metadata });
+  }
+
+  async query(queryVector, topK = 5) {
+    // Simple cosine similarity search
+    const scores = Array.from(this.vectors.entries()).map(([id, entry]) => ({
+      id,
+      score: this.cosineSimilarity(queryVector, entry.vector),
+      metadata: entry.metadata
+    }));
+
+    return scores
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topK);
+  }
+
+  cosineSimilarity(vecA, vecB) {
+    const dotProduct = vecA.reduce((sum, a, i) => sum + a * vecB[i], 0);
+    const magnitudeA = Math.sqrt(vecA.reduce((sum, a) => sum + a * a, 0));
+    const magnitudeB = Math.sqrt(vecB.reduce((sum, b) => sum + b * b, 0));
+    return dotProduct / (magnitudeA * magnitudeB);
+  }
+
+  async clear() {
+    this.vectors.clear();
+  }
+}
 
 class BabyAGIAgent extends BaseAgent {
   constructor(config) {
@@ -12,41 +45,27 @@ class BabyAGIAgent extends BaseAgent {
     this.initialTask = config.initialTask || '';
     this.modelName = config.modelName || 'gpt-4';
     this.maxIterations = config.maxIterations || 5;
-    this.vectorStore = config.vectorStore || 'pinecone'; // or 'chroma'
-    this.pineconeApiKey = config.pineconeApiKey;
-    this.pineconeEnvironment = config.pineconeEnvironment;
-    this.pineconeIndex = config.pineconeIndex;
     
     // Task management
     this.taskList = [];
     this.taskIdCounter = 1;
     this.tasksDone = [];
+    this.vectorStore = new SimpleVectorStore();
   }
 
   async initialize() {
+    // Check for required API key
+    if (!this.config.apiKeys?.openai) {
+      throw new Error('OpenAI API key is required but not provided in configuration');
+    }
+
     // Initialize LLM
     this.llm = new OpenAI({
       modelName: this.modelName,
       temperature: 0.7,
-      maxTokens: 2000
+      maxTokens: 2000,
+      openAIApiKey: this.config.apiKeys.openai
     });
-
-    // Initialize vector store
-    if (this.vectorStore === 'pinecone') {
-      const pinecone = new PineconeClient();
-      await pinecone.init({
-        apiKey: this.pineconeApiKey,
-        environment: this.pineconeEnvironment
-      });
-      this.vectorDb = pinecone.Index(this.pineconeIndex);
-    } else {
-      this.vectorDb = new ChromaClient();
-      // Initialize Chroma collection
-      await this.vectorDb.createCollection({
-        name: 'tasks',
-        metadata: { 'objective': this.objective }
-      });
-    }
   }
 
   async createTask(taskDescription, dependentTaskId = null) {
@@ -123,53 +142,22 @@ Execute this task and provide:
   }
 
   async getTaskContext(task) {
-    if (this.vectorStore === 'pinecone') {
-      const queryResponse = await this.vectorDb.query({
-        queryRequest: {
-          vector: await this.getEmbedding(task.taskName),
-          topK: 5
-        }
-      });
-      return queryResponse.matches.map(match => match.metadata.result).join('\n');
-    } else {
-      const queryResponse = await this.vectorDb.query({
-        collectionName: 'tasks',
-        queryTexts: [task.taskName],
-        nResults: 5
-      });
-      return queryResponse.results[0].map(result => result.metadata.result).join('\n');
-    }
+    const embedding = await this.getEmbedding(task.taskName);
+    const results = await this.vectorStore.query(embedding, 5);
+    return results.map(match => match.metadata.result).join('\n');
   }
 
   async storeResult(task, result) {
     const embedding = await this.getEmbedding(task.taskName);
-    
-    if (this.vectorStore === 'pinecone') {
-      await this.vectorDb.upsert({
-        upsertRequest: {
-          vectors: [{
-            id: task.taskId.toString(),
-            values: embedding,
-            metadata: {
-              taskName: task.taskName,
-              result: result,
-              objective: this.objective
-            }
-          }]
-        }
-      });
-    } else {
-      await this.vectorDb.add({
-        collectionName: 'tasks',
-        embeddings: [embedding],
-        metadatas: [{
-          taskName: task.taskName,
-          result: result,
-          objective: this.objective
-        }],
-        ids: [task.taskId.toString()]
-      });
-    }
+    await this.vectorStore.upsert(
+      task.taskId.toString(),
+      embedding,
+      {
+        taskName: task.taskName,
+        result: result,
+        objective: this.objective
+      }
+    );
   }
 
   parseTaskResponse(response) {
@@ -186,8 +174,7 @@ Execute this task and provide:
   }
 
   async getEmbedding(text) {
-    // Implementation would use OpenAI or other embedding service
-    // For now, return a mock embedding
+    // Simple mock embedding - in production, use OpenAI's embedding API
     return Array(1536).fill(0).map(() => Math.random());
   }
 
@@ -235,12 +222,20 @@ Execute this task and provide:
       throw error;
     }
   }
+
+  async cleanup() {
+    await this.vectorStore.clear();
+    if (this.memory) {
+      await this.memory.cleanup();
+    }
+  }
 }
 
 // Handler function for BabyAGI agent
 const executeBabyAGIAgent = async (input, config) => {
   const agent = new BabyAGIAgent(config);
   const result = await agent.execute(input);
+  await agent.cleanup();
   return result;
 };
 
