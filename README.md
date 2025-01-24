@@ -1,5 +1,7 @@
 # Republic - AI Agent Orchestration Platform
 
+![Republic AI Agent Orchestration Platform](image.png)
+
 A powerful visual flow-based platform for orchestrating AI agents. Republic enables you to create, connect, and manage sophisticated AI agent workflows through an intuitive drag-and-drop interface, supporting multiple agent frameworks and seamless integration with various AI services.
 
 ## 🌟 Key Features
