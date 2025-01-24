@@ -385,32 +385,11 @@ class ZerePyAgent extends BaseAgent {
     this.name = config.agentName || 'ZerePy';
     this.bio = config.agentBio || 'Social media management agent';
     this.traits = config.traits || ['engaging', 'analytical'];
-    this.socialPlatforms = this.initializeSocialPlatforms(config);
     this.taskWeights = config.taskWeights || {
       contentCreation: 0.4,
       engagement: 0.3,
       analysis: 0.3
     };
-  }
-
-  initializeSocialPlatforms(config) {
-    const platforms = {};
-    if (config.socialPlatforms) {
-      config.socialPlatforms.forEach(platform => {
-        switch (platform) {
-          case 'twitter':
-            platforms.twitter = new TwitterPlatform({ token: config.apiKeys?.twitter });
-            break;
-          case 'farcaster':
-            platforms.farcaster = new FarcasterPlatform({ token: config.apiKeys?.farcaster });
-            break;
-          case 'discord':
-            platforms.discord = new DiscordPlatform({ token: config.apiKeys?.discord });
-            break;
-        }
-      });
-    }
-    return platforms;
   }
 
   async execute(input) {
@@ -421,35 +400,17 @@ class ZerePyAgent extends BaseAgent {
 System: You are ${this.name}, a social media management AI with the following traits: ${this.traits.join(', ')}.
 Bio: ${this.bio}
 Task: Create engaging social media content based on the following input.
-Available Platforms: ${Object.keys(this.socialPlatforms).join(', ')}
 
 Context: ${JSON.stringify(context.history)}
 Input: ${input}
 
-Generate platform-specific content that maintains a consistent message while optimizing for each platform's unique characteristics.
+Generate a response that maintains a consistent message while being engaging and concise.
 `;
 
     const result = await this.model.call(prompt);
+    await this.memory.saveContext({ input }, { output: result });
     
-    // Post to social platforms
-    const postResults = await Promise.all(
-      Object.entries(this.socialPlatforms).map(async ([platform, client]) => {
-        try {
-          return await client.post(result);
-        } catch (error) {
-          console.error(`Error posting to ${platform}:`, error);
-          return { platform, success: false, error: error.message };
-        }
-      })
-    );
-
-    const output = {
-      content: result,
-      posts: postResults
-    };
-
-    await this.memory.saveContext({ input }, output);
-    return JSON.stringify(output, null, 2);
+    return result;
   }
 }
 
@@ -730,27 +691,51 @@ const executeBabyAGIAgent = async (input, config) => {
 // Handle ZerePy agent execution
 const executeZerePyAgent = async (input, config) => {
   try {
-    // Initialize platform instances instead of clients
+    // Initialize platform instances
     const socialPlatforms = {
       twitter: config.apiKeys?.twitter ? new TwitterPlatform({ token: config.apiKeys.twitter }) : null,
       farcaster: config.apiKeys?.farcaster ? new FarcasterPlatform({ token: config.apiKeys.farcaster }) : null,
       discord: config.apiKeys?.discord ? new DiscordPlatform({ token: config.apiKeys.discord }) : null,
     };
 
-    // Process input
-    const result = `[ZerePy] Processing: ${input}`;
+    // Create the agent instance
+    const agent = new ZerePyAgent(config);
+    
+    // Process input through the agent
+    const agentResult = await agent.execute(input);
+    
+    // Format the result
+    let result = {
+      content: agentResult,  // This will be processed by extractAgentResult
+      socialPosts: []
+    };
 
     // Post to social platforms if configured
     if (config.socialPlatforms) {
       for (const platform of config.socialPlatforms) {
         const client = socialPlatforms[platform];
         if (client) {
-          await client.post(result);
+          try {
+            const postResult = await client.post(agentResult);
+            result.socialPosts.push({
+              platform,
+              success: true,
+              ...postResult
+            });
+          } catch (error) {
+            console.error(`Error posting to ${platform}:`, error);
+            result.socialPosts.push({
+              platform,
+              success: false,
+              error: error.message
+            });
+          }
         }
       }
     }
 
-    return result;
+    // Return only the content for consistent handling
+    return result.content;
   } catch (error) {
     console.error('Error executing ZerePy agent:', error);
     return `Error: ${error.message}`;
@@ -768,14 +753,16 @@ const getModelProvider = (model) => {
 // Handle input node execution
 const executeInputNode = async (input, config) => {
   try {
+    let result;
     switch (config.inputType) {
       case 'text':
-        return input;
+        result = input;
+        break;
 
       case 'file':
         // Files are handled by the frontend and passed as base64
-        // Here we just pass through the file data
-        return config.fileUpload;
+        result = config.fileUpload;
+        break;
 
       case 'api':
         const response = await axios({
@@ -784,241 +771,258 @@ const executeInputNode = async (input, config) => {
           headers: JSON.parse(config.apiHeaders || '{}'),
           data: JSON.parse(config.apiBody || '{}')
         });
-        return JSON.stringify(response.data);
+        result = JSON.stringify(response.data);
+        break;
 
       default:
-        return input;
+        result = input;
     }
+    return result;
   } catch (error) {
     console.error('Error executing input node:', error);
     return `Error: ${error.message}`;
   }
 };
 
-// Handle output node execution
+// Update the output node execution to better handle results
 const executeOutputNode = async (input, config) => {
   try {
-    let formattedOutput = input;
-
-    // Format the output if needed
-    if (config.formatOutput && config.formatOutput !== 'raw') {
-      switch (config.formatOutput) {
-        case 'json':
-          formattedOutput = typeof input === 'string' ? JSON.parse(input) : input;
-          formattedOutput = JSON.stringify(formattedOutput, null, 2);
-          break;
-        case 'xml':
-          // Add XML formatting if needed
-          formattedOutput = `<?xml version="1.0"?><root>${input}</root>`;
-          break;
-        case 'yaml':
-          // Add YAML formatting if needed
-          formattedOutput = input;
-          break;
-      }
+    // If input is an array of results from multiple nodes
+    if (Array.isArray(input)) {
+      const formattedResults = input.map(item => {
+        if (typeof item === 'string' && item.includes('Results from')) {
+          return item; // Already formatted
+        }
+        return typeof item === 'object' ? 
+          extractAgentResult(item) : 
+          String(item);
+      });
+      return formattedResults.join('\n\n');
     }
-
-    // Send to API if configured
-    if (config.outputType === 'api' || config.outputType === 'both') {
-      try {
-        await axios({
-          method: config.apiMethod,
-          url: config.apiEndpoint,
-          headers: JSON.parse(config.apiHeaders || '{}'),
-          data: formattedOutput
-        });
-      } catch (apiError) {
-        console.error('Error sending to API:', apiError);
-        formattedOutput = `${formattedOutput}\n\nAPI Error: ${apiError.message}`;
-      }
-    }
-
-    return formattedOutput;
+    
+    // Handle single input
+    return typeof input === 'object' ? 
+      extractAgentResult(input) : 
+      String(input);
   } catch (error) {
     console.error('Error executing output node:', error);
     return `Error: ${error.message}`;
   }
 };
 
-// Update agent handlers with new implementations
+// Agent handlers mapping
 const agentHandlers = {
-  'input': executeInputNode,
-  'output': executeOutputNode,
+  'input': async (input, config) => {
+    // For input nodes, just return the input text
+    return input;
+  },
+  'output': async (input, config) => {
+    return await executeOutputNode(input, config);
+  },
   'eliza': async (input, config) => {
-    try {
-      // Ensure OpenAI API key is set in config
-      if (!config.apiKeys?.openai && process.env.OPENAI_API_KEY) {
-        config.apiKeys = {
-          ...config.apiKeys,
-          openai: process.env.OPENAI_API_KEY
-        };
-      }
-      const agent = new ElizaAgent(config);
-      return await agent.execute(input);
-    } catch (error) {
-      console.error('Error in Eliza agent:', error);
-      return `Error: ${error.message}`;
-    }
+    const agent = new ElizaAgent(config);
+    const result = await agent.execute(input);
+    return extractAgentResult(result);
   },
   'zerepy': async (input, config) => {
-    try {
-      // Ensure OpenAI API key is set in config
-      if (!config.apiKeys?.openai && process.env.OPENAI_API_KEY) {
-        config.apiKeys = {
-          ...config.apiKeys,
-          openai: process.env.OPENAI_API_KEY
-        };
-      }
-      const agent = new ZerePyAgent(config);
-      return await agent.execute(input);
-    } catch (error) {
-      console.error('Error in ZerePy agent:', error);
-      return `Error: ${error.message}`;
-    }
+    const agent = new ZerePyAgent(config);
+    const result = await agent.execute(input);
+    return extractAgentResult(result);
   },
   'autogpt': async (input, config) => {
-    try {
-      // Ensure OpenAI API key is set in config
-      if (!config.apiKeys?.openai && process.env.OPENAI_API_KEY) {
-        config.apiKeys = {
-          ...config.apiKeys,
-          openai: process.env.OPENAI_API_KEY
-        };
-      }
-      const agent = new AutoGPTAgent(config);
-      return await agent.execute(input);
-    } catch (error) {
-      console.error('Error in AutoGPT agent:', error);
-      return `Error: ${error.message}`;
-    }
+    const agent = new AutoGPTAgent(config);
+    const result = await agent.execute(input);
+    return extractAgentResult(result);
   },
   'babyagi': async (input, config) => {
-    try {
-      // Ensure OpenAI API key is set in config
-      if (!config.apiKeys?.openai && process.env.OPENAI_API_KEY) {
-        config.apiKeys = {
-          ...config.apiKeys,
-          openai: process.env.OPENAI_API_KEY
-        };
-      }
-      const agent = new BabyAGIAgent(config);
-      return await agent.execute(input);
-    } catch (error) {
-      console.error('Error in BabyAGI agent:', error);
-      return `Error: ${error.message}`;
-    }
+    const agent = new BabyAGIAgent(config);
+    const result = await agent.execute(input);
+    return extractAgentResult(result);
   }
 };
+
+// Helper function to extract the actual result content from agent outputs
+function extractAgentResult(result) {
+  // If result is already a string, return it
+  if (typeof result === 'string') {
+    return result;
+  }
+  
+  // If result is null or undefined, return empty string
+  if (!result) {
+    return '';
+  }
+
+  try {
+    // If result is a string that looks like JSON, parse it
+    if (typeof result === 'string' && (result.startsWith('{') || result.startsWith('['))) {
+      result = JSON.parse(result);
+    }
+
+    // If result is an object
+    if (typeof result === 'object') {
+      // If it has a content/output property, use that
+      if (result.content) return result.content;
+      if (result.output) return result.output;
+      if (result.result) return result.result;
+      if (result.response) return result.response;
+      if (result.text) return result.text;
+      if (result.message) return result.message;
+      
+      // If it's an array, join the elements
+      if (Array.isArray(result)) {
+        return result.map(item => 
+          typeof item === 'object' ? JSON.stringify(item) : String(item)
+        ).join('\n');
+      }
+
+      // If it has only one key, use its value
+      const keys = Object.keys(result);
+      if (keys.length === 1) {
+        return extractAgentResult(result[keys[0]]);
+      }
+
+      // If it has multiple keys and none of them are our expected output keys,
+      // stringify the entire object
+      return JSON.stringify(result, null, 2);
+    }
+  } catch (error) {
+    console.error('Error extracting result:', error);
+    return String(result);
+  }
+
+  // For any other type, convert to string
+  return String(result);
+}
 
 app.post('/execute-flow', async (req, res) => {
   try {
     const { nodes, edges } = req.body;
     console.log('Received request with nodes:', JSON.stringify(nodes, null, 2));
-    console.log('Received edges:', JSON.stringify(edges, null, 2));
     
-    // Initialize environment variables
-    const envVars = {
-      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY
-    };
-    console.log('Environment variables loaded:', Object.keys(envVars).filter(key => !!envVars[key]));
-    
+    // Initialize tracking
     const nodeResults = {};
     const inDegree = {};
+    const processingOrder = [];
     
-    nodes.forEach(n => (inDegree[n.id] = 0));
-    edges.forEach(e => { inDegree[e.target]++; });
+    // Calculate in-degrees
+    nodes.forEach(n => {
+      inDegree[n.id] = 0;
+    });
+    edges.forEach(e => {
+      inDegree[e.target]++;
+    });
     
+    // Start with nodes that have no incoming edges
     const queue = nodes.filter(n => inDegree[n.id] === 0);
     console.log('Starting nodes:', queue.map(n => n.id));
 
+    // Process nodes in topological order
     while (queue.length > 0) {
       const current = queue.shift();
       const nodeId = current.id;
       console.log(`Processing node ${nodeId}`);
 
-      let inputString = current.inputText || "";
-      if (edges.some(e => e.target === nodeId)) {
-        const incomingEdge = edges.find(e => e.target === nodeId);
-        if (incomingEdge) {
-          const sourceId = incomingEdge.source;
-          const prevOutput = nodeResults[sourceId] || "";
-          inputString = inputString.replace("{PREV_RESULT}", prevOutput);
-        }
-      }
-      console.log(`Node ${nodeId} input:`, inputString);
-
-      let result;
       try {
-        // Get the actual type from the node data
+        // Get input for current node
+        let inputString = current.inputText || "";
+        const incomingEdges = edges.filter(e => e.target === nodeId);
+        
+        // Collect inputs from previous nodes
+        if (incomingEdges.length > 0) {
+          const inputs = [];
+          for (const edge of incomingEdges) {
+            const sourceResult = nodeResults[edge.source];
+            if (sourceResult) {
+              // Extract content from result object
+              const content = sourceResult.content || extractAgentResult(sourceResult);
+              inputs.push(content);
+            }
+          }
+          inputString = inputs.join('\n\n');
+        }
+
+        console.log(`Node ${nodeId} input:`, inputString);
+
         const nodeType = current.type || (current.data && current.data.type);
         const nodeConfig = current.config || (current.data && current.data.config) || {};
         
-        // Inject environment variables into config if not present
-        if (!nodeConfig.apiKeys) {
-          nodeConfig.apiKeys = {};
-        }
-        if (!nodeConfig.apiKeys.openai && envVars.OPENAI_API_KEY) {
-          nodeConfig.apiKeys.openai = envVars.OPENAI_API_KEY;
-        }
-        if (!nodeConfig.apiKeys.anthropic && envVars.ANTHROPIC_API_KEY) {
-          nodeConfig.apiKeys.anthropic = envVars.ANTHROPIC_API_KEY;
-        }
-        
-        console.log(`Node ${nodeId} type:`, nodeType);
-        console.log(`Node ${nodeId} config:`, JSON.stringify({
-          ...nodeConfig,
-          apiKeys: Object.keys(nodeConfig.apiKeys || {}).reduce((acc, key) => {
-            acc[key] = key === 'openai' || key === 'anthropic' ? '[HIDDEN]' : nodeConfig.apiKeys[key];
-            return acc;
-          }, {})
-        }, null, 2));
-        
-        if (nodeType === "python-llm") {
-          const resp = await axios.post("http://python-llm-service:5001/run", { input: inputString });
-          result = resp.data.result;
-        } else if (nodeType === "node-llm") {
-          const resp = await axios.post("http://node-llm-service:5002/run", { input: inputString });
-          result = resp.data.result;
-        } else if (agentHandlers[nodeType]) {
-          // Execute custom agent with proper config
-          const config = {
-            ...nodeConfig,
-            nodeId // Add nodeId for memory management
+        let result;
+        if (nodeType === 'output') {
+          // For output nodes, collect all previous results
+          const allResults = processingOrder.map(prevNodeId => {
+            const prevNode = nodes.find(n => n.id === prevNodeId);
+            const prevResult = nodeResults[prevNodeId];
+            const prevType = prevNode.type || (prevNode.data && prevNode.data.type);
+            
+            // Extract the actual content from the result
+            const content = prevResult.content || extractAgentResult(prevResult);
+            
+            return `Results from ${prevType} (${prevNodeId}):\n${content}`;
+          });
+          
+          // Execute output node with formatted results
+          const outputResult = await executeOutputNode(allResults, nodeConfig);
+          
+          result = {
+            content: outputResult,
+            metadata: {
+              nodeId,
+              type: nodeType,
+              timestamp: new Date().toISOString()
+            }
           };
-          result = await agentHandlers[nodeType](inputString, config);
         } else {
-          result = `No service matched for type: ${nodeType}`;
+          // Execute node handler (input, agent, etc.)
+          const handlerResult = await agentHandlers[nodeType](inputString, nodeConfig);
+          
+          // Store result in a consistent format
+          result = {
+            content: typeof handlerResult === 'object' ? 
+              extractAgentResult(handlerResult) : 
+              handlerResult,
+            metadata: {
+              nodeId,
+              type: nodeType,
+              timestamp: new Date().toISOString()
+            }
+          };
         }
+
+        nodeResults[nodeId] = result;
+        processingOrder.push(nodeId);
         console.log(`Node ${nodeId} result:`, result);
+
+        // Queue next nodes
+        edges
+          .filter(e => e.source === nodeId)
+          .forEach(e => {
+            inDegree[e.target]--;
+            if (inDegree[e.target] === 0) {
+              const nextNode = nodes.find(n => n.id === e.target);
+              if (nextNode) queue.push(nextNode);
+            }
+          });
+
       } catch (error) {
         console.error(`Error executing node ${nodeId}:`, error);
-        result = `Error executing node ${nodeId}: ${error.message}`;
+        nodeResults[nodeId] = {
+          content: `Error in node ${nodeId}: ${error.message}`,
+          metadata: {
+            nodeId,
+            type: nodeType,
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }
+        };
       }
-
-      nodeResults[nodeId] = result;
-
-      const nextNodes = edges
-        .filter(e => e.source === nodeId)
-        .map(e => {
-          inDegree[e.target]--;
-          return { target: e.target, degree: inDegree[e.target] };
-        });
-      console.log(`Node ${nodeId} next nodes:`, nextNodes);
-
-      nextNodes.forEach(({ target, degree }) => {
-        if (degree === 0) {
-          const targetNode = nodes.find(n => n.id === target);
-          queue.push(targetNode);
-          console.log(`Added node ${target} to queue`);
-        }
-      });
     }
 
     console.log('Final results:', nodeResults);
     return res.json({ nodeResults });
+    
   } catch (err) {
-    console.error("Error in orchestrator /execute-flow:", err);
+    console.error('Error in execute-flow:', err);
     return res.status(500).json({ error: err.message });
   }
 });
