@@ -312,7 +312,7 @@ class BaseAgent {
       // Use OpenAI for GPT models
       const openAIConfig = {
         temperature: config.modelParams?.temperature || 0.7,
-        modelName: modelName,
+        modelName: modelName === 'openai' ? 'gpt-3.5-turbo' : modelName,
         maxTokens: config.modelParams?.maxTokens || 1000,
         topP: config.modelParams?.topP || 1,
       };
@@ -846,6 +846,13 @@ const agentHandlers = {
   'output': executeOutputNode,
   'eliza': async (input, config) => {
     try {
+      // Ensure OpenAI API key is set in config
+      if (!config.apiKeys?.openai && process.env.OPENAI_API_KEY) {
+        config.apiKeys = {
+          ...config.apiKeys,
+          openai: process.env.OPENAI_API_KEY
+        };
+      }
       const agent = new ElizaAgent(config);
       return await agent.execute(input);
     } catch (error) {
@@ -855,6 +862,13 @@ const agentHandlers = {
   },
   'zerepy': async (input, config) => {
     try {
+      // Ensure OpenAI API key is set in config
+      if (!config.apiKeys?.openai && process.env.OPENAI_API_KEY) {
+        config.apiKeys = {
+          ...config.apiKeys,
+          openai: process.env.OPENAI_API_KEY
+        };
+      }
       const agent = new ZerePyAgent(config);
       return await agent.execute(input);
     } catch (error) {
@@ -864,6 +878,13 @@ const agentHandlers = {
   },
   'autogpt': async (input, config) => {
     try {
+      // Ensure OpenAI API key is set in config
+      if (!config.apiKeys?.openai && process.env.OPENAI_API_KEY) {
+        config.apiKeys = {
+          ...config.apiKeys,
+          openai: process.env.OPENAI_API_KEY
+        };
+      }
       const agent = new AutoGPTAgent(config);
       return await agent.execute(input);
     } catch (error) {
@@ -873,6 +894,13 @@ const agentHandlers = {
   },
   'babyagi': async (input, config) => {
     try {
+      // Ensure OpenAI API key is set in config
+      if (!config.apiKeys?.openai && process.env.OPENAI_API_KEY) {
+        config.apiKeys = {
+          ...config.apiKeys,
+          openai: process.env.OPENAI_API_KEY
+        };
+      }
       const agent = new BabyAGIAgent(config);
       return await agent.execute(input);
     } catch (error) {
@@ -887,6 +915,13 @@ app.post('/execute-flow', async (req, res) => {
     const { nodes, edges } = req.body;
     console.log('Received request with nodes:', JSON.stringify(nodes, null, 2));
     console.log('Received edges:', JSON.stringify(edges, null, 2));
+    
+    // Initialize environment variables
+    const envVars = {
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY
+    };
+    console.log('Environment variables loaded:', Object.keys(envVars).filter(key => !!envVars[key]));
     
     const nodeResults = {};
     const inDegree = {};
@@ -918,8 +953,26 @@ app.post('/execute-flow', async (req, res) => {
         // Get the actual type from the node data
         const nodeType = current.type || (current.data && current.data.type);
         const nodeConfig = current.config || (current.data && current.data.config) || {};
+        
+        // Inject environment variables into config if not present
+        if (!nodeConfig.apiKeys) {
+          nodeConfig.apiKeys = {};
+        }
+        if (!nodeConfig.apiKeys.openai && envVars.OPENAI_API_KEY) {
+          nodeConfig.apiKeys.openai = envVars.OPENAI_API_KEY;
+        }
+        if (!nodeConfig.apiKeys.anthropic && envVars.ANTHROPIC_API_KEY) {
+          nodeConfig.apiKeys.anthropic = envVars.ANTHROPIC_API_KEY;
+        }
+        
         console.log(`Node ${nodeId} type:`, nodeType);
-        console.log(`Node ${nodeId} config:`, JSON.stringify(nodeConfig, null, 2));
+        console.log(`Node ${nodeId} config:`, JSON.stringify({
+          ...nodeConfig,
+          apiKeys: Object.keys(nodeConfig.apiKeys || {}).reduce((acc, key) => {
+            acc[key] = key === 'openai' || key === 'anthropic' ? '[HIDDEN]' : nodeConfig.apiKeys[key];
+            return acc;
+          }, {})
+        }, null, 2));
         
         if (nodeType === "python-llm") {
           const resp = await axios.post("http://python-llm-service:5001/run", { input: inputString });
