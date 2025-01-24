@@ -5,8 +5,7 @@ import ReactFlow, {
   Controls,
   MiniMap,
   useEdgesState,
-  useNodesState,
-  Panel
+  useNodesState
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './styles.css';
@@ -73,22 +72,18 @@ export default function App() {
       };
 
       const resp = await axios.post("http://localhost:3000/execute-flow", requestBody);
-      alert(JSON.stringify(resp.data, null, 2));
+      
+      // Find the output node and update its data
+      setNodes((nds) =>
+        nds.map((node) =>
+          node.data.type === 'output'
+            ? { ...node, data: { ...node.data, outputResult: resp.data } }
+            : node
+        )
+      );
     } catch (error) {
       console.error(error);
       alert("Error: " + error.message);
-    }
-  };
-
-  // Handle wheel event to prevent zooming when over nodes
-  const onNodeWheel = (event, node) => {
-    const target = event.target;
-    const isScrollable = target.classList.contains('node-config') || 
-                        target.classList.contains('node-textarea') ||
-                        target.classList.contains('node-multiselect');
-    
-    if (isScrollable) {
-      event.stopPropagation();
     }
   };
 
@@ -155,28 +150,12 @@ export default function App() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          onNodeWheel={onNodeWheel}
           nodeTypes={nodeTypes}
           fitView
-          preventScrolling={false}
-          zoomOnScroll={false}
-          zoomOnPinch={true}
-          panOnScroll={true}
-          panOnScrollMode="free"
-          selectionOnDrag={true}
-          noWheelClassName="no-wheel"
         >
           <Background />
-          <Controls showZoom={true} />
+          <Controls />
           <MiniMap />
-          <Panel position="top-right" className="zoom-controls">
-            <button onClick={() => document.querySelector('.react-flow__controls-zoomin').click()}>
-              Zoom In
-            </button>
-            <button onClick={() => document.querySelector('.react-flow__controls-zoomout').click()}>
-              Zoom Out
-            </button>
-          </Panel>
         </ReactFlow>
       </div>
     </div>
