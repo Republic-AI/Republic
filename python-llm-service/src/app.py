@@ -1,24 +1,16 @@
 from flask import Flask, request, jsonify
 import os
-from src.agents.zerepy_agent import ZerePyAgent
-from src.agents.langchain_agent import LangChainAgent
-from src.agents.babyagi_agent import BabyAGIAgent
-from src.agents.autogpt_agent import AutoGPTAgent
-import asyncio
-from functools import wraps
+from agents.zerepy_agent import ZerePyAgent
+from agents.langchain_agent import LangChainAgent
+from agents.babyagi_agent import BabyAGIAgent
+from agents.autogpt_agent import AutoGPTAgent
+from core.async_utils import async_route
+from utils.error_handler import handle_error
 from dotenv import load_dotenv
-from src.app import app
 
 load_dotenv()
 
-# 简单示例：使用LangChain Python
-# 需要先在环境变量里配置 OPENAI_API_KEY
-
-def async_route(f):
-    @wraps(f)
-    def wrapped(*args, **kwargs):
-        return asyncio.run(f(*args, **kwargs))
-    return wrapped
+app = Flask(__name__)
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -63,7 +55,7 @@ async def run_agent():
             return jsonify({"error": f"Unsupported agent type: {agent_type}"}), 400
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return handle_error(e)
 
 @app.route('/clear-memory', methods=['POST'])
 @async_route
@@ -89,8 +81,4 @@ async def clear_memory():
         return jsonify({"status": "Memory cleared successfully"})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5001))
-    app.run(host='0.0.0.0', port=port)
+        return handle_error(e) 

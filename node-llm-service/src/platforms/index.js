@@ -171,6 +171,33 @@ class DiscordPlatform extends SocialPlatform {
 
     return results;
   }
+
+  async createThread(channelId, name, content) {
+    if (!this.initialized) await this.initialize();
+
+    try {
+      const response = await this.axios.post(`${this.apiBase}/channels/${channelId}/threads`, {
+        name: name,
+        type: 11, // Public thread
+        auto_archive_duration: 1440 // 24 hours
+      });
+
+      // Post initial message in thread
+      await this.axios.post(`${this.apiBase}/channels/${response.data.id}/messages`, {
+        content: content
+      });
+
+      return {
+        platform: 'discord',
+        success: true,
+        threadId: response.data.id,
+        url: `https://discord.com/channels/${response.data.guild_id}/${channelId}/${response.data.id}`
+      };
+    } catch (error) {
+      console.error('Discord API error:', error.response?.data || error.message);
+      throw new Error(`Failed to create Discord thread: ${error.message}`);
+    }
+  }
 }
 
 module.exports = {

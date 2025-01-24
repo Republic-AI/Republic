@@ -376,9 +376,9 @@ v
 
 2. **Set `OPENAI_API_KEY`**  
    Create a `.env` file in the root folder:
-   ```bash
+     ```bash
    OPENAI_API_KEY=sk-xxxxxx
-   ```
+     ```
 
 3. **Build and run**:
    ```bash
