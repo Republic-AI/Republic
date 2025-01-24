@@ -1,20 +1,23 @@
 {
     "name": "orchestrator",
     "version": "1.0.0",
-    "main": "orchestrator.js",
+    "description": "Multi-agent orchestration service",
+    "main": "src/index.js",
     "scripts": {
-      "start": "node orchestrator.js"
+      "start": "node src/index.js",
+      "dev": "nodemon src/index.js",
+      "test": "jest"
     },
     "dependencies": {
-      "@anthropic-ai/sdk": "^0.18.0",
       "axios": "^1.3.4",
       "body-parser": "^1.20.2",
-      "cheerio": "^1.0.0-rc.12",
       "cors": "^2.8.5",
       "dotenv": "^16.0.3",
       "express": "^4.18.2",
-      "langchain": "^0.1.9",
-      "puppeteer": "^19.7.0",
-      "wikipedia": "^2.1.1"
+      "langchain": "^0.0.75"
+    },
+    "devDependencies": {
+      "jest": "^29.5.0",
+      "nodemon": "^2.0.22"
     }
   }
