@@ -1,6 +1,149 @@
-# AI Microservices Demo
+# Republic - AI Agent Flow Orchestrator
 
-This repository demonstrates a **microservices + HTTP** architecture where multiple AI services (written in different languages) are orchestrated by a central service, and a React Flow front-end provides a **visual flow editor** for chaining AI calls. Each microservice is capable of calling OpenAI (or potentially other AI APIs), and the orchestrator coordinates the sequence in which those services are invoked, based on a graph defined in the front-end.
+A powerful visual flow-based orchestrator for creating and managing AI agent workflows. This platform allows you to create, connect, and orchestrate different types of AI agents through an intuitive drag-and-drop interface.
+
+## Features
+
+### Core Features
+- 🎨 Visual Flow Editor
+  - Drag-and-drop interface for creating agent workflows
+  - Real-time flow visualization
+  - Intuitive node connection system
+  - Customizable node configurations
+
+- 🤖 Supported Agent Types
+  - **Eliza Agent**: Content creation and strategic planning
+  - **ZerePy Agent**: Social media management and blockchain integration
+  - **LangChain Agent**: General-purpose language model integration
+  - **AutoGPT Agent**: Autonomous task completion
+  - **BabyAGI Agent**: Task management and planning
+
+- 🔌 Input/Output Nodes
+  - Text input support
+  - File upload capabilities
+  - API integration
+  - Multiple output formats (JSON, XML, YAML)
+  - API endpoint output
+
+### Agent Features
+
+#### Eliza Agent
+- Content strategy and planning
+- Document interaction
+- Web search capabilities
+- Retrievable memory system
+- Tool integration (web search, document handling, code execution)
+
+#### ZerePy Agent
+- Social platform integration (Twitter, Farcaster, Discord)
+- Blockchain network support
+- GOAT plugin system
+- Task weight management
+- Time-based configuration
+- Performance analytics
+
+## Setup
+
+### Prerequisites
+- Node.js (v18 or higher)
+- Docker and Docker Compose
+- API keys for desired services (OpenAI, Anthropic, etc.)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/republic.git
+cd republic
+```
+
+2. Create environment files:
+```bash
+cp .env.example .env
+```
+
+3. Update the `.env` file with your API keys and configurations.
+
+4. Build and start the services:
+```bash
+docker-compose up -d
+```
+
+The application will be available at `http://localhost:3000`.
+
+## Usage Examples
+
+### Basic Content Creation Flow
+
+```javascript
+// Example flow configuration
+{
+  "nodes": [
+    {
+      "id": "1",
+      "type": "input",
+      "inputText": "Create tech content about AI trends"
+    },
+    {
+      "id": "2",
+      "type": "eliza",
+      "data": {
+        "config": {
+          "agentName": "Content Creator",
+          "systemPrompt": "Create engaging tech content"
+        }
+      }
+    },
+    {
+      "id": "3",
+      "type": "zerepy",
+      "data": {
+        "config": {
+          "socialPlatforms": ["twitter", "farcaster"]
+        }
+      }
+    },
+    {
+      "id": "4",
+      "type": "output"
+    }
+  ],
+  "edges": [
+    {"source": "1", "target": "2"},
+    {"source": "2", "target": "3"},
+    {"source": "3", "target": "4"}
+  ]
+}
+```
+
+### Advanced Multi-Agent Workflow
+
+See the [examples](./examples) directory for more complex workflow configurations.
+
+## Architecture
+
+The system consists of several key components:
+
+- **Frontend**: React-based visual flow editor
+- **Orchestrator**: Node.js service managing workflow execution
+- **Agent Services**: Specialized services for each agent type
+- **Memory System**: Persistent storage for agent states and data
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For support, please open an issue in the GitHub repository or contact the maintainers.
 
 ---
 
@@ -27,7 +170,7 @@ This repository demonstrates a **microservices + HTTP** architecture where multi
 - **Why**: You may have AI logic in different languages or frameworks. By exposing each service via HTTP, you can chain them together in a flexible pipeline. The front-end (React Flow) lets users visually define the flow, and the orchestrator executes it in the correct sequence.
 - **Features**:
   - Each microservice calls **OpenAI API** via LangChain (Python or JS).
-  - **Orchestrator** performs topological sorting of nodes and sequentially invokes each service’s `/run` endpoint.
+  - **Orchestrator** performs topological sorting of nodes and sequentially invokes each service's `/run` endpoint.
   - **React Flow** in the front-end for node-based workflow editing.
 
 ---
@@ -142,7 +285,7 @@ docker-compose logs -f
 4.	**Open your browser**: http://localhost:8080
 You should see a React Flow UI with two default nodes (Python LLM and Node LLM) and one edge between them.
 
-5.	**Click “Run Flow” to execute the entire pipeline**:
+5.	**Click "Run Flow" to execute the entire pipeline**:
 The Orchestrator calls each microservice in turn, passes outputs forward, and returns a final result object.
 
 To stop everything:
