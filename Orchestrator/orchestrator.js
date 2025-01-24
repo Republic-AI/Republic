@@ -322,7 +322,7 @@ class BaseAgent {
         throw new Error('OpenAI API key not found in config or environment variables');
       }
       
-      openAIConfig.apiKey = openAIKey;
+      openAIConfig.openAIApiKey = openAIKey;
       this.model = new OpenAI(openAIConfig);
     }
   }
