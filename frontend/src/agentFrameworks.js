@@ -332,30 +332,75 @@ export const agentFrameworks = [
   {
     id: 'babyagi',
     name: 'BabyAGI Agent',
-    description: 'Create task-driven autonomous agents with dynamic task generation',
+    description: 'Task-driven autonomous agent that breaks down objectives into tasks and executes them iteratively',
     configFields: [
       {
         name: 'objective',
-        label: 'Main Objective',
-        type: 'text',
-        placeholder: 'Enter the main goal for the agent'
+        label: 'Objective',
+        type: 'textarea',
+        required: true,
+        description: 'The main goal or objective for the agent to accomplish'
       },
       {
-        name: 'taskCreation',
-        label: 'Task Creation Strategy',
+        name: 'initialTask',
+        label: 'Initial Task',
+        type: 'textarea',
+        required: true,
+        description: 'The first task to start working on the objective'
+      },
+      {
+        name: 'modelName',
+        label: 'Model Name',
         type: 'select',
         options: [
-          { value: 'sequential', label: 'Sequential' },
-          { value: 'priority', label: 'Priority-based' }
-        ]
+          { value: 'gpt-4', label: 'GPT-4' },
+          { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
+        ],
+        required: true,
+        description: 'The language model to use for task execution'
       },
       {
-        name: 'maxTasks',
-        label: 'Maximum Tasks',
+        name: 'maxIterations',
+        label: 'Maximum Iterations',
         type: 'number',
+        required: true,
         default: 5,
-        min: 1,
-        max: 20
+        description: 'Maximum number of task iterations to perform'
+      },
+      {
+        name: 'vectorStore',
+        label: 'Vector Store',
+        type: 'select',
+        options: [
+          { value: 'pinecone', label: 'Pinecone' },
+          { value: 'chroma', label: 'ChromaDB' }
+        ],
+        required: true,
+        description: 'Vector database for storing and retrieving task results'
+      },
+      {
+        name: 'pineconeApiKey',
+        label: 'Pinecone API Key',
+        type: 'password',
+        required: false,
+        showIf: { field: 'vectorStore', value: 'pinecone' },
+        description: 'API key for Pinecone vector database'
+      },
+      {
+        name: 'pineconeEnvironment',
+        label: 'Pinecone Environment',
+        type: 'text',
+        required: false,
+        showIf: { field: 'vectorStore', value: 'pinecone' },
+        description: 'Pinecone environment (e.g., "us-west1-gcp")'
+      },
+      {
+        name: 'pineconeIndex',
+        label: 'Pinecone Index',
+        type: 'text',
+        required: false,
+        showIf: { field: 'vectorStore', value: 'pinecone' },
+        description: 'Name of the Pinecone index to use'
       }
     ]
   },
