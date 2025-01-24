@@ -71,19 +71,52 @@ export default function App() {
         }))
       };
 
+      console.log('Sending request:', JSON.stringify(requestBody, null, 2));
       const resp = await axios.post("http://localhost:3000/execute-flow", requestBody);
-      
-      // Find the output node and update its data
+      console.log('Received response:', resp.data);
+
+      // Update nodes with their results
       setNodes((nds) =>
-        nds.map((node) =>
-          node.data.type === 'output'
-            ? { ...node, data: { ...node.data, outputResult: resp.data } }
-            : node
-        )
+        nds.map((node) => {
+          if (node.data.type === 'output') {
+            // For output nodes, collect results from all connected nodes
+            const inputNodeIds = edges
+              .filter(e => e.target === node.id)
+              .map(e => e.source);
+            
+            console.log('Output node connected to:', inputNodeIds);
+            
+            let results = '';
+            inputNodeIds.forEach(sourceId => {
+              const sourceNode = nodes.find(n => n.id === sourceId);
+              const result = resp.data.nodeResults[sourceId];
+              if (result) {
+                results += `Results from ${sourceNode.data.type} (${sourceId}):\n${result}\n\n`;
+              }
+            });
+
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                inputText: results || 'No results available'
+              }
+            };
+          }
+
+          // For non-output nodes, store their results
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              outputResult: resp.data.nodeResults[node.id]
+            }
+          };
+        })
       );
     } catch (error) {
-      console.error(error);
-      alert("Error: " + error.message);
+      console.error('Error executing flow:', error);
+      alert(`Error executing flow: ${error.message}`);
     }
   };
 
