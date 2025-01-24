@@ -94,7 +94,7 @@ A powerful visual flow-based platform for orchestrating AI agents. Republic enab
 
 1. **Clone the Repository**
 ```bash
-git clone https://github.com/yourusername/republic.git
+git clone https://github.com/Republic-AI/Republic.git
 cd republic
 ```
 
@@ -367,21 +367,25 @@ v
 
 ## Quick Start (Docker Compose)
 
-1. **Set `OPENAI_API_KEY`**  
-   - Either create a `.env` file in the root folder with:
+1. **Get the Code**
+   - Download this repository or clone it locally
+   - Navigate to the project directory:
      ```bash
-     OPENAI_API_KEY=sk-xxxxxx
+     cd republic
      ```
-     or export it in your shell:
-     ```bash
-     export OPENAI_API_KEY=sk-xxxxxx
-     ```
-2. **Build and run**:
+
+2. **Set `OPENAI_API_KEY`**  
+   Create a `.env` file in the root folder:
+   ```bash
+   OPENAI_API_KEY=sk-xxxxxx
+   ```
+
+3. **Build and run**:
    ```bash
    docker-compose up -d
    ```
 
-3. **Check containers**:
+4. **Check containers**:
 
 After running `docker-compose up -d`, you will have four containers running:
 
@@ -397,10 +401,10 @@ docker-compose ps
 docker-compose logs -f
 ```
 
-4.	**Open your browser**: http://localhost:8080
+5.	**Open your browser**: http://localhost:8080
 You should see a React Flow UI with two default nodes (Python LLM and Node LLM) and one edge between them.
 
-5.	**Click "Run Flow" to execute the entire pipeline**:
+6.	**Click "Run Flow" to execute the entire pipeline**:
 The Orchestrator calls each microservice in turn, passes outputs forward, and returns a final result object.
 
 To stop everything:
