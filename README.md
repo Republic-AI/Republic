@@ -1,149 +1,214 @@
-# Republic - AI Agent Flow Orchestrator
+# Republic - AI Agent Orchestration Platform
 
-A powerful visual flow-based orchestrator for creating and managing AI agent workflows. This platform allows you to create, connect, and orchestrate different types of AI agents through an intuitive drag-and-drop interface.
+A powerful visual flow-based platform for orchestrating AI agents. Republic enables you to create, connect, and manage sophisticated AI agent workflows through an intuitive drag-and-drop interface, supporting multiple agent frameworks and seamless integration with various AI services.
 
-## Features
+## 🌟 Key Features
 
-### Core Features
-- 🎨 Visual Flow Editor
-  - Drag-and-drop interface for creating agent workflows
-  - Real-time flow visualization
-  - Intuitive node connection system
-  - Customizable node configurations
+### Visual Flow Editor
+- Intuitive drag-and-drop interface
+- Real-time flow visualization
+- Dynamic node connections
+- Live preview of agent configurations
+- Custom node styling and grouping
 
-- 🤖 Supported Agent Types
-  - **Eliza Agent**: Content creation and strategic planning
-  - **ZerePy Agent**: Social media management and blockchain integration
-  - **LangChain Agent**: General-purpose language model integration
-  - **AutoGPT Agent**: Autonomous task completion
-  - **BabyAGI Agent**: Task management and planning
+### Agent Frameworks
 
-- 🔌 Input/Output Nodes
-  - Text input support
-  - File upload capabilities
-  - API integration
-  - Multiple output formats (JSON, XML, YAML)
-  - API endpoint output
+#### 🤖 Eliza Agent Framework
+- **Content & Strategy**
+  - Advanced content planning and creation
+  - Strategic decision-making capabilities
+  - Document analysis and synthesis
+  
+- **Tools & Integration**
+  - Web search and research capabilities
+  - Document processing and management
+  - Code execution and analysis
+  - File system operations
+  
+- **Memory Systems**
+  - Retrievable memory for context retention
+  - Document store for knowledge management
+  - Conversation history tracking
+  
+- **Client Integration**
+  - Discord bot integration
+  - Twitter API support
+  - Telegram bot capabilities
 
-### Agent Features
+#### 🚀 ZerePy Agent Framework
+- **Social Platform Integration**
+  - Twitter engagement and analytics
+  - Farcaster social protocol support
+  - Discord community management
+  - Echo Chambers integration
+  
+- **Blockchain Capabilities**
+  - Multi-chain support
+  - Smart contract interaction
+  - Web3 protocol integration
+  
+- **Advanced Features**
+  - GOAT plugin system
+  - Task prioritization with weights
+  - Time-based execution scheduling
+  - Performance analytics and reporting
+  
+- **Configuration Options**
+  - Agent personality traits
+  - Task management preferences
+  - Engagement strategies
+  - Response templating
 
-#### Eliza Agent
-- Content strategy and planning
-- Document interaction
-- Web search capabilities
-- Retrievable memory system
-- Tool integration (web search, document handling, code execution)
+#### 🔗 Additional Agent Types
+- **LangChain Agent**: General-purpose language model integration
+- **AutoGPT Agent**: Autonomous task execution
+- **BabyAGI Agent**: Task management and planning
 
-#### ZerePy Agent
-- Social platform integration (Twitter, Farcaster, Discord)
-- Blockchain network support
-- GOAT plugin system
-- Task weight management
-- Time-based configuration
-- Performance analytics
+### Input/Output System
+- **Input Types**
+  - Text input with formatting
+  - File upload support
+  - API endpoint integration
+  - Structured data parsing
+  
+- **Output Formats**
+  - JSON/XML/YAML formatting
+  - API response handling
+  - File export capabilities
+  - Custom format templates
 
-## Setup
+## 🛠 Setup
 
 ### Prerequisites
-- Node.js (v18 or higher)
+- Node.js v18+
 - Docker and Docker Compose
-- API keys for desired services (OpenAI, Anthropic, etc.)
+- API Keys:
+  - OpenAI API key
+  - Anthropic API key (for Claude models)
+  - Social platform API keys (as needed)
 
-### Installation
+### Quick Start
 
-1. Clone the repository:
+1. **Clone & Setup**
 ```bash
 git clone https://github.com/yourusername/republic.git
 cd republic
-```
-
-2. Create environment files:
-```bash
 cp .env.example .env
 ```
 
-3. Update the `.env` file with your API keys and configurations.
+2. **Configure Environment**
+Edit `.env` with your API keys and preferences:
+```env
+OPENAI_API_KEY=your_key_here
+ANTHROPIC_API_KEY=your_key_here
+DISCORD_BOT_TOKEN=your_token_here
+# Add other API keys as needed
+```
 
-4. Build and start the services:
+3. **Launch**
 ```bash
 docker-compose up -d
 ```
 
-The application will be available at `http://localhost:3000`.
+Access the platform at `http://localhost:3000`
 
-## Usage Examples
+## 📚 Usage Examples
 
-### Basic Content Creation Flow
-
+### 1. Content Creation & Distribution Flow
 ```javascript
-// Example flow configuration
 {
   "nodes": [
     {
-      "id": "1",
+      "id": "input",
       "type": "input",
-      "inputText": "Create tech content about AI trends"
+      "data": {
+        "text": "Create viral tech content about AI trends"
+      }
     },
     {
-      "id": "2",
+      "id": "eliza",
       "type": "eliza",
       "data": {
         "config": {
-          "agentName": "Content Creator",
-          "systemPrompt": "Create engaging tech content"
+          "agentName": "Content Strategist",
+          "systemPrompt": "You are an expert tech content creator",
+          "tools": ["web-search", "document-interaction"]
         }
       }
     },
     {
-      "id": "3",
+      "id": "zerepy",
       "type": "zerepy",
       "data": {
         "config": {
-          "socialPlatforms": ["twitter", "farcaster"]
+          "socialPlatforms": ["twitter", "farcaster"],
+          "traits": ["engaging", "analytical"],
+          "taskWeights": {
+            "distribution": 0.6,
+            "engagement": 0.4
+          }
         }
       }
     },
     {
-      "id": "4",
-      "type": "output"
+      "id": "output",
+      "type": "output",
+      "data": {
+        "format": "json"
+      }
     }
   ],
   "edges": [
-    {"source": "1", "target": "2"},
-    {"source": "2", "target": "3"},
-    {"source": "3", "target": "4"}
+    {"source": "input", "target": "eliza"},
+    {"source": "eliza", "target": "zerepy"},
+    {"source": "zerepy", "target": "output"}
   ]
 }
 ```
 
-### Advanced Multi-Agent Workflow
+### 2. Research & Analysis Flow
+See more examples in the [examples](./examples) directory.
 
-See the [examples](./examples) directory for more complex workflow configurations.
+## 🏗 Architecture
 
-## Architecture
+### Core Components
+- **Frontend**: React-based flow editor with real-time updates
+- **Orchestrator**: Node.js service for workflow management
+- **Agent Services**: Specialized services for each agent framework
+- **Memory System**: Distributed storage for agent state and data
 
-The system consists of several key components:
+### Data Flow
+1. User creates workflow in visual editor
+2. Orchestrator validates and processes flow
+3. Agents execute in sequence with data passing
+4. Results collected and formatted for output
 
-- **Frontend**: React-based visual flow editor
-- **Orchestrator**: Node.js service managing workflow execution
-- **Agent Services**: Specialized services for each agent type
-- **Memory System**: Persistent storage for agent states and data
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
-## License
+## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) for details
 
-## Support
+## 💬 Support
 
-For support, please open an issue in the GitHub repository or contact the maintainers.
+- GitHub Issues: Bug reports and feature requests
+- Documentation: [docs/](./docs)
+- Community: [Discord](https://discord.gg/republic)
+
+## 🔮 Roadmap
+
+- [ ] Additional agent frameworks
+- [ ] Enhanced memory systems
+- [ ] Custom plugin development
+- [ ] Advanced workflow templates
+- [ ] Multi-user collaboration
+- [ ] Enterprise features
 
 ---
 
