@@ -1,24 +1,28 @@
 export const initialNodes = [
-    {
-      id: '1',
-      position: { x: 200, y: 100 },
-      data: {
-        type: 'python-llm',
-        inputText: 'Hello from the Python node',
-        config: {}
-      }
-    },
-    {
-      id: '2',
-      position: { x: 600, y: 100 },
-      data: {
-        type: 'node-llm',
-        inputText: 'Previously we got: {PREV_RESULT}',
-        config: {}
+  {
+    id: '1',
+    position: { x: 100, y: 100 },
+    data: {
+      type: 'input',
+      framework: 'input',
+      inputText: '',
+      config: {
+        inputType: 'text'
       }
     }
-  ];
-  
-  export const initialEdges = [
-    { id: 'e1-2', source: '1', target: '2' }
-  ];
+  },
+  {
+    id: '2',
+    position: { x: 700, y: 100 },
+    data: {
+      type: 'output',
+      framework: 'output',
+      inputText: '',
+      config: {
+        outputType: 'display'
+      }
+    }
+  }
+];
+
+export const initialEdges = [];

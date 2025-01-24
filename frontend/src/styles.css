@@ -172,6 +172,21 @@ html, body {
   border: 1px solid #eee;
   max-height: 400px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
+}
+
+.node-config::-webkit-scrollbar {
+  width: 6px;
+}
+
+.node-config::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.node-config::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 3px;
 }
 
 .config-field {
@@ -223,6 +238,21 @@ html, body {
   border-radius: 3px;
   padding: 4px;
   background: white;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
+}
+
+.node-multiselect::-webkit-scrollbar {
+  width: 6px;
+}
+
+.node-multiselect::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.node-multiselect::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 3px;
 }
 
 .node-checkbox {
@@ -247,11 +277,28 @@ html, body {
 .node-textarea {
   width: 100%;
   min-height: 60px;
+  max-height: 200px;
   padding: 6px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 12px;
   resize: vertical;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
+}
+
+.node-textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.node-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.node-textarea::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 3px;
 }
 
 .config-textarea {
@@ -430,4 +477,39 @@ html, body {
   flex: 1;
   height: 100%;
   background: #f0f2f5;
+}
+
+/* Prevent zoom on node content */
+.no-wheel {
+  pointer-events: none;
+}
+
+.node-config,
+.node-textarea,
+.node-multiselect {
+  pointer-events: auto;
+}
+
+/* Zoom controls */
+.zoom-controls {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.zoom-controls button {
+  padding: 4px 8px;
+  font-size: 12px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #495057;
+}
+
+.zoom-controls button:hover {
+  background: #e9ecef;
 }

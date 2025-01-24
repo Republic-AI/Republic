@@ -5,7 +5,8 @@ import ReactFlow, {
   Controls,
   MiniMap,
   useEdgesState,
-  useNodesState
+  useNodesState,
+  Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './styles.css';
@@ -79,6 +80,18 @@ export default function App() {
     }
   };
 
+  // Handle wheel event to prevent zooming when over nodes
+  const onNodeWheel = (event, node) => {
+    const target = event.target;
+    const isScrollable = target.classList.contains('node-config') || 
+                        target.classList.contains('node-textarea') ||
+                        target.classList.contains('node-multiselect');
+    
+    if (isScrollable) {
+      event.stopPropagation();
+    }
+  };
+
   return (
     <div className="app-container">
       {/* Sidebar */}
@@ -142,12 +155,28 @@ export default function App() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onNodeWheel={onNodeWheel}
           nodeTypes={nodeTypes}
           fitView
+          preventScrolling={false}
+          zoomOnScroll={false}
+          zoomOnPinch={true}
+          panOnScroll={true}
+          panOnScrollMode="free"
+          selectionOnDrag={true}
+          noWheelClassName="no-wheel"
         >
           <Background />
-          <Controls />
+          <Controls showZoom={true} />
           <MiniMap />
+          <Panel position="top-right" className="zoom-controls">
+            <button onClick={() => document.querySelector('.react-flow__controls-zoomin').click()}>
+              Zoom In
+            </button>
+            <button onClick={() => document.querySelector('.react-flow__controls-zoomout').click()}>
+              Zoom Out
+            </button>
+          </Panel>
         </ReactFlow>
       </div>
     </div>

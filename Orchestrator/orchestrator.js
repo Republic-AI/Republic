@@ -3,21 +3,21 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const { OpenAI } = require("langchain/llms/openai");
 const { initializeAgentExecutorWithOptions } = require("langchain/agents");
-const { WebBrowser } = require("langchain/tools/webbrowser");
-const { Calculator } = require("langchain/tools/calculator");
-const { WikipediaQueryRun } = require("langchain/tools/wikipedia");
+const { WebBrowser } = require("langchain/tools");
+const { Calculator } = require("langchain/tools");
+const { WikipediaQueryRun } = require("langchain/tools");
 const { BufferMemory, SummaryMemory, ConversationSummaryMemory } = require("langchain/memory");
 const { RetrievableMemory, DocumentStore } = require("langchain/memory");
 const { WebSearchTool, DocumentTool, CodeExecutionTool, FileOperationsTool } = require("langchain/tools");
-const { ElizaAgent } = require("langchain/agents/eliza");
-const { ZerePyAgent } = require("langchain/agents/zerepy");
-const { DiscordClient, TwitterClient, TelegramClient } = require("langchain/tools/clients");
+const { ElizaAgent } = require("langchain/agents");
+const { ZerePyAgent } = require("langchain/agents");
+const { DiscordClient, TwitterClient, TelegramClient } = require("langchain/tools");
 const { 
   FarcasterClient, 
   EchochambersClient,
   BlockchainClient,
   GoatPluginManager 
-} = require("langchain/tools/zerepy");
+} = require("langchain/tools");
 require("dotenv").config();
 
 const app = express();
