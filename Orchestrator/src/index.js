@@ -16,6 +16,7 @@ const {
 } = require("langchain/tools");
 const { DuckDuckGoSearchRun } = require("langchain/tools");
 const { SerpAPI } = require("langchain/tools");
+const { DocumentStore } = require("./utils/DocumentStore");
 require("dotenv").config();
 
 const app = express();
@@ -288,11 +289,23 @@ class DiscordPlatform extends SocialPlatform {
 class BaseAgent {
   constructor(config = {}) {
     this.config = config;
-    this.memory = new AdvancedMemory(config.memoryType);
+    this.memory = new AdvancedMemory(config.memoryConfig?.memoryType);
     
     // Initialize the model based on the foundation model type
     const modelName = config.foundationModel || 'gpt-3.5-turbo';
     
+    // Log the config structure to debug
+    console.log('BaseAgent config:', JSON.stringify(config, null, 2));
+    
+    // Try to get API key from different possible locations
+    const apiKey = config.modelConfig?.apiKey || config.apiKey || process.env.OPENAI_API_KEY;
+    
+    console.log('Found API key:', apiKey ? 'Yes' : 'No');
+    
+    if (!apiKey) {
+      throw new Error(`API key not found for model ${modelName}. Please provide it in the node configuration.`);
+    }
+
     if (modelName.startsWith('claude')) {
       // Use Anthropic for Claude models
       const anthropicConfig = {
@@ -300,14 +313,9 @@ class BaseAgent {
         modelName: modelName,
         maxTokens: config.modelParams?.maxTokens || 1000,
         topP: config.modelParams?.topP || 1,
+        apiKey: apiKey
       };
-
-      const anthropicKey = config.apiKeys?.anthropic;
-      if (!anthropicKey) {
-        throw new Error('Anthropic API key not found in node configuration');
-      }
       
-      anthropicConfig.apiKey = anthropicKey;
       this.model = new ChatAnthropic(anthropicConfig);
     } else {
       // Use OpenAI for GPT models
@@ -316,14 +324,9 @@ class BaseAgent {
         modelName: modelName === 'openai' ? 'gpt-3.5-turbo' : modelName,
         maxTokens: config.modelParams?.maxTokens || 1000,
         topP: config.modelParams?.topP || 1,
+        openAIApiKey: apiKey
       };
-
-      const openAIKey = config.apiKeys?.openai;
-      if (!openAIKey) {
-        throw new Error('OpenAI API key not found in node configuration');
-      }
       
-      openAIConfig.openAIApiKey = openAIKey;
       this.model = new OpenAI(openAIConfig);
     }
   }
@@ -341,41 +344,229 @@ class BaseAgent {
 class ElizaAgent extends BaseAgent {
   constructor(config) {
     super(config);
+    // Core agent properties
     this.name = config.agentName || 'Eliza';
-    this.description = config.agentDescription || 'A helpful AI assistant';
-    this.systemPrompt = config.systemPrompt || 'You are a helpful AI assistant.';
-    this.tools = this.initializeTools(config.tools || []);
+    this.role = config.agentRole || 'empathetic';
+    this.conversationStyle = config.conversationStyle || 'empathetic';
+    this.reflectionLevel = config.reflectionLevel || 7;
+    
+    // Social platform integrations
+    this.socialPlatforms = this.initializeSocialPlatforms(config.socialPlatforms || {});
+    
+    // Document store and memory
+    this.documentStore = new DocumentStore(config.documentStoreConfig || {});
+    this.memory = new BufferMemory({
+      returnMessages: true,
+      memoryKey: "chat_history",
+      inputKey: "input",
+      outputKey: "output"
+    });
+
+    // Pattern matching and response generation
+    this.patterns = this.loadPatterns();
+    this.responseGenerators = this.initializeResponseGenerators();
+    
+    // Multi-agent support
+    this.collaborators = new Map();
+    if (config.collaborators) {
+      for (const [id, agentConfig] of Object.entries(config.collaborators)) {
+        this.collaborators.set(id, new ElizaAgent(agentConfig));
+      }
+    }
   }
 
-  initializeTools(toolNames) {
-    return toolNames.map(name => {
-      switch (name) {
-        case 'search':
-          return DuckDuckGo();
-        case 'calculator':
-          return new Calculator();
-        case 'wikipedia':
-          return new WikipediaQueryRun();
-        default:
-          return null;
+  initializeSocialPlatforms(config) {
+    const platforms = {};
+    
+    // Twitter/X integration
+    if (config.twitter?.enabled) {
+      platforms.twitter = new TwitterPlatform({
+        apiKey: config.twitter.apiKey,
+        autoPost: config.twitter.autoPost
+      });
+    }
+
+    // Discord integration
+    if (config.discord?.enabled) {
+      platforms.discord = new DiscordPlatform({
+        botToken: config.discord.botToken,
+        channels: config.discord.channels,
+        autoPost: config.discord.autoPost
+      });
+    }
+
+    // Telegram integration
+    if (config.telegram?.enabled) {
+      platforms.telegram = new TelegramPlatform({
+        botToken: config.telegram.botToken,
+        channels: config.telegram.channels,
+        autoPost: config.telegram.autoPost
+      });
+    }
+
+    return platforms;
+  }
+
+  loadPatterns() {
+    return {
+      greeting: [
+        { pattern: /hello|hi|hey/i, response: `Hello, I'm ${this.name}. How can I help you today?` },
+        { pattern: /how are you/i, response: "I'm here to assist you. What would you like to discuss?" }
+      ],
+      reflection: [
+        { pattern: /i am (.*)/i, response: "Tell me more about being $1." },
+        { pattern: /i feel (.*)/i, response: "What makes you feel $1?" },
+        { pattern: /i think (.*)/i, response: "What leads you to think $1?" }
+      ],
+      deepening: [
+        { pattern: /because (.*)/i, response: "How did you come to that conclusion about $1?" },
+        { pattern: /but (.*)/i, response: "What other aspects of $1 would you like to explore?" }
+      ],
+      emotions: [
+        { pattern: /(sad|angry|happy|anxious|worried)/i, response: "How does being $1 affect you?" },
+        { pattern: /afraid|scared/i, response: "What aspects of this situation concern you?" }
+      ],
+      documents: [
+        { pattern: /read|document|file/i, response: "I'll help you analyze that document. What aspects should we focus on?" }
+      ]
+    };
+  }
+
+  initializeResponseGenerators() {
+    return {
+      reflection: this.generateReflection.bind(this),
+      analysis: this.generateAnalysis.bind(this),
+      summary: this.generateSummary.bind(this),
+      action: this.generateActionPlan.bind(this)
+    };
+  }
+
+  async generateAnalysis(input, context) {
+    const prompt = `
+      Analyze the following input in the context of our therapeutic conversation:
+      Input: ${input}
+      Context: ${context}
+      
+      Provide a structured analysis focusing on:
+      1. Emotional content
+      2. Core beliefs
+      3. Behavioral patterns
+      4. Potential areas for exploration
+    `;
+    return await this.model.call(prompt);
+  }
+
+  async generateSummary(conversation) {
+    const prompt = `
+      Summarize the key points of our therapeutic conversation:
+      ${conversation}
+      
+      Focus on:
+      1. Main themes
+      2. Emotional progress
+      3. Insights gained
+      4. Areas for future exploration
+    `;
+    return await this.model.call(prompt);
+  }
+
+  async generateActionPlan(insights) {
+    const prompt = `
+      Based on these therapeutic insights:
+      ${insights}
+      
+      Create a gentle, non-prescriptive action plan that:
+      1. Encourages self-reflection
+      2. Supports emotional awareness
+      3. Promotes healthy coping strategies
+      4. Maintains therapeutic boundaries
+    `;
+    return await this.model.call(prompt);
+  }
+
+  async processDocument(document) {
+    await this.documentStore.add(document);
+    const analysis = await this.generateAnalysis(document.content, "document review");
+    return {
+      analysis,
+      metadata: document.metadata
+    };
+  }
+
+  async broadcastToSocialPlatforms(response) {
+    const results = {};
+    for (const [platform, client] of Object.entries(this.socialPlatforms)) {
+      if (client.autoPost) {
+        try {
+          results[platform] = await client.post(response);
+        } catch (error) {
+          console.error(`Error posting to ${platform}:`, error);
+          results[platform] = { error: error.message };
+        }
       }
-    }).filter(Boolean);
+    }
+    return results;
   }
 
   async execute(input) {
-    const context = await this.memory.loadMemoryVariables();
-    const prompt = `
-System: ${this.systemPrompt}
-Name: ${this.name}
-Description: ${this.description}
-Context: ${JSON.stringify(context.history)}
+    try {
+      // Load conversation history
+      const context = await this.memory.loadMemoryVariables({});
+      const history = context.chat_history || [];
 
-User: ${input}
-`;
+      // Try pattern matching first
+      let response = await this.matchPattern(input);
 
-    const result = await this.model.call(prompt);
-    await this.memory.saveContext({ input }, { output: result });
-    return result;
+      // If no pattern match, use the LLM with proper context
+      if (!response) {
+        const prompt = `
+Role: You are ${this.name}, a conversational AI with a ${this.role} approach and ${this.conversationStyle} conversation style.
+Context: Previous conversation history:
+${history.map(h => `${h.type}: ${h.content}`).join('\n')}
+
+Current input: ${input}
+
+Instructions:
+1. Maintain a reflection level of ${this.reflectionLevel}/10
+2. Use active listening techniques
+3. Focus on understanding and responding to the user's perspective
+4. Provide thoughtful, relevant responses
+5. Use open-ended questions
+6. Stay within your configured role
+
+Response:`;
+
+        response = await this.model.call(prompt);
+      }
+
+      // Generate additional insights
+      const analysis = await this.generateAnalysis(input, history);
+      
+      // Save the interaction to memory
+      await this.memory.saveContext(
+        { input: input },
+        { output: response }
+      );
+
+      // Broadcast to social platforms if configured
+      const socialResults = await this.broadcastToSocialPlatforms(response);
+
+      // Return comprehensive response
+      return {
+        content: response,
+        metadata: {
+          agentName: this.name,
+          role: this.role,
+          style: this.conversationStyle,
+          timestamp: new Date().toISOString(),
+          analysis: analysis,
+          socialPlatforms: socialResults
+        }
+      };
+    } catch (error) {
+      console.error('Error in Eliza execution:', error);
+      throw new Error(`Eliza execution failed: ${error.message}`);
+    }
   }
 }
 
@@ -696,11 +887,17 @@ const executeLangChainAgent = async (input, config) => {
     outputKey: "output"
   });
   
+  // Get API key from modelConfig
+  const apiKey = config.modelConfig?.apiKey;
+  if (!apiKey) {
+    throw new Error(`API key not found. Please provide it in the node configuration.`);
+  }
+  
   // Initialize OpenAI model with configuration
   const model = new OpenAI({ 
-    temperature: config.modelParams?.temperature || 0.7,
-    openAIApiKey: config.apiKeys?.openai || process.env.OPENAI_API_KEY,
-    modelName: config.foundationModel || 'gpt-3.5-turbo'
+    temperature: config.modelConfig?.modelParams?.temperature || 0.7,
+    openAIApiKey: apiKey,
+    modelName: config.modelConfig?.foundationModel || 'gpt-3.5-turbo'
   });
 
   // Initialize agent with correct type and memory
@@ -879,34 +1076,108 @@ const executeOutputNode = async (input, config) => {
 // Agent handlers mapping
 const agentHandlers = {
   'input': async (input, config) => {
-    // For input nodes, just return the input text
     return input;
   },
   'output': async (input, config) => {
     return await executeOutputNode(input, config);
   },
   'eliza': async (input, config) => {
-    const agent = new ElizaAgent(config);
+    console.log('Eliza handler config:', JSON.stringify(config, null, 2));
+    
+    const elizaConfig = {
+      foundationModel: config.modelConfig?.foundationModel || 'gpt-3.5-turbo',
+      modelConfig: {
+        apiKey: config.modelConfig?.apiKey
+      },
+      apiKey: config.modelConfig?.apiKey,  // Also pass directly
+      modelParams: config.modelConfig?.modelParams || {
+        temperature: 0.7,
+        maxTokens: 1000,
+        topP: 1
+      },
+      agentName: config.agentName,
+      agentRole: config.agentRole,
+      conversationStyle: config.conversationStyle,
+      reflectionLevel: config.reflectionLevel,
+      socialPlatforms: config.socialPlatforms,
+      documentStoreConfig: config.documentStoreConfig
+    };
+
+    console.log('Eliza config prepared:', JSON.stringify(elizaConfig, null, 2));
+
+    const agent = new ElizaAgent(elizaConfig);
     const result = await agent.execute(input);
     return extractAgentResult(result);
   },
   'zerepy': async (input, config) => {
-    const agent = new ZerePyAgent(config);
+    const zerepyConfig = {
+      foundationModel: config.modelConfig?.foundationModel || 'gpt-3.5-turbo',
+      apiKey: config.modelConfig?.apiKey,  // Get API key from modelConfig
+      modelParams: config.modelConfig?.modelParams || {
+        temperature: 0.7,
+        maxTokens: 1000,
+        topP: 1
+      },
+      agentName: config.agentName,
+      agentBio: config.agentBio,
+      traits: config.traits,
+      taskWeights: config.taskWeights
+    };
+
+    const agent = new ZerePyAgent(zerepyConfig);
     const result = await agent.execute(input);
     return extractAgentResult(result);
   },
   'autogpt': async (input, config) => {
-    const agent = new AutoGPTAgent(config);
+    const autogptConfig = {
+      foundationModel: config.modelConfig?.foundationModel || 'gpt-4',
+      apiKey: config.modelConfig?.apiKey,  // Get API key from modelConfig
+      modelParams: config.modelConfig?.modelParams || {
+        temperature: 0.7,
+        maxTokens: 1000,
+        topP: 1
+      },
+      maxIterations: config.maxIterations,
+      tools: config.tools
+    };
+
+    const agent = new AutoGPTAgent(autogptConfig);
     const result = await agent.execute(input);
     return extractAgentResult(result);
   },
   'babyagi': async (input, config) => {
-    const agent = new BabyAGIAgent(config);
+    const babyagiConfig = {
+      foundationModel: config.modelConfig?.foundationModel || 'gpt-4',
+      apiKey: config.modelConfig?.apiKey,  // Get API key from modelConfig
+      modelParams: config.modelConfig?.modelParams || {
+        temperature: 0.7,
+        maxTokens: 1000,
+        topP: 1
+      },
+      maxTasks: config.maxTasks,
+      tools: config.tools
+    };
+
+    const agent = new BabyAGIAgent(babyagiConfig);
     const result = await agent.execute(input);
     return extractAgentResult(result);
   },
   'langchain': async (input, config) => {
-    return await executeLangChainAgent(input, config);
+    const langchainConfig = {
+      modelConfig: {
+        foundationModel: config.modelConfig?.foundationModel || 'gpt-3.5-turbo',
+        apiKey: config.modelConfig?.apiKey,  // Get API key from modelConfig
+        modelParams: config.modelConfig?.modelParams || {
+          temperature: 0.7,
+          maxTokens: 1000,
+          topP: 1
+        }
+      },
+      toolsConfig: config.toolsConfig,
+      maxIterations: config.maxIterations || 3
+    };
+
+    return await executeLangChainAgent(input, langchainConfig);
   }
 };
 

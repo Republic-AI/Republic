@@ -3,17 +3,14 @@ import { Handle } from 'reactflow';
 import { agentFrameworks } from './agentFrameworks';
 
 const defaultConfig = {
-  apiKeys: {
-    openai: '',
-    anthropic: '',
-    serpapi: '',
-    google: ''
-  },
-  foundationModel: 'gpt-3.5-turbo',
-  modelParams: {
-    temperature: 0.7,
-    maxTokens: 1000,
-    topP: 1
+  modelConfig: {
+    foundationModel: 'gpt-3.5-turbo',
+    apiKey: '',
+    modelParams: {
+      temperature: 0.7,
+      maxTokens: 1000,
+      topP: 1
+    }
   }
 };
 
@@ -21,7 +18,7 @@ const defaultConfig = {
 const NODE_CONFIGS = {
   'eliza': {
     fields: {
-      // Therapist Personality
+      // Core Configuration
       therapistName: {
         type: 'text',
         label: 'Therapist Name',
@@ -42,7 +39,6 @@ const NODE_CONFIGS = {
         default: 'Empathetic',
         tooltip: 'Overall tone of conversation'
       },
-      // Response Style
       reflectionLevel: {
         type: 'slider',
         label: 'Reflection Level',
@@ -51,86 +47,168 @@ const NODE_CONFIGS = {
         default: 7,
         tooltip: 'How much to reflect user statements back'
       },
-      empathyLevel: {
-        type: 'slider',
-        label: 'Empathy Level',
-        min: 0,
-        max: 10,
-        default: 8,
-        tooltip: 'Level of emotional understanding to express'
-      },
-      // Memory Configuration
-      memoryType: {
-        type: 'select',
-        label: 'Memory Type',
-        options: ['session', 'emotional', 'contextual'],
-        default: 'emotional',
-        tooltip: 'Type of memory to maintain'
-      },
-      contextWindow: {
-        type: 'number',
-        label: 'Context Window',
-        min: 1,
-        max: 10,
-        default: 5,
-        tooltip: 'Number of previous exchanges to consider'
-      },
+
       // Social Platform Integration
-      platforms: {
+      socialPlatforms: {
         type: 'group',
         label: 'Social Platforms',
         fields: {
           twitter: {
             type: 'group',
-            label: 'Twitter',
+            label: 'Twitter/X Integration',
             fields: {
               enabled: {
                 type: 'boolean',
                 label: 'Enable Twitter',
-                default: false,
-                tooltip: 'Enable posting to Twitter'
+                default: false
               },
               apiKey: {
                 type: 'password',
                 label: 'API Key',
-                tooltip: 'Twitter API Key'
+                showWhen: { field: 'enabled', value: true }
               },
               autoPost: {
                 type: 'boolean',
-                label: 'Auto Post',
+                label: 'Auto Post Responses',
                 default: false,
-                tooltip: 'Automatically post responses to Twitter'
+                showWhen: { field: 'enabled', value: true }
               }
             }
           },
           discord: {
             type: 'group',
-            label: 'Discord',
+            label: 'Discord Integration',
             fields: {
               enabled: {
                 type: 'boolean',
                 label: 'Enable Discord',
-                default: false,
-                tooltip: 'Enable posting to Discord'
+                default: false
               },
               botToken: {
                 type: 'password',
                 label: 'Bot Token',
-                tooltip: 'Discord Bot Token'
+                showWhen: { field: 'enabled', value: true }
               },
               channels: {
                 type: 'array',
                 label: 'Channel IDs',
                 itemType: 'text',
-                tooltip: 'Discord Channel IDs to post to'
+                showWhen: { field: 'enabled', value: true }
               },
               autoPost: {
                 type: 'boolean',
-                label: 'Auto Post',
+                label: 'Auto Post Responses',
                 default: false,
-                tooltip: 'Automatically post responses to Discord'
+                showWhen: { field: 'enabled', value: true }
               }
             }
+          },
+          telegram: {
+            type: 'group',
+            label: 'Telegram Integration',
+            fields: {
+              enabled: {
+                type: 'boolean',
+                label: 'Enable Telegram',
+                default: false
+              },
+              botToken: {
+                type: 'password',
+                label: 'Bot Token',
+                showWhen: { field: 'enabled', value: true }
+              },
+              channels: {
+                type: 'array',
+                label: 'Channel IDs',
+                itemType: 'text',
+                showWhen: { field: 'enabled', value: true }
+              },
+              autoPost: {
+                type: 'boolean',
+                label: 'Auto Post Responses',
+                default: false,
+                showWhen: { field: 'enabled', value: true }
+              }
+            }
+          }
+        }
+      },
+
+      // Document Store Configuration
+      documentStoreConfig: {
+        type: 'group',
+        label: 'Document Processing',
+        fields: {
+          enabled: {
+            type: 'boolean',
+            label: 'Enable Document Processing',
+            default: false
+          },
+          storageType: {
+            type: 'select',
+            label: 'Storage Type',
+            options: ['local', 'cloud'],
+            default: 'local',
+            showWhen: { field: 'enabled', value: true }
+          },
+          maxDocuments: {
+            type: 'number',
+            label: 'Max Documents',
+            default: 100,
+            showWhen: { field: 'enabled', value: true }
+          }
+        }
+      },
+
+      // Multi-Agent Configuration
+      collaborators: {
+        type: 'group',
+        label: 'Collaborating Agents',
+        fields: {
+          enabled: {
+            type: 'boolean',
+            label: 'Enable Multi-Agent Mode',
+            default: false
+          },
+          agents: {
+            type: 'array',
+            label: 'Collaborating Agents',
+            itemType: 'group',
+            showWhen: { field: 'enabled', value: true },
+            fields: {
+              name: {
+                type: 'text',
+                label: 'Agent Name'
+              },
+              role: {
+                type: 'select',
+                label: 'Role',
+                options: ['Supervisor', 'Peer', 'Assistant']
+              }
+            }
+          }
+        }
+      },
+
+      // Advanced Settings
+      advanced: {
+        type: 'group',
+        label: 'Advanced Settings',
+        fields: {
+          maxIterations: {
+            type: 'number',
+            label: 'Max Iterations',
+            default: 3
+          },
+          responseTimeout: {
+            type: 'number',
+            label: 'Response Timeout (ms)',
+            default: 30000
+          },
+          debugMode: {
+            type: 'boolean',
+            label: 'Debug Mode',
+            default: false
           }
         }
       }
@@ -203,137 +281,163 @@ export default function CustomNode({ data, isConnectable }) {
   };
 
   const renderConfigField = (field) => {
-    const value = data.config?.[field.name];
-    
+    const value = field.type === 'group' ? 
+      data.config[field.name] || {} :
+      data.config[field.name] || field.default;
+
     // Check if field should be shown based on conditions
     if (field.showWhen) {
-      const conditionField = data.config?.[field.showWhen.field];
-      const conditionValues = Array.isArray(field.showWhen.values) 
-        ? field.showWhen.values 
-        : [field.showWhen.value];
-      
-      if (!conditionValues.includes(conditionField)) {
+      const conditionField = data.config[field.showWhen.field];
+      if (conditionField !== field.showWhen.value) {
         return null;
       }
     }
 
     switch (field.type) {
+      case 'text':
+        return (
+          <input
+            type="text"
+            value={value || ''}
+            placeholder={field.placeholder}
+            onChange={(e) => handleConfigChange(field.name, e.target.value)}
+            className="node-input"
+          />
+        );
+
+      case 'password':
+        return (
+          <input
+            type="password"
+            value={value || ''}
+            placeholder={field.placeholder}
+            onChange={(e) => handleConfigChange(field.name, e.target.value)}
+            className="node-input"
+          />
+        );
+
       case 'select':
         return (
-          <select 
-            value={value || ''} 
+          <select
+            value={value || field.default}
             onChange={(e) => handleConfigChange(field.name, e.target.value)}
             className="node-select"
           >
             {field.options.map(opt => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
+              <option key={opt.value || opt} value={opt.value || opt}>
+                {opt.label || opt}
               </option>
             ))}
           </select>
         );
-      
-      case 'multiselect':
+
+      case 'slider':
         return (
-          <div className="node-multiselect">
-            {field.options.map(opt => (
-              <div key={opt.value} className="node-checkbox">
-                <input
-                  type="checkbox"
-                  checked={(value || []).includes(opt.value)}
-                  onChange={(e) => {
-                    const newValue = e.target.checked
-                      ? [...(value || []), opt.value]
-                      : (value || []).filter(v => v !== opt.value);
-                    handleConfigChange(field.name, newValue);
+          <div className="slider-container">
+            <input
+              type="range"
+              min={field.min}
+              max={field.max}
+              value={value || field.default}
+              onChange={(e) => handleConfigChange(field.name, parseInt(e.target.value))}
+              className="node-slider"
+            />
+            <span className="slider-value">{value || field.default}</span>
+          </div>
+        );
+
+      case 'boolean':
+        return (
+          <label className="toggle-container">
+            <input
+              type="checkbox"
+              checked={value || false}
+              onChange={(e) => handleConfigChange(field.name, e.target.checked)}
+              className="node-toggle"
+            />
+            <span className="toggle-label">{field.label}</span>
+          </label>
+        );
+
+      case 'array':
+        const items = value || [];
+        return (
+          <div className="array-container">
+            {items.map((item, index) => (
+              <div key={index} className="array-item">
+                {field.itemType === 'group' ? (
+                  Object.entries(field.fields).map(([fieldName, subField]) => (
+                    <div key={fieldName} className="group-field">
+                      <label>{subField.label}</label>
+                      {renderConfigField({
+                        ...subField,
+                        name: `${field.name}.${index}.${fieldName}`,
+                        value: item[fieldName]
+                      })}
+                    </div>
+                  ))
+                ) : (
+                  <input
+                    type={field.itemType}
+                    value={item}
+                    onChange={(e) => {
+                      const newItems = [...items];
+                      newItems[index] = e.target.value;
+                      handleConfigChange(field.name, newItems);
+                    }}
+                    className="node-input"
+                  />
+                )}
+                <button
+                  onClick={() => {
+                    const newItems = items.filter((_, i) => i !== index);
+                    handleConfigChange(field.name, newItems);
                   }}
-                />
-                <label>{opt.label}</label>
+                  className="remove-item-btn"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const newItem = field.itemType === 'group' ? {} : '';
+                handleConfigChange(field.name, [...items, newItem]);
+              }}
+              className="add-item-btn"
+            >
+              + Add {field.label}
+            </button>
+          </div>
+        );
+
+      case 'group':
+        return (
+          <div className="group-container">
+            {Object.entries(field.fields).map(([fieldName, subField]) => (
+              <div key={fieldName} className="group-field">
+                <label>{subField.label}</label>
+                {renderConfigField({
+                  ...subField,
+                  name: `${field.name}.${fieldName}`,
+                  value: value[fieldName]
+                })}
               </div>
             ))}
           </div>
         );
 
-      case 'file':
+      case 'number':
         return (
           <input
-            type="file"
-            onChange={(e) => {
-              const files = Array.from(e.target.files);
-              handleConfigChange(field.name, files);
-            }}
-            accept={field.accept}
-            multiple={field.multiple}
-            className="node-file-input"
+            type="number"
+            min={field.min}
+            max={field.max}
+            step={field.step || 1}
+            value={value || field.default}
+            onChange={(e) => handleConfigChange(field.name, parseFloat(e.target.value))}
+            className="node-input"
           />
-        );
-
-      case 'json':
-        return (
-          <textarea
-            value={value || field.placeholder || ''}
-            onChange={(e) => {
-              try {
-                // Validate JSON but store as string
-                JSON.parse(e.target.value);
-                handleConfigChange(field.name, e.target.value);
-              } catch (err) {
-                // Still update even if invalid JSON
-                handleConfigChange(field.name, e.target.value);
-              }
-            }}
-            placeholder={field.placeholder}
-            className="node-textarea json-textarea"
-            rows={5}
-          />
-        );
-
-      case 'textarea':
-        return (
-          <textarea
-            value={value || ''}
-            onChange={(e) => handleConfigChange(field.name, e.target.value)}
-            placeholder={field.placeholder}
-            className="node-textarea config-textarea"
-          />
-        );
-
-      case 'apiKeys':
-        return (
-          <div className="api-keys-container">
-            {field.fields.map(apiField => (
-              <div key={apiField.name} className="api-key-field">
-                <label>{apiField.label}:</label>
-                <input
-                  type="password"
-                  value={value?.[apiField.name] || ''}
-                  onChange={(e) => handleConfigChange(field.name, e.target.value, apiField.name)}
-                  className="node-input"
-                  placeholder="Enter API key"
-                />
-              </div>
-            ))}
-          </div>
-        );
-
-      case 'modelParams':
-        return (
-          <div className="model-params-container">
-            {field.params.map(param => (
-              <div key={param.name} className="param-field">
-                <label>{param.label}:</label>
-                <input
-                  type="number"
-                  value={value?.[param.name] || param.default}
-                  onChange={(e) => handleConfigChange(field.name, parseFloat(e.target.value), param.name)}
-                  min={param.min}
-                  max={param.max}
-                  step={param.step || 1}
-                  className="node-input"
-                />
-              </div>
-            ))}
-          </div>
         );
 
       default:
@@ -355,32 +459,23 @@ export default function CustomNode({ data, isConnectable }) {
         return (
           <div className="config-fields">
             <div className="config-section">
-              <h4>API Keys</h4>
-              <input
-                type="password"
-                placeholder="OpenAI API Key"
-                value={config.apiKeys?.openai || ''}
-                onChange={(e) => handleConfigChange('apiKeys.openai', e.target.value)}
-              />
-              <input
-                type="password"
-                placeholder="Anthropic API Key"
-                value={config.apiKeys?.anthropic || ''}
-                onChange={(e) => handleConfigChange('apiKeys.anthropic', e.target.value)}
-              />
-            </div>
-            
-            <div className="config-section">
               <h4>Model Configuration</h4>
               <select
-                value={config.foundationModel || 'gpt-3.5-turbo'}
-                onChange={(e) => handleConfigChange('foundationModel', e.target.value)}
+                value={config.modelConfig?.foundationModel || 'gpt-3.5-turbo'}
+                onChange={(e) => handleConfigChange('modelConfig', { ...config.modelConfig, foundationModel: e.target.value })}
               >
                 <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                 <option value="gpt-4">GPT-4</option>
-                <option value="claude-2">Claude 2</option>
-                <option value="claude-instant">Claude Instant</option>
+                <option value="claude-3-opus">Claude 3 Opus</option>
+                <option value="claude-3-sonnet">Claude 3 Sonnet</option>
               </select>
+              
+              <input
+                type="password"
+                placeholder="API Key"
+                value={config.modelConfig?.apiKey || ''}
+                onChange={(e) => handleConfigChange('modelConfig', { ...config.modelConfig, apiKey: e.target.value })}
+              />
               
               <input
                 type="number"
@@ -388,8 +483,14 @@ export default function CustomNode({ data, isConnectable }) {
                 min="0"
                 max="1"
                 placeholder="Temperature (0-1)"
-                value={config.modelParams?.temperature || 0.7}
-                onChange={(e) => handleConfigChange('modelParams.temperature', parseFloat(e.target.value))}
+                value={config.modelConfig?.modelParams?.temperature || 0.7}
+                onChange={(e) => handleConfigChange('modelConfig', { 
+                  ...config.modelConfig, 
+                  modelParams: { 
+                    ...config.modelConfig?.modelParams,
+                    temperature: parseFloat(e.target.value)
+                  }
+                })}
               />
               
               <input
@@ -398,8 +499,14 @@ export default function CustomNode({ data, isConnectable }) {
                 min="100"
                 max="4000"
                 placeholder="Max Tokens"
-                value={config.modelParams?.maxTokens || 1000}
-                onChange={(e) => handleConfigChange('modelParams.maxTokens', parseInt(e.target.value))}
+                value={config.modelConfig?.modelParams?.maxTokens || 1000}
+                onChange={(e) => handleConfigChange('modelConfig', { 
+                  ...config.modelConfig, 
+                  modelParams: { 
+                    ...config.modelConfig?.modelParams,
+                    maxTokens: parseInt(e.target.value)
+                  }
+                })}
               />
             </div>
           </div>

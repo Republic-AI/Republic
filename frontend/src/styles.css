@@ -513,3 +513,220 @@ html, body {
 .zoom-controls button:hover {
   background: #e9ecef;
 }
+
+/* Node Configuration Styles */
+.group-container {
+  padding: 10px;
+  margin: 5px 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #f8f9fa;
+}
+
+.group-field {
+  margin: 8px 0;
+}
+
+.group-field label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+/* Array Field Styles */
+.array-container {
+  margin: 8px 0;
+}
+
+.array-item {
+  display: flex;
+  align-items: center;
+  margin: 4px 0;
+  gap: 8px;
+}
+
+.remove-item-btn {
+  padding: 2px 8px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-item-btn {
+  padding: 4px 12px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+/* Slider Styles */
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.node-slider {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  background: #ddd;
+  border-radius: 2px;
+  outline: none;
+}
+
+.node-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #007bff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider-value {
+  min-width: 30px;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+}
+
+/* Toggle Switch Styles */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.node-toggle {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  -webkit-appearance: none;
+  background: #ddd;
+  border-radius: 10px;
+  outline: none;
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.node-toggle:checked {
+  background: #28a745;
+}
+
+.node-toggle:before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  background: white;
+  transition: 0.3s;
+}
+
+.node-toggle:checked:before {
+  left: 22px;
+}
+
+.toggle-label {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Select Field Styles */
+.node-select {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  font-size: 12px;
+  color: #333;
+}
+
+/* Input Field Styles */
+.node-input {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #333;
+}
+
+.node-input[type="password"] {
+  font-family: monospace;
+}
+
+/* Section Headers */
+.config-section {
+  margin: 15px 0;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.config-section h4 {
+  font-size: 14px;
+  color: #333;
+  margin: 0 0 10px 0;
+}
+
+/* Tooltips */
+.field-tooltip {
+  position: relative;
+  display: inline-block;
+  margin-left: 4px;
+  color: #666;
+  cursor: help;
+}
+
+.field-tooltip:hover:after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 1000;
+}
+
+/* Validation Styles */
+.field-error {
+  color: #dc3545;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.input-error {
+  border-color: #dc3545;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .group-container {
+    padding: 8px;
+  }
+
+  .array-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .remove-item-btn {
+    align-self: flex-end;
+  }
+}
