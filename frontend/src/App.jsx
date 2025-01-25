@@ -89,7 +89,7 @@ export default function App() {
             let results = '';
             inputNodeIds.forEach(sourceId => {
               const sourceNode = nodes.find(n => n.id === sourceId);
-              const result = resp.data.nodeResults[sourceId];
+              const result = resp.data.results[sourceId];
               if (result) {
                 const content = result.content || result;
                 results += `Results from ${sourceNode.data.type} (${sourceId}):\n${content}\n\n`;
@@ -106,7 +106,7 @@ export default function App() {
           }
 
           // For non-output nodes, store their results
-          const result = resp.data.nodeResults[node.id];
+          const result = resp.data.results[node.id];
           return {
             ...node,
             data: {

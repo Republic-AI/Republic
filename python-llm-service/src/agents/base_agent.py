@@ -11,11 +11,12 @@ class BaseAgent(ABC):
         self.validate_api_keys()
         
         # Initialize LLM with configurable parameters
+        api_keys = self.config.get("apiKeys", {})
         self.llm = ChatOpenAI(
             model_name=config.get("model_name", "gpt-3.5-turbo"),
             temperature=config.get("temperature", 0.7),
             max_tokens=config.get("max_tokens", 1000),
-            api_key=os.getenv("OPENAI_API_KEY")
+            api_key=api_keys.get("openai") or os.getenv("OPENAI_API_KEY")
         )
         
         # Initialize memory
@@ -26,12 +27,12 @@ class BaseAgent(ABC):
 
     def validate_api_keys(self):
         """Validate that required API keys are present."""
-        required_keys = ["OPENAI_API_KEY"]
+        api_keys = self.config.get("apiKeys", {})
         missing_keys = []
         
-        for key in required_keys:
-            if not os.getenv(key):
-                missing_keys.append(key)
+        # Check for OpenAI API key
+        if not (api_keys.get("openai") or os.getenv("OPENAI_API_KEY")):
+            missing_keys.append("OPENAI_API_KEY")
         
         if missing_keys:
             raise ValueError(f"Missing required API keys: {', '.join(missing_keys)}")

@@ -1,7 +1,10 @@
 from flask import Flask, request, jsonify
 import os
-import logging
 from dotenv import load_dotenv
+from agents.langchain_agent import LangChainAgent
+import asyncio
+from functools import wraps
+import logging
 
 load_dotenv()
 
@@ -10,17 +13,23 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.debug = True
+
+def async_route(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        return asyncio.run(f(*args, **kwargs))
+    return wrapped
 
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({
-        "status": "ok",
-        "service": "python-llm-service"
+        "service": "python-llm-service",
+        "status": "ok"
     })
 
 @app.route('/run', methods=['POST'])
-def run_agent():
+@async_route
+async def run_agent():
     try:
         data = request.json
         logger.debug(f"Received request data: {data}")
@@ -30,12 +39,23 @@ def run_agent():
         config = data.get("config", {})
 
         if agent_type == "langchain":
-            return jsonify({
-                "status": "not_implemented",
-                "message": "LangChain agent not implemented yet",
-                "agent_type": agent_type,
-                "input": user_input
-            })
+            try:
+                agent = LangChainAgent(config)
+                result = await agent.execute(user_input)
+                return jsonify({
+                    "status": "success",
+                    "result": result,
+                    "agent_type": agent_type,
+                    "input": user_input
+                })
+            except Exception as e:
+                logger.exception("Error executing LangChain agent:")
+                return jsonify({
+                    "status": "error",
+                    "error": str(e),
+                    "agent_type": agent_type,
+                    "input": user_input
+                }), 500
             
         elif agent_type == "babyagi":
             return jsonify({
@@ -72,20 +92,9 @@ def run_agent():
 def clear_memory():
     try:
         data = request.json
-        logger.debug(f"Received request data: {data}")
-        
         agent_type = data.get("agent_type", "langchain")
         config = data.get("config", {})
-
-        return jsonify({
-            "status": "success",
-            "message": "Memory cleared successfully",
-            "agent_type": agent_type
-        })
+        return jsonify({"status": "success", "message": "Memory cleared successfully"})
     except Exception as e:
         logger.exception("Error in clear_memory:")
-        return jsonify({
-            "status": "error",
-            "error": str(e),
-            "agent_type": agent_type if 'agent_type' in locals() else 'unknown'
-        }), 500 
+        return jsonify({"status": "error", "error": str(e)}), 500 

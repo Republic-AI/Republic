@@ -5,7 +5,6 @@ const axios = require('axios');
 const { OpenAI } = require("langchain/llms/openai");
 const { ChatAnthropic } = require("langchain/chat_models/anthropic");
 const { initializeAgentExecutorWithOptions } = require("langchain/agents");
-const { WebBrowser } = require("langchain/tools");
 const { Calculator } = require("langchain/tools");
 const { WikipediaQueryRun } = require("langchain/tools");
 const { BufferMemory, ConversationSummaryMemory } = require("langchain/memory");
@@ -15,6 +14,8 @@ const {
   BlockchainClient,
   GoatPluginManager 
 } = require("langchain/tools");
+const { DuckDuckGoSearchRun } = require("langchain/tools");
+const { SerpAPI } = require("langchain/tools");
 require("dotenv").config();
 
 const app = express();
@@ -349,8 +350,8 @@ class ElizaAgent extends BaseAgent {
   initializeTools(toolNames) {
     return toolNames.map(name => {
       switch (name) {
-        case 'web-search':
-          return new WebBrowser();
+        case 'search':
+          return DuckDuckGo();
         case 'calculator':
           return new Calculator();
         case 'wikipedia':
@@ -426,8 +427,8 @@ class AutoGPTAgent extends BaseAgent {
   initializeTools(toolNames) {
     return toolNames.map(name => {
       switch (name) {
-        case 'web-search':
-          return new WebBrowser();
+        case 'search':
+          return DuckDuckGo();
         case 'calculator':
           return new Calculator();
         case 'wikipedia':
@@ -518,8 +519,8 @@ class BabyAGIAgent extends BaseAgent {
   initializeTools(toolNames) {
     return toolNames.map(name => {
       switch (name) {
-        case 'web-search':
-          return new WebBrowser();
+        case 'search':
+          return DuckDuckGo();
         case 'calculator':
           return new Calculator();
         case 'wikipedia':
@@ -627,17 +628,53 @@ Respond in JSON format with:
   }
 }
 
-// Initialize tools based on configuration
-const initializeTools = (toolNames) => {
-  const toolMap = {
-    'search': new WebBrowser(),
-    'calculator': new Calculator(),
-    'wikipedia': new WikipediaQueryRun(),
-    // Add more tools as needed
-  };
-
-  return toolNames.map(name => toolMap[name]).filter(Boolean);
+// Tool definitions and requirements
+const AVAILABLE_TOOLS = {
+  'search': {
+    name: 'Web Search',
+    types: ['duckduckgo', 'serpapi'],
+    requiresConfig: {
+      serpapi: ['apiKey']
+    },
+    initialize: (config) => {
+      if (config.type === 'serpapi') {
+        const { SerpAPI } = require("langchain/tools");
+        return new SerpAPI(config.apiKey);
+      } else {
+        // Fallback to DuckDuckGo if no API key
+        const { WebBrowser } = require("langchain/tools");
+        return new WebBrowser();
+      }
+    }
+  },
+  'calculator': {
+    name: 'Calculator',
+    initialize: () => new Calculator()
+  },
+  'wikipedia': {
+    name: 'Wikipedia',
+    initialize: () => new WikipediaQueryRun()
+  }
 };
+
+// Initialize tools based on configuration
+function initializeTools(config = {}) {
+  const tools = [];
+  
+  if (config.tools?.includes('search')) {
+    tools.push(new DuckDuckGoSearchRun());
+  }
+  
+  if (config.tools?.includes('wikipedia')) {
+    tools.push(new WikipediaQueryRun());
+  }
+  
+  if (config.tools?.includes('calculator')) {
+    tools.push(new Calculator());
+  }
+  
+  return tools;
+}
 
 // Initialize memory based on configuration
 const initializeMemory = (nodeId, memoryType) => {
@@ -649,27 +686,56 @@ const initializeMemory = (nodeId, memoryType) => {
 
 // Handle LangChain agent execution
 const executeLangChainAgent = async (input, config) => {
-  const tools = initializeTools(config.tools || []);
-  const memory = initializeMemory(config.nodeId, config.memory);
+  const tools = initializeTools(config.toolsConfig || {});
   
+  // Initialize memory with chat history support
+  const memory = new BufferMemory({
+    returnMessages: true,
+    memoryKey: "chat_history",
+    inputKey: "input",
+    outputKey: "output"
+  });
+  
+  // Initialize OpenAI model with configuration
+  const model = new OpenAI({ 
+    temperature: config.modelParams?.temperature || 0.7,
+    openAIApiKey: config.apiKeys?.openai || process.env.OPENAI_API_KEY,
+    modelName: config.foundationModel || 'gpt-3.5-turbo'
+  });
+
+  // Initialize agent with correct type and memory
   const executor = await initializeAgentExecutorWithOptions(
     tools,
-    new OpenAI({ temperature: 0.7 }),
+    model,
     {
-      agentType: config.agentType || "zero-shot-react",
+      agentType: "chat-conversational-react-description",
       memory: memory,
-      verbose: true
+      verbose: true,
+      maxIterations: config.maxIterations || 3,
+      earlyStoppingMethod: "generate",
+      handleParsingErrors: true
     }
   );
 
-  const result = await executor.call({ input });
-  return result.output;
+  try {
+    // Initialize chat history if needed
+    await memory.saveContext(
+      { input: "Hello, I'm ready to help you." },
+      { output: "Hello! I'm here to assist. What can I help you with?" }
+    );
+    
+    const result = await executor.call({ input });
+    return result.output;
+  } catch (error) {
+    console.error('Error in LangChain agent execution:', error);
+    throw new Error(`LangChain agent execution failed: ${error.message}`);
+  }
 };
 
 // Handle AutoGPT agent execution
 const executeAutoGPTAgent = async (input, config) => {
   // Implementation for AutoGPT
-  const tools = initializeTools(config.tools || []);
+  const tools = initializeTools(config.toolsConfig || {});
   const maxIterations = config.maxIterations || 5;
   
   let result = `[AutoGPT] Processing task: ${input}\n`;
@@ -838,6 +904,9 @@ const agentHandlers = {
     const agent = new BabyAGIAgent(config);
     const result = await agent.execute(input);
     return extractAgentResult(result);
+  },
+  'langchain': async (input, config) => {
+    return await executeLangChainAgent(input, config);
   }
 };
 
@@ -1016,24 +1085,23 @@ app.post('/execute-flow', async (req, res) => {
 
       } catch (error) {
         console.error(`Error executing node ${nodeId}:`, error);
-        nodeResults[nodeId] = {
-          content: `Error in node ${nodeId}: ${error.message}`,
-          metadata: {
-            nodeId,
-            type: nodeType,
-            error: error.message,
-            timestamp: new Date().toISOString()
-          }
-        };
+        throw new Error(`Error executing node ${nodeId}: ${error.message}`);
       }
     }
 
-    console.log('Final results:', nodeResults);
-    return res.json({ nodeResults });
-    
-  } catch (err) {
-    console.error('Error in execute-flow:', err);
-    return res.status(500).json({ error: err.message });
+    // Return all results
+    res.json({
+      success: true,
+      results: nodeResults,
+      processingOrder
+    });
+
+  } catch (error) {
+    console.error('Error in execute-flow:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 });
 

@@ -17,6 +17,128 @@ const defaultConfig = {
   }
 };
 
+// Configuration fields for different node types
+const NODE_CONFIGS = {
+  'eliza': {
+    fields: {
+      // Therapist Personality
+      therapistName: {
+        type: 'text',
+        label: 'Therapist Name',
+        default: 'Eliza',
+        tooltip: 'Name of the therapist personality'
+      },
+      therapistRole: {
+        type: 'select',
+        label: 'Role',
+        options: ['Rogerian', 'Cognitive-Behavioral', 'Psychodynamic', 'Humanistic'],
+        default: 'Rogerian',
+        tooltip: 'Therapeutic approach style'
+      },
+      conversationStyle: {
+        type: 'select',
+        label: 'Conversation Style',
+        options: ['Formal', 'Casual', 'Empathetic', 'Direct'],
+        default: 'Empathetic',
+        tooltip: 'Overall tone of conversation'
+      },
+      // Response Style
+      reflectionLevel: {
+        type: 'slider',
+        label: 'Reflection Level',
+        min: 0,
+        max: 10,
+        default: 7,
+        tooltip: 'How much to reflect user statements back'
+      },
+      empathyLevel: {
+        type: 'slider',
+        label: 'Empathy Level',
+        min: 0,
+        max: 10,
+        default: 8,
+        tooltip: 'Level of emotional understanding to express'
+      },
+      // Memory Configuration
+      memoryType: {
+        type: 'select',
+        label: 'Memory Type',
+        options: ['session', 'emotional', 'contextual'],
+        default: 'emotional',
+        tooltip: 'Type of memory to maintain'
+      },
+      contextWindow: {
+        type: 'number',
+        label: 'Context Window',
+        min: 1,
+        max: 10,
+        default: 5,
+        tooltip: 'Number of previous exchanges to consider'
+      },
+      // Social Platform Integration
+      platforms: {
+        type: 'group',
+        label: 'Social Platforms',
+        fields: {
+          twitter: {
+            type: 'group',
+            label: 'Twitter',
+            fields: {
+              enabled: {
+                type: 'boolean',
+                label: 'Enable Twitter',
+                default: false,
+                tooltip: 'Enable posting to Twitter'
+              },
+              apiKey: {
+                type: 'password',
+                label: 'API Key',
+                tooltip: 'Twitter API Key'
+              },
+              autoPost: {
+                type: 'boolean',
+                label: 'Auto Post',
+                default: false,
+                tooltip: 'Automatically post responses to Twitter'
+              }
+            }
+          },
+          discord: {
+            type: 'group',
+            label: 'Discord',
+            fields: {
+              enabled: {
+                type: 'boolean',
+                label: 'Enable Discord',
+                default: false,
+                tooltip: 'Enable posting to Discord'
+              },
+              botToken: {
+                type: 'password',
+                label: 'Bot Token',
+                tooltip: 'Discord Bot Token'
+              },
+              channels: {
+                type: 'array',
+                label: 'Channel IDs',
+                itemType: 'text',
+                tooltip: 'Discord Channel IDs to post to'
+              },
+              autoPost: {
+                type: 'boolean',
+                label: 'Auto Post',
+                default: false,
+                tooltip: 'Automatically post responses to Discord'
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  // ... other node types ...
+};
+
 export default function CustomNode({ data, isConnectable }) {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [config, setConfig] = useState(data.config || defaultConfig);
