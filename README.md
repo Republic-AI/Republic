@@ -85,8 +85,27 @@ A powerful visual flow-based platform for orchestrating AI agents. Republic enab
 - Docker and Docker Compose
 - Node.js v18+ (for local development only)
 - API Keys:
-  - OpenAI API key (required)
-  - Anthropic API key (optional, for Claude models)
+  - OpenAI API key (required for GPT models)
+  - Anthropic API key (required for Claude models)
+
+### API Key Configuration
+
+There are two ways to configure API keys:
+
+1. **Node Configuration (Recommended)**
+   - Each AI agent node has a dedicated API key field in its configuration
+   - The API key is stored securely and used only for that specific node
+   - Configure the API key in the node settings under "AI Model Configuration"
+
+2. **Environment Variables (Alternative)**
+   - Create a `.env` file in the root directory:
+   ```env
+   OPENAI_API_KEY=your_openai_key_here
+   ANTHROPIC_API_KEY=your_anthropic_key_here
+   ```
+   - These will be used as fallback if no API key is provided in the node configuration
+
+Note: For security, API keys in node configurations are masked and stored as password fields.
 
 ### Installation
 

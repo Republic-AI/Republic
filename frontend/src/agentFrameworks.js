@@ -118,31 +118,32 @@ export const agentFrameworks = [
     configFields: [
       // AI Model Configuration
       {
-        name: 'modelConfig',
+        id: 'modelConfig',
         label: 'AI Model Configuration',
         type: 'group',
-        fields: {
-          foundationModel: {
-            name: 'foundationModel',
-            label: 'Foundation Model',
+        fields: [
+          {
+            id: 'foundationModel',
+            label: 'AI Model',
             type: 'select',
             options: [
-              { value: 'gpt-4', label: 'GPT-4' },
               { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
+              { value: 'gpt-4', label: 'GPT-4' },
               { value: 'claude-3-opus', label: 'Claude 3 Opus' },
               { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet' }
             ],
-            default: 'gpt-3.5-turbo'
+            required: true,
+            tooltip: 'Select the AI model to use for this node'
           },
-          apiKey: {
-            name: 'apiKey',
+          {
+            id: 'apiKey',
             label: 'API Key',
             type: 'password',
             required: true,
-            tooltip: 'API key for the selected model (OpenAI key for GPT models, Anthropic key for Claude models)'
+            tooltip: 'Enter your API key for the selected model (OpenAI key for GPT models, Anthropic key for Claude models)'
           },
-          modelParams: {
-            name: 'modelParams',
+          {
+            id: 'modelParams',
             label: 'Model Parameters',
             type: 'group',
             fields: {
@@ -174,7 +175,7 @@ export const agentFrameworks = [
               }
             }
           }
-        }
+        ]
       },
 
       // Core Agent Settings
