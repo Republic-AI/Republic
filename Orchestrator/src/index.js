@@ -301,9 +301,9 @@ class BaseAgent {
         topP: config.modelParams?.topP || 1,
       };
 
-      const anthropicKey = config.apiKeys?.anthropic || process.env.ANTHROPIC_API_KEY;
+      const anthropicKey = config.apiKeys?.anthropic;
       if (!anthropicKey) {
-        throw new Error('Anthropic API key not found in config or environment variables');
+        throw new Error('Anthropic API key not found in node configuration');
       }
       
       anthropicConfig.apiKey = anthropicKey;
@@ -317,9 +317,9 @@ class BaseAgent {
         topP: config.modelParams?.topP || 1,
       };
 
-      const openAIKey = config.apiKeys?.openai || process.env.OPENAI_API_KEY;
+      const openAIKey = config.apiKeys?.openai;
       if (!openAIKey) {
-        throw new Error('OpenAI API key not found in config or environment variables');
+        throw new Error('OpenAI API key not found in node configuration');
       }
       
       openAIConfig.openAIApiKey = openAIKey;
@@ -925,7 +925,7 @@ app.post('/execute-flow', async (req, res) => {
 
       try {
         // Get input for current node
-      let inputString = current.inputText || "";
+        let inputString = current.inputText || "";
         const incomingEdges = edges.filter(e => e.target === nodeId);
         
         // Collect inputs from previous nodes
@@ -944,10 +944,15 @@ app.post('/execute-flow', async (req, res) => {
 
         console.log(`Node ${nodeId} input:`, inputString);
 
+        // Get node type and config, checking both direct properties and data object
         const nodeType = current.type || (current.data && current.data.type);
         const nodeConfig = current.config || (current.data && current.data.config) || {};
 
-      let result;
+        if (!nodeType) {
+          throw new Error(`Node ${nodeId} has no type specified`);
+        }
+
+        let result;
         if (nodeType === 'output') {
           // For output nodes, collect all previous results
           const allResults = processingOrder.map(prevNodeId => {
@@ -973,6 +978,11 @@ app.post('/execute-flow', async (req, res) => {
             }
           };
         } else {
+          // Check if handler exists for this node type
+          if (!agentHandlers[nodeType]) {
+            throw new Error(`No handler found for node type: ${nodeType}`);
+          }
+
           // Execute node handler (input, agent, etc.)
           const handlerResult = await agentHandlers[nodeType](inputString, nodeConfig);
           
@@ -987,18 +997,18 @@ app.post('/execute-flow', async (req, res) => {
               timestamp: new Date().toISOString()
             }
           };
-      }
+        }
 
-      nodeResults[nodeId] = result;
+        nodeResults[nodeId] = result;
         processingOrder.push(nodeId);
         console.log(`Node ${nodeId} result:`, result);
 
         // Queue next nodes
-      edges
-        .filter(e => e.source === nodeId)
-        .forEach(e => {
-          inDegree[e.target]--;
-          if (inDegree[e.target] === 0) {
+        edges
+          .filter(e => e.source === nodeId)
+          .forEach(e => {
+            inDegree[e.target]--;
+            if (inDegree[e.target] === 0) {
               const nextNode = nodes.find(n => n.id === e.target);
               if (nextNode) queue.push(nextNode);
             }

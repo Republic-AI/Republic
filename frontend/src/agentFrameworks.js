@@ -140,15 +140,31 @@ export const agentFrameworks = [
       {
         name: 'apiKeys',
         label: 'API Keys',
-        type: 'object',
+        type: 'apiKeys',
         fields: [
-          {
-            name: 'openai',
-            label: 'OpenAI API Key',
-            type: 'password',
-            required: true,
-            description: 'Your OpenAI API key'
-          }
+          { name: 'openai', label: 'OpenAI API Key', required: true },
+          { name: 'anthropic', label: 'Anthropic API Key' }
+        ]
+      },
+      {
+        name: 'foundationModel',
+        label: 'Foundation Model',
+        type: 'select',
+        options: [
+          { value: 'gpt-4', label: 'GPT-4' },
+          { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
+          { value: 'claude-3-opus', label: 'Claude 3 Opus' },
+          { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet' }
+        ]
+      },
+      {
+        name: 'modelParams',
+        label: 'Model Parameters',
+        type: 'modelParams',
+        params: [
+          { name: 'temperature', label: 'Temperature', default: 0.7, min: 0, max: 1, step: 0.1 },
+          { name: 'maxTokens', label: 'Max Tokens', default: 2048, min: 1, max: 8192 },
+          { name: 'topP', label: 'Top P', default: 0.9, min: 0, max: 1, step: 0.1 }
         ]
       }
     ]
@@ -192,8 +208,9 @@ export const agentFrameworks = [
         label: 'API Keys',
         type: 'apiKeys',
         fields: [
-          { name: 'openai', label: 'OpenAI API Key' },
-          { name: 'anthropic', label: 'Anthropic API Key' }
+          { name: 'openai', label: 'OpenAI API Key', required: true },
+          { name: 'serpapi', label: 'SerpAPI Key' },
+          { name: 'google', label: 'Google API Key' }
         ]
       },
       {
@@ -269,6 +286,25 @@ export const agentFrameworks = [
           { value: 'web-browse', label: 'Web Browser' },
           { value: 'file-ops', label: 'File Operations' },
           { value: 'code-exec', label: 'Code Execution' }
+        ]
+      },
+      {
+        name: 'apiKeys',
+        label: 'API Keys',
+        type: 'apiKeys',
+        fields: [
+          { name: 'openai', label: 'OpenAI API Key', required: true },
+          { name: 'google', label: 'Google API Key' },
+          { name: 'serpapi', label: 'SerpAPI Key' }
+        ]
+      },
+      {
+        name: 'foundationModel',
+        label: 'Foundation Model',
+        type: 'select',
+        options: [
+          { value: 'gpt-4', label: 'GPT-4' },
+          { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
         ]
       }
     ]
@@ -349,15 +385,19 @@ export const agentFrameworks = [
       {
         name: 'apiKeys',
         label: 'API Keys',
-        type: 'object',
+        type: 'apiKeys',
         fields: [
-          {
-            name: 'openai',
-            label: 'OpenAI API Key',
-            type: 'password',
-            required: true,
-            description: 'Your OpenAI API key'
-          }
+          { name: 'openai', label: 'OpenAI API Key', required: true },
+          { name: 'pinecone', label: 'Pinecone API Key' }
+        ]
+      },
+      {
+        name: 'foundationModel',
+        label: 'Foundation Model',
+        type: 'select',
+        options: [
+          { value: 'gpt-4', label: 'GPT-4' },
+          { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
         ]
       }
     ]

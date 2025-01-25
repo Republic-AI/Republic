@@ -2,8 +2,24 @@ import React, { useState } from 'react';
 import { Handle } from 'reactflow';
 import { agentFrameworks } from './agentFrameworks';
 
+const defaultConfig = {
+  apiKeys: {
+    openai: '',
+    anthropic: '',
+    serpapi: '',
+    google: ''
+  },
+  foundationModel: 'gpt-3.5-turbo',
+  modelParams: {
+    temperature: 0.7,
+    maxTokens: 1000,
+    topP: 1
+  }
+};
+
 export default function CustomNode({ data, isConnectable }) {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [config, setConfig] = useState(data.config || defaultConfig);
   const framework = data.framework ? agentFrameworks.find(f => f.id === data.framework) : null;
 
   const handleTypeChange = (newType) => {
@@ -211,6 +227,75 @@ export default function CustomNode({ data, isConnectable }) {
     }
   };
 
+  const renderConfigFields = () => {
+    switch (data.type) {
+      case 'ai-agent':
+        return (
+          <div className="config-fields">
+            <div className="config-section">
+              <h4>API Keys</h4>
+              <input
+                type="password"
+                placeholder="OpenAI API Key"
+                value={config.apiKeys?.openai || ''}
+                onChange={(e) => handleConfigChange('apiKeys.openai', e.target.value)}
+              />
+              <input
+                type="password"
+                placeholder="Anthropic API Key"
+                value={config.apiKeys?.anthropic || ''}
+                onChange={(e) => handleConfigChange('apiKeys.anthropic', e.target.value)}
+              />
+            </div>
+            
+            <div className="config-section">
+              <h4>Model Configuration</h4>
+              <select
+                value={config.foundationModel || 'gpt-3.5-turbo'}
+                onChange={(e) => handleConfigChange('foundationModel', e.target.value)}
+              >
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                <option value="gpt-4">GPT-4</option>
+                <option value="claude-2">Claude 2</option>
+                <option value="claude-instant">Claude Instant</option>
+              </select>
+              
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="1"
+                placeholder="Temperature (0-1)"
+                value={config.modelParams?.temperature || 0.7}
+                onChange={(e) => handleConfigChange('modelParams.temperature', parseFloat(e.target.value))}
+              />
+              
+              <input
+                type="number"
+                step="100"
+                min="100"
+                max="4000"
+                placeholder="Max Tokens"
+                value={config.modelParams?.maxTokens || 1000}
+                onChange={(e) => handleConfigChange('modelParams.maxTokens', parseInt(e.target.value))}
+              />
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="node-config">
+            {framework.configFields.map(field => (
+              <div key={field.name} className="config-field">
+                <label>{field.label}:</label>
+                {renderConfigField(field)}
+              </div>
+            ))}
+          </div>
+        );
+    }
+  };
+
   return (
     <div className={`custom-node ${data.type === 'input' ? 'input-node' : ''} ${data.type === 'output' ? 'output-node' : ''} ${isConfigOpen ? 'expanded' : ''}`}>
       <Handle
@@ -265,14 +350,7 @@ export default function CustomNode({ data, isConnectable }) {
 
       {/* Configuration Panel */}
       {isConfigOpen && framework && (
-        <div className="node-config">
-          {framework.configFields.map(field => (
-            <div key={field.name} className="config-field">
-              <label>{field.label}:</label>
-              {renderConfigField(field)}
-            </div>
-          ))}
-        </div>
+        renderConfigFields()
       )}
 
       {/* Input/Prompt */}

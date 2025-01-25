@@ -1,5 +1,6 @@
 # Web Framework
-flask[async]==2.2.3
+flask==2.0.3
+werkzeug==2.0.3
 
 # Core Dependencies
 requests==2.28.2

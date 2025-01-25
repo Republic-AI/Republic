@@ -91,7 +91,8 @@ export default function App() {
               const sourceNode = nodes.find(n => n.id === sourceId);
               const result = resp.data.nodeResults[sourceId];
               if (result) {
-                results += `Results from ${sourceNode.data.type} (${sourceId}):\n${result}\n\n`;
+                const content = result.content || result;
+                results += `Results from ${sourceNode.data.type} (${sourceId}):\n${content}\n\n`;
               }
             });
 
@@ -105,11 +106,12 @@ export default function App() {
           }
 
           // For non-output nodes, store their results
+          const result = resp.data.nodeResults[node.id];
           return {
             ...node,
             data: {
               ...node.data,
-              outputResult: resp.data.nodeResults[node.id]
+              outputResult: result ? (result.content || result) : undefined
             }
           };
         })
