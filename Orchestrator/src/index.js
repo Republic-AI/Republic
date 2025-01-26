@@ -434,11 +434,26 @@ class ElizaAgent extends BaseAgent {
 
   initializeResponseGenerators() {
     return {
-      reflection: this.generateReflection.bind(this),
-      analysis: this.generateAnalysis.bind(this),
-      summary: this.generateSummary.bind(this),
-      action: this.generateActionPlan.bind(this)
+      reflection: (input) => this.generateReflection(input),
+      analysis: (input) => this.generateAnalysis(input),
+      summary: (input) => this.generateSummary(input),
+      action: (input) => this.generateActionPlan(input)
     };
+  }
+
+  async generateReflection(input, context = '') {
+    const prompt = `
+      As ${this.name}, reflect on the following input with a ${this.role} perspective:
+      Input: ${input}
+      Context: ${context}
+      
+      Provide a reflective response that:
+      1. Shows understanding of the underlying emotions
+      2. Uses active listening techniques
+      3. Encourages deeper exploration
+      4. Maintains appropriate therapeutic boundaries
+    `;
+    return await this.model.call(prompt);
   }
 
   async generateAnalysis(input, context) {
@@ -506,6 +521,24 @@ class ElizaAgent extends BaseAgent {
       }
     }
     return results;
+  }
+
+  async matchPattern(input) {
+    // Try each pattern category
+    for (const [category, patterns] of Object.entries(this.patterns)) {
+      for (const patternObj of patterns) {
+        const match = input.match(patternObj.pattern);
+        if (match) {
+          // Replace capture groups in response
+          let response = patternObj.response;
+          for (let i = 1; i < match.length; i++) {
+            response = response.replace(`$${i}`, match[i]);
+          }
+          return response;
+        }
+      }
+    }
+    return null;  // No pattern match found
   }
 
   async execute(input) {

@@ -22,11 +22,15 @@ A flexible, general-purpose language model agent:
   - Tool-using capabilities
   - Web search integration
   - Document analysis
+  - Memory management
+  - Chain-of-thought reasoning
   
 - **Use Cases**
   - Research and analysis
   - Content generation
   - Question answering
+  - Data extraction
+  - Process automation
 
 #### 🤓 AutoGPT Agent
 An autonomous agent capable of breaking down and executing complex tasks:
@@ -35,12 +39,15 @@ An autonomous agent capable of breaking down and executing complex tasks:
   - Goal-oriented task execution
   - Self-prompted task planning
   - Tool utilization
+  - Long-term memory
+  - Recursive task refinement
   
 - **Capabilities**
   - Web research
   - Content creation
   - Code generation
   - Data analysis
+  - Project planning
 
 #### 👶 BabyAGI Agent
 A task management and execution agent focused on iterative improvement:
@@ -49,29 +56,39 @@ A task management and execution agent focused on iterative improvement:
   - Task prioritization
   - Objective breakdown
   - Result analysis
+  - Vector memory storage
+  - Learning optimization
   
 - **Applications**
   - Project planning
   - Research organization
   - Learning optimization
+  - Knowledge management
+  - Process improvement
 
 #### 🤖 Eliza Agent Framework
 A sophisticated conversational agent inspired by the classic ELIZA program, enhanced with modern AI capabilities:
 
 - **Personality & Adaptation**
-  - Configurable personality traits and conversation styles
+  - Configurable personality traits
   - Dynamic emotional state tracking
   - Context-aware responses
+  - Adaptive conversation styles
+  - Memory-based personalization
   
 - **Advanced Features**
   - Pattern-based response generation
   - Emotional memory system
   - Conversation history analysis
+  - Multi-turn dialogue management
+  - Natural language understanding
   
 - **Integration Capabilities**
   - Discord bot functionality
   - Twitter API integration
   - Telegram bot support
+  - Custom webhook support
+  - Real-time event handling
 
 #### 🚀 ZerePy Agent Framework
 A versatile social media management and engagement agent:
@@ -80,25 +97,33 @@ A versatile social media management and engagement agent:
   - Multi-platform content creation
   - Engagement strategy optimization
   - Audience analysis and insights
+  - Content scheduling
+  - Performance analytics
   
 - **Platform Support**
   - Twitter engagement and analytics
   - Farcaster social protocol integration
   - Discord community management
+  - Cross-platform coordination
+  - API rate limit handling
   
 - **Smart Features**
   - Content performance tracking
   - Automated response generation
   - Engagement pattern analysis
+  - Sentiment analysis
+  - Trend detection
 
 ## 🛠 Setup
 
 ### Prerequisites
 - Docker and Docker Compose
 - Node.js v18+ (for local development only)
+- Python 3.8+ (for local development only)
 - API Keys:
   - OpenAI API key (required for GPT models)
-  - Anthropic API key (required for Claude models)
+  - Anthropic API key (optional for Claude models)
+  - Platform-specific API keys (as needed)
 
 ### API Key Configuration
 
@@ -106,8 +131,9 @@ There are two ways to configure API keys:
 
 1. **Node Configuration (Recommended)**
    - Each AI agent node has a dedicated API key field in its configuration
-   - The API key is stored securely and used only for that specific node
-   - Configure the API key in the node settings under "AI Model Configuration"
+   - API keys are stored securely and used only for specific nodes
+   - Configure keys in node settings under "AI Model Configuration"
+   - Supports per-node API key rotation and management
 
 2. **Environment Variables (Alternative)**
    - Create a `.env` file in the root directory:
@@ -115,9 +141,10 @@ There are two ways to configure API keys:
    OPENAI_API_KEY=your_openai_key_here
    ANTHROPIC_API_KEY=your_anthropic_key_here
    ```
-   - These will be used as fallback if no API key is provided in the node configuration
+   - These will be used as fallback if no API key is provided in node configuration
+   - Supports global API key management
 
-Note: For security, API keys in node configurations are masked and stored as password fields.
+Note: For security, API keys in node configurations are encrypted at rest and masked in the UI.
 
 ### Installation
 
@@ -130,11 +157,7 @@ cd republic
 ```
 
 2. **Configure Environment**
-Create a `.env` file in the root directory:
-```env
-OPENAI_API_KEY=your_openai_key_here
-ANTHROPIC_API_KEY=your_anthropic_key_here  # Optional
-```
+Create a `.env` file in the root directory with your API keys and configuration.
 
 3. **Build and Run with Docker Compose**
 ```bash
@@ -193,7 +216,7 @@ Python LLM Service will run on http://localhost:5001
 
 ## 📚 Usage Examples
 
-### 1. Social Media Content Creation and Distribution
+### 1. Therapeutic Conversation Flow
 ```javascript
 {
   "nodes": [
@@ -201,7 +224,7 @@ Python LLM Service will run on http://localhost:5001
       "id": "input",
       "type": "input",
       "data": {
-        "text": "Create viral tech content about AI trends"
+        "text": "I've been feeling overwhelmed with work lately and having trouble sleeping."
       }
     },
     {
@@ -209,43 +232,18 @@ Python LLM Service will run on http://localhost:5001
       "type": "eliza",
       "data": {
         "config": {
-          "agentName": "Content Strategist",
-          "systemPrompt": "You are an expert tech content creator",
-          "tools": ["web-search", "document-interaction"]
-        }
-      }
-    },
-    {
-      "id": "zerepy",
-      "type": "zerepy",
-      "data": {
-        "config": {
-          "socialPlatforms": ["twitter", "farcaster"],
-          "traits": ["engaging", "analytical"],
-          "taskWeights": {
-            "distribution": 0.6,
-            "engagement": 0.4
+          "agentName": "Dr. Eliza",
+          "agentRole": "empathetic",
+          "conversationStyle": "therapeutic",
+          "reflectionLevel": 8,
+          "modelConfig": {
+            "foundationModel": "gpt-4",
+            "modelParams": {
+              "temperature": 0.7,
+              "maxTokens": 2000
+            }
           }
         }
-      }
-    }
-  ],
-  "edges": [
-    {"source": "input", "target": "eliza"},
-    {"source": "eliza", "target": "zerepy"}
-  ]
-}
-```
-
-### 2. Research and Analysis Pipeline
-```javascript
-{
-  "nodes": [
-    {
-      "id": "input",
-      "type": "input",
-      "data": {
-        "text": "Research the impact of AI on healthcare"
       }
     },
     {
@@ -253,45 +251,39 @@ Python LLM Service will run on http://localhost:5001
       "type": "langchain",
       "data": {
         "config": {
-          "tools": ["web-search", "wikipedia"],
-          "memory": "conversation"
+          "tools": ["search", "wikipedia"],
+          "modelConfig": {
+            "foundationModel": "gpt-4",
+            "modelParams": {
+              "temperature": 0.5
+            }
+          },
+          "maxIterations": 3,
+          "toolsConfig": {
+            "search": {
+              "type": "serpapi"
+            }
+          }
         }
       }
     },
     {
-      "id": "autogpt",
-      "type": "autogpt",
+      "id": "output",
+      "type": "output",
       "data": {
-        "config": {
-          "goals": [
-            "Analyze research findings",
-            "Identify key trends",
-            "Generate insights"
-          ]
-        }
-      }
-    },
-    {
-      "id": "eliza",
-      "type": "eliza",
-      "data": {
-        "config": {
-          "role": "analyst",
-          "style": "analytical",
-          "outputFormat": "report"
-        }
+        "format": "structured"
       }
     }
   ],
   "edges": [
-    {"source": "input", "target": "langchain"},
-    {"source": "langchain", "target": "autogpt"},
-    {"source": "autogpt", "target": "eliza"}
+    {"source": "input", "target": "eliza"},
+    {"source": "eliza", "target": "langchain"},
+    {"source": "langchain", "target": "output"}
   ]
 }
 ```
 
-### 3. Task Management and Learning Flow
+### 2. Web3 Content Creation and Distribution
 ```javascript
 {
   "nodes": [
@@ -299,18 +291,7 @@ Python LLM Service will run on http://localhost:5001
       "id": "input",
       "type": "input",
       "data": {
-        "text": "Learn and implement machine learning concepts"
-      }
-    },
-    {
-      "id": "babyagi",
-      "type": "babyagi",
-      "data": {
-        "config": {
-          "objective": "Master ML fundamentals",
-          "maxIterations": 10,
-          "learningStyle": "incremental"
-        }
+        "text": "Create engaging content about the latest DeFi trends and distribute across Web3 social platforms."
       }
     },
     {
@@ -318,8 +299,21 @@ Python LLM Service will run on http://localhost:5001
       "type": "autogpt",
       "data": {
         "config": {
-          "tools": ["code-execution", "documentation"],
-          "goals": ["Implement examples", "Test understanding"]
+          "modelConfig": {
+            "foundationModel": "gpt-4",
+            "modelParams": {
+              "temperature": 0.8,
+              "maxTokens": 2000
+            }
+          },
+          "maxIterations": 5,
+          "tools": ["search", "wikipedia"],
+          "goals": [
+            "Research latest DeFi trends",
+            "Analyze market sentiment",
+            "Identify key innovations",
+            "Create platform-specific content"
+          ]
         }
       }
     },
@@ -328,17 +322,54 @@ Python LLM Service will run on http://localhost:5001
       "type": "zerepy",
       "data": {
         "config": {
-          "platforms": ["discord"],
-          "role": "tutor",
-          "style": "educational"
+          "agentName": "CryptoInfluencer",
+          "agentBio": "Web3 content creator and DeFi analyst",
+          "traits": ["analytical", "engaging", "tech-savvy"],
+          "taskWeights": {
+            "contentCreation": 0.5,
+            "engagement": 0.3,
+            "analysis": 0.2
+          },
+          "socialPlatforms": ["farcaster", "twitter"],
+          "modelConfig": {
+            "foundationModel": "gpt-4",
+            "modelParams": {
+              "temperature": 0.7
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "eliza",
+      "type": "eliza",
+      "data": {
+        "config": {
+          "agentName": "CommunityManager",
+          "agentRole": "community",
+          "conversationStyle": "professional",
+          "reflectionLevel": 6,
+          "socialPlatforms": {
+            "discord": {
+              "enabled": true,
+              "channels": ["defi-discussion", "market-analysis"],
+              "autoPost": true
+            }
+          },
+          "modelConfig": {
+            "foundationModel": "gpt-4",
+            "modelParams": {
+              "temperature": 0.6
+            }
+          }
         }
       }
     }
   ],
   "edges": [
-    {"source": "input", "target": "babyagi"},
-    {"source": "babyagi", "target": "autogpt"},
-    {"source": "autogpt", "target": "zerepy"}
+    {"source": "input", "target": "autogpt"},
+    {"source": "autogpt", "target": "zerepy"},
+    {"source": "zerepy", "target": "eliza"}
   ]
 }
 ```
@@ -351,6 +382,8 @@ Python LLM Service will run on http://localhost:5001
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open Pull Request
 
+For detailed contribution guidelines, see [CONTRIBUTING.md](./CONTRIBUTING.md)
+
 ## 📝 License
 
 MIT License - see [LICENSE](LICENSE) for details
@@ -360,165 +393,32 @@ MIT License - see [LICENSE](LICENSE) for details
 - GitHub Issues: Bug reports and feature requests
 - Documentation: [docs/](./docs)
 - Community: [Discord](https://discord.gg/republic)
+- Email: support@republic.ai
 
 ## 🔮 Roadmap
 
 - [ ] Additional agent frameworks
+  - [ ] ReAct Agent integration
+  - [ ] Plan-and-Execute Agent
+  - [ ] Multi-Agent collaboration
 - [ ] Enhanced memory systems
+  - [ ] Distributed vector storage
+  - [ ] Cross-agent memory sharing
+  - [ ] Long-term memory optimization
 - [ ] Custom plugin development
+  - [ ] Plugin marketplace
+  - [ ] Custom tool creation
+  - [ ] Third-party integrations
 - [ ] Advanced workflow templates
+  - [ ] Industry-specific templates
+  - [ ] Best practice patterns
+  - [ ] Template marketplace
 - [ ] Multi-user collaboration
+  - [ ] Real-time flow editing
+  - [ ] Version control
+  - [ ] Team workspaces
 - [ ] Enterprise features
-
----
-
-## Table of Contents
-1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Services](#services)
-   - [Python LLM Service](#python-llm-service)
-   - [Node.js LLM Service](#nodejs-llm-service)
-   - [Orchestrator](#orchestrator)
-   - [Frontend](#frontend-react-flow)
-4. [Requirements](#requirements)
-5. [Quick Start (Docker Compose)](#quick-start-docker-compose)
-6. [Local Setup (Without Docker)](#local-setup-without-docker)
-7. [Usage](#usage)
-8. [Extend and Customize](#extend-and-customize)
-9. [License](#license)
-
----
-
-## Overview
-
-- **Goal**: Show how to combine multiple AI microservices (in Python, Node.js, etc.) behind an orchestrator, with a **visual drag-and-drop** interface for building a flow of AI calls.
-- **Why**: You may have AI logic in different languages or frameworks. By exposing each service via HTTP, you can chain them together in a flexible pipeline. The front-end (React Flow) lets users visually define the flow, and the orchestrator executes it in the correct sequence.
-- **Features**:
-  - Each microservice calls **OpenAI API** via LangChain (Python or JS).
-  - **Orchestrator** performs topological sorting of nodes and sequentially invokes each service's `/run` endpoint.
-  - **React Flow** in the front-end for node-based workflow editing.
-
----
-
-## Architecture
-
-Below is a simplified schematic:
-+——————+    +——————+    +———————+
-| Python LLM       |    | Node.js LLM      |    |   Other AI Services |
-| (Flask+LangChain)|    | (Express+Langchain.js) |   (Optional)       |
-|   /run endpoint  |    |   /run endpoint  |    | /run endpoint       |
-+——————+    +——————+    +———————+
-^                       ^                       ^
-|    HTTP calls        |                       |
-+–––––+———–+———–+———–+
-|                       |
-v                       v
-+——————————+
-|        Orchestrator         |
-| (Node.js, executes flow)    |
-+–––––––+—————+
-|
-|  HTTP /execute-flow
-v
-+—————————+
-|        Frontend          |
-|    (React + React Flow)  |
-+—————————+
-
-1. **Python LLM Service** and **Node.js LLM Service** each provide a `/run` endpoint.  
-2. **Orchestrator** receives a JSON graph of nodes and edges from the front-end, calls the microservices in the appropriate order, and forwards results from one node to the next.  
-3. **Frontend** uses **React Flow** to let you drag nodes (representing each microservice), connect them with edges, and define input parameters (e.g., prompt text).
-
----
-
-## Services
-
-### Python LLM Service
-
-- **Location**: `python-llm-service/`
-- **Tech**: Python + Flask + LangChain
-- **Endpoint**: `POST /run`
-- **Description**: Demonstrates how to call OpenAI from Python using LangChain. Expects an `input` string in JSON, returns a JSON with a `result` string.
-
-### Node.js LLM Service
-
-- **Location**: `node-llm-service/`
-- **Tech**: Node.js + Express + Langchain.js
-- **Endpoint**: `POST /run`
-- **Description**: Demonstrates how to call OpenAI from Node.js using LangChain (JavaScript version). Expects an `input` string, returns `result`.
-
-### Orchestrator
-
-- **Location**: `orchestrator/`
-- **Tech**: Node.js + Express + Axios
-- **Endpoint**: `POST /execute-flow`
-- **Description**: Receives the graph (nodes + edges) from the front-end, calls each microservice in sequence. Supports a placeholder `{PREV_RESULT}` to insert the output from the previous node.
-
-### Frontend (React Flow)
-
-- **Location**: `frontend/`
-- **Tech**: React + React Flow + Axios
-- **Description**: Lets you drag and edit nodes, then sends the final flow to the Orchestrator.  
-- **Default Port**: 80 (if Docker), or 3000/5173 (local dev), depending on your tooling.
-
----
-
-## Requirements
-
-- **OpenAI API Key**: You need a valid key from [OpenAI](https://platform.openai.com/) to call GPT-3.5, GPT-4, etc.  
-- **Docker** (recommended, if you want a one-command solution) OR
-- **Local runtime** for:
-  - Python 3.9+ (Flask, LangChain)
-  - Node.js 18+ (Express, Langchain.js)
-  - (Optional) React dev server
-
----
-
-## Quick Start (Docker Compose)
-
-1. **Get the Code**
-   - Download this repository or clone it locally
-   - Navigate to the project directory:
-     ```bash
-     cd republic
-     ```
-
-2. **Set `OPENAI_API_KEY`**  
-   Create a `.env` file in the root folder:
-     ```bash
-   OPENAI_API_KEY=sk-xxxxxx
-     ```
-
-3. **Build and run**:
-   ```bash
-   docker-compose up -d
-   ```
-
-4. **Check containers**:
-
-After running `docker-compose up -d`, you will have four containers running:
-
-- **python-llm-service** (Flask) on port **5001**
-- **node-llm-service** (Express) on port **5002**
-- **orchestrator** on port **3000**
-- **frontend** on port **8080**
-
-You can verify their status and logs by running:
-
-```bash
-docker-compose ps
-docker-compose logs -f
-```
-
-5.	**Open your browser**: http://localhost:8080
-You should see a React Flow UI with two default nodes (Python LLM and Node LLM) and one edge between them.
-
-6.	**Click "Run Flow" to execute the entire pipeline**:
-The Orchestrator calls each microservice in turn, passes outputs forward, and returns a final result object.
-
-To stop everything:
-```bash
-docker-compose down
-```
-
-
+  - [ ] Role-based access control
+  - [ ] Audit logging
+  - [ ] Custom deployment options
+  - [ ] SLA guarantees
