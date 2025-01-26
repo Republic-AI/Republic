@@ -378,7 +378,7 @@ MIT License - see [LICENSE](LICENSE) for details
 3. [Services](#services)
    - [Python LLM Service](#python-llm-service)
    - [Node.js LLM Service](#nodejs-llm-service)
-   - [orchestrator](#orchestrator)
+   - [Orchestrator](#orchestrator)
    - [Frontend](#frontend-react-flow)
 4. [Requirements](#requirements)
 5. [Quick Start (Docker Compose)](#quick-start-docker-compose)
@@ -395,7 +395,7 @@ MIT License - see [LICENSE](LICENSE) for details
 - **Why**: You may have AI logic in different languages or frameworks. By exposing each service via HTTP, you can chain them together in a flexible pipeline. The front-end (React Flow) lets users visually define the flow, and the orchestrator executes it in the correct sequence.
 - **Features**:
   - Each microservice calls **OpenAI API** via LangChain (Python or JS).
-  - **orchestrator** performs topological sorting of nodes and sequentially invokes each service's `/run` endpoint.
+  - **Orchestrator** performs topological sorting of nodes and sequentially invokes each service's `/run` endpoint.
   - **React Flow** in the front-end for node-based workflow editing.
 
 ---
@@ -414,7 +414,7 @@ Below is a simplified schematic:
 |                       |
 v                       v
 +——————————+
-|        orchestrator         |
+|        Orchestrator         |
 | (Node.js, executes flow)    |
 +–––––––+—————+
 |
@@ -426,7 +426,7 @@ v
 +—————————+
 
 1. **Python LLM Service** and **Node.js LLM Service** each provide a `/run` endpoint.  
-2. **orchestrator** receives a JSON graph of nodes and edges from the front-end, calls the microservices in the appropriate order, and forwards results from one node to the next.  
+2. **Orchestrator** receives a JSON graph of nodes and edges from the front-end, calls the microservices in the appropriate order, and forwards results from one node to the next.  
 3. **Frontend** uses **React Flow** to let you drag nodes (representing each microservice), connect them with edges, and define input parameters (e.g., prompt text).
 
 ---
@@ -447,7 +447,7 @@ v
 - **Endpoint**: `POST /run`
 - **Description**: Demonstrates how to call OpenAI from Node.js using LangChain (JavaScript version). Expects an `input` string, returns `result`.
 
-### orchestrator
+### Orchestrator
 
 - **Location**: `orchestrator/`
 - **Tech**: Node.js + Express + Axios
@@ -458,7 +458,7 @@ v
 
 - **Location**: `frontend/`
 - **Tech**: React + React Flow + Axios
-- **Description**: Lets you drag and edit nodes, then sends the final flow to the orchestrator.  
+- **Description**: Lets you drag and edit nodes, then sends the final flow to the Orchestrator.  
 - **Default Port**: 80 (if Docker), or 3000/5173 (local dev), depending on your tooling.
 
 ---
@@ -514,7 +514,7 @@ docker-compose logs -f
 You should see a React Flow UI with two default nodes (Python LLM and Node LLM) and one edge between them.
 
 6.	**Click "Run Flow" to execute the entire pipeline**:
-The orchestrator calls each microservice in turn, passes outputs forward, and returns a final result object.
+The Orchestrator calls each microservice in turn, passes outputs forward, and returns a final result object.
 
 To stop everything:
 ```bash
