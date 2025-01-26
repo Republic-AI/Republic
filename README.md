@@ -15,42 +15,6 @@ A powerful visual flow-based platform for orchestrating AI agents. Republic enab
 
 ### Agent Frameworks
 
-#### 🤖 Eliza Agent Framework
-A sophisticated conversational agent inspired by the classic ELIZA program, enhanced with modern AI capabilities:
-
-- **Personality & Adaptation**
-  - Configurable personality traits and conversation styles
-  - Dynamic emotional state tracking
-  - Context-aware responses
-  
-- **Advanced Features**
-  - Pattern-based response generation
-  - Emotional memory system
-  - Conversation history analysis
-  
-- **Integration Capabilities**
-  - Discord bot functionality
-  - Twitter API integration
-  - Telegram bot support
-
-#### 🚀 ZerePy Agent Framework
-A versatile social media management and engagement agent:
-
-- **Core Capabilities**
-  - Multi-platform content creation
-  - Engagement strategy optimization
-  - Audience analysis and insights
-  
-- **Platform Support**
-  - Twitter engagement and analytics
-  - Farcaster social protocol integration
-  - Discord community management
-  
-- **Smart Features**
-  - Content performance tracking
-  - Automated response generation
-  - Engagement pattern analysis
-
 #### 🔍 LangChain Agent
 A flexible, general-purpose language model agent:
 
@@ -90,6 +54,42 @@ A task management and execution agent focused on iterative improvement:
   - Project planning
   - Research organization
   - Learning optimization
+
+#### 🤖 Eliza Agent Framework
+A sophisticated conversational agent inspired by the classic ELIZA program, enhanced with modern AI capabilities:
+
+- **Personality & Adaptation**
+  - Configurable personality traits and conversation styles
+  - Dynamic emotional state tracking
+  - Context-aware responses
+  
+- **Advanced Features**
+  - Pattern-based response generation
+  - Emotional memory system
+  - Conversation history analysis
+  
+- **Integration Capabilities**
+  - Discord bot functionality
+  - Twitter API integration
+  - Telegram bot support
+
+#### 🚀 ZerePy Agent Framework
+A versatile social media management and engagement agent:
+
+- **Core Capabilities**
+  - Multi-platform content creation
+  - Engagement strategy optimization
+  - Audience analysis and insights
+  
+- **Platform Support**
+  - Twitter engagement and analytics
+  - Farcaster social protocol integration
+  - Discord community management
+  
+- **Smart Features**
+  - Content performance tracking
+  - Automated response generation
+  - Engagement pattern analysis
 
 ## 🛠 Setup
 
@@ -144,7 +144,7 @@ docker-compose up -d
 
 4. **Access the Application**
 - Frontend UI: http://localhost:3000
-- Orchestrator API: http://localhost:8080
+- orchestrator API: http://localhost:8080
 - Python LLM Service: http://localhost:5001
 - Node LLM Service: http://localhost:5002
 
@@ -165,13 +165,13 @@ npm start
 ```
 Frontend will be available at http://localhost:3000
 
-Orchestrator:
+orchestrator:
 ```bash
 cd orchestrator
 npm install
 npm start
 ```
-Orchestrator will run on http://localhost:8080
+orchestrator will run on http://localhost:8080
 
 Node LLM Service:
 ```bash
@@ -378,7 +378,7 @@ MIT License - see [LICENSE](LICENSE) for details
 3. [Services](#services)
    - [Python LLM Service](#python-llm-service)
    - [Node.js LLM Service](#nodejs-llm-service)
-   - [Orchestrator](#orchestrator)
+   - [orchestrator](#orchestrator)
    - [Frontend](#frontend-react-flow)
 4. [Requirements](#requirements)
 5. [Quick Start (Docker Compose)](#quick-start-docker-compose)
@@ -395,7 +395,7 @@ MIT License - see [LICENSE](LICENSE) for details
 - **Why**: You may have AI logic in different languages or frameworks. By exposing each service via HTTP, you can chain them together in a flexible pipeline. The front-end (React Flow) lets users visually define the flow, and the orchestrator executes it in the correct sequence.
 - **Features**:
   - Each microservice calls **OpenAI API** via LangChain (Python or JS).
-  - **Orchestrator** performs topological sorting of nodes and sequentially invokes each service's `/run` endpoint.
+  - **orchestrator** performs topological sorting of nodes and sequentially invokes each service's `/run` endpoint.
   - **React Flow** in the front-end for node-based workflow editing.
 
 ---
@@ -414,7 +414,7 @@ Below is a simplified schematic:
 |                       |
 v                       v
 +——————————+
-|        Orchestrator         |
+|        orchestrator         |
 | (Node.js, executes flow)    |
 +–––––––+—————+
 |
@@ -426,7 +426,7 @@ v
 +—————————+
 
 1. **Python LLM Service** and **Node.js LLM Service** each provide a `/run` endpoint.  
-2. **Orchestrator** receives a JSON graph of nodes and edges from the front-end, calls the microservices in the appropriate order, and forwards results from one node to the next.  
+2. **orchestrator** receives a JSON graph of nodes and edges from the front-end, calls the microservices in the appropriate order, and forwards results from one node to the next.  
 3. **Frontend** uses **React Flow** to let you drag nodes (representing each microservice), connect them with edges, and define input parameters (e.g., prompt text).
 
 ---
@@ -447,7 +447,7 @@ v
 - **Endpoint**: `POST /run`
 - **Description**: Demonstrates how to call OpenAI from Node.js using LangChain (JavaScript version). Expects an `input` string, returns `result`.
 
-### Orchestrator
+### orchestrator
 
 - **Location**: `orchestrator/`
 - **Tech**: Node.js + Express + Axios
@@ -458,7 +458,7 @@ v
 
 - **Location**: `frontend/`
 - **Tech**: React + React Flow + Axios
-- **Description**: Lets you drag and edit nodes, then sends the final flow to the Orchestrator.  
+- **Description**: Lets you drag and edit nodes, then sends the final flow to the orchestrator.  
 - **Default Port**: 80 (if Docker), or 3000/5173 (local dev), depending on your tooling.
 
 ---
@@ -514,7 +514,7 @@ docker-compose logs -f
 You should see a React Flow UI with two default nodes (Python LLM and Node LLM) and one edge between them.
 
 6.	**Click "Run Flow" to execute the entire pipeline**:
-The Orchestrator calls each microservice in turn, passes outputs forward, and returns a final result object.
+The orchestrator calls each microservice in turn, passes outputs forward, and returns a final result object.
 
 To stop everything:
 ```bash
