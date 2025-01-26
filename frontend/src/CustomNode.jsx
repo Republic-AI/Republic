@@ -248,6 +248,12 @@ export default function CustomNode({ data, isConnectable }) {
           keys[f.name] = '';
         });
         config[field.name] = keys;
+      } else if (field.id === 'modelConfig') {
+        const keys = {};
+        field.fields.forEach(f => {
+          keys[f.id] = '';
+        });
+        config[field.id] = keys;
       } else {
         config[field.name] = field.default || 
           (field.type === 'select' ? field.options[0].value : '') ||
@@ -258,6 +264,7 @@ export default function CustomNode({ data, isConnectable }) {
   };
 
   const handleConfigChange = (fieldName, value, subField = null) => {
+    console.log(fieldName + "aaa" + value + "aaaa");
     if (subField) {
       data.onChange({
         ...data,
@@ -419,8 +426,8 @@ export default function CustomNode({ data, isConnectable }) {
                 <label>{subField.label}</label>
                 {renderConfigField({
                   ...subField,
-                  name: `${field.name}.${fieldName}`,
-                  value: value[fieldName]
+                  name: `${subField.id}`,
+                  value: value[subField.id]
                 })}
               </div>
             ))}

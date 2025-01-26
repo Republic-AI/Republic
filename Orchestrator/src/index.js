@@ -1087,9 +1087,9 @@ const agentHandlers = {
     const elizaConfig = {
       foundationModel: config.modelConfig?.foundationModel || 'gpt-3.5-turbo',
       modelConfig: {
-        apiKey: config.modelConfig?.apiKey
+        apiKey: config.apiKey
       },
-      apiKey: config.modelConfig?.apiKey,  // Also pass directly
+      apiKey: config.apiKey,  // Also pass directly
       modelParams: config.modelConfig?.modelParams || {
         temperature: 0.7,
         maxTokens: 1000,
@@ -1112,7 +1112,7 @@ const agentHandlers = {
   'zerepy': async (input, config) => {
     const zerepyConfig = {
       foundationModel: config.modelConfig?.foundationModel || 'gpt-3.5-turbo',
-      apiKey: config.modelConfig?.apiKey,  // Get API key from modelConfig
+      apiKey: config?.apiKey,  // Get API key from modelConfig
       modelParams: config.modelConfig?.modelParams || {
         temperature: 0.7,
         maxTokens: 1000,

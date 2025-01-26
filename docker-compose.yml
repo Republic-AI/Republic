@@ -23,7 +23,7 @@ services:
       - python-llm-service
       - node-llm-service
     ports:
-      - "8080:8080"
+      - "3000:3000"
 
   frontend:
     build: ./frontend
@@ -31,4 +31,4 @@ services:
     depends_on:
       - orchestrator
     ports:
-      - "3000:80"
+      - "80:80"
