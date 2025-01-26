@@ -1459,91 +1459,316 @@ export const agentFrameworks = [
     name: 'BabyAGI Agent',
     description: 'Task-driven autonomous agent that breaks down objectives into tasks and executes them iteratively',
     configFields: [
+      // Basic Configuration
       {
-        name: 'objective',
-        label: 'Objective',
-        type: 'textarea',
-        required: true,
-        description: 'The main goal or objective for the agent to accomplish'
+        name: 'basicConfig',
+        label: 'Basic Configuration',
+        type: 'group',
+        fields: {
+          agentName: {
+            name: 'agentName',
+            label: 'Agent Name',
+            type: 'text',
+            required: true,
+            placeholder: 'Enter a name for your agent'
+          },
+          objective: {
+            name: 'objective',
+            label: 'Main Objective',
+            type: 'textarea',
+            required: true,
+            placeholder: 'Define the main objective for the agent'
+          },
+          initialTask: {
+            name: 'initialTask',
+            label: 'Initial Task',
+            type: 'textarea',
+            required: true,
+            placeholder: 'Define the first task to start working on'
+          }
+        }
       },
+
+      // Model Configuration
       {
-        name: 'initialTask',
-        label: 'Initial Task',
-        type: 'textarea',
-        required: true,
-        description: 'The first task to start working on the objective'
+        name: 'modelConfig',
+        label: 'Model Configuration',
+        type: 'group',
+        fields: {
+          foundationModel: {
+            name: 'foundationModel',
+            label: 'Foundation Model',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'gpt-4', label: 'GPT-4' },
+              { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
+              { value: 'claude-3-opus', label: 'Claude 3 Opus' },
+              { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet' }
+            ]
+          },
+          modelParams: {
+            name: 'modelParams',
+            label: 'Model Parameters',
+            type: 'group',
+            fields: {
+              temperature: {
+                name: 'temperature',
+                label: 'Temperature',
+                type: 'slider',
+                min: 0,
+                max: 1,
+                step: 0.1,
+                default: 0.7
+              },
+              maxTokens: {
+                name: 'maxTokens',
+                label: 'Max Tokens',
+                type: 'number',
+                min: 1,
+                max: 8192,
+                default: 2048
+              }
+            }
+          }
+        }
       },
+
+      // Task Management Configuration
       {
-        name: 'modelName',
-        label: 'Model Name',
-        type: 'select',
-        options: [
-          { value: 'gpt-4', label: 'GPT-4' },
-          { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
-        ],
-        required: true,
-        description: 'The language model to use for task execution'
+        name: 'taskConfig',
+        label: 'Task Management',
+        type: 'group',
+        fields: {
+          taskCreation: {
+            name: 'taskCreation',
+            label: 'Task Creation Settings',
+            type: 'group',
+            fields: {
+              maxTasks: {
+                name: 'maxTasks',
+                label: 'Maximum Tasks',
+                type: 'number',
+                min: 1,
+                max: 100,
+                default: 10
+              },
+              taskPrioritization: {
+                name: 'taskPrioritization',
+                label: 'Task Prioritization',
+                type: 'select',
+                options: [
+                  { value: 'importance', label: 'By Importance' },
+                  { value: 'dependency', label: 'By Dependencies' },
+                  { value: 'complexity', label: 'By Complexity' }
+                ]
+              },
+              taskTimeout: {
+                name: 'taskTimeout',
+                label: 'Task Timeout (seconds)',
+                type: 'number',
+                min: 30,
+                max: 3600,
+                default: 300
+              }
+            }
+          },
+          executionStrategy: {
+            name: 'executionStrategy',
+            label: 'Execution Strategy',
+            type: 'group',
+            fields: {
+              maxIterations: {
+                name: 'maxIterations',
+                label: 'Max Iterations',
+                type: 'number',
+                min: 1,
+                max: 100,
+                default: 5
+              },
+              iterationDelay: {
+                name: 'iterationDelay',
+                label: 'Iteration Delay (seconds)',
+                type: 'number',
+                min: 1,
+                max: 60,
+                default: 10
+              },
+              contextWindow: {
+                name: 'contextWindow',
+                label: 'Context Window',
+                type: 'number',
+                min: 1,
+                max: 20,
+                default: 5,
+                tooltip: 'Number of previous tasks to consider for context'
+              }
+            }
+          }
+        }
       },
+
+      // Memory Configuration
       {
-        name: 'maxIterations',
-        label: 'Maximum Iterations',
-        type: 'number',
-        required: true,
-        default: 5,
-        description: 'Maximum number of task iterations to perform'
+        name: 'memoryConfig',
+        label: 'Memory Configuration',
+        type: 'group',
+        fields: {
+          vectorStore: {
+            name: 'vectorStore',
+            label: 'Vector Store',
+            type: 'select',
+            options: [
+              { value: 'pinecone', label: 'Pinecone' },
+              { value: 'chroma', label: 'ChromaDB' },
+              { value: 'weaviate', label: 'Weaviate' },
+              { value: 'milvus', label: 'Milvus' }
+            ]
+          },
+          vectorStoreConfig: {
+            name: 'vectorStoreConfig',
+            label: 'Vector Store Configuration',
+            type: 'group',
+            fields: {
+              indexName: {
+                name: 'indexName',
+                label: 'Index Name',
+                type: 'text',
+                default: 'babyagi-tasks'
+              },
+              dimensions: {
+                name: 'dimensions',
+                label: 'Vector Dimensions',
+                type: 'number',
+                min: 64,
+                max: 1536,
+                default: 1536
+              },
+              metric: {
+                name: 'metric',
+                label: 'Distance Metric',
+                type: 'select',
+                options: [
+                  { value: 'cosine', label: 'Cosine Similarity' },
+                  { value: 'euclidean', label: 'Euclidean Distance' },
+                  { value: 'dotproduct', label: 'Dot Product' }
+                ]
+              }
+            }
+          },
+          resultStorage: {
+            name: 'resultStorage',
+            label: 'Result Storage',
+            type: 'group',
+            fields: {
+              storageType: {
+                name: 'storageType',
+                label: 'Storage Type',
+                type: 'select',
+                options: [
+                  { value: 'local', label: 'Local File System' },
+                  { value: 's3', label: 'AWS S3' },
+                  { value: 'redis', label: 'Redis' }
+                ]
+              },
+              retentionPeriod: {
+                name: 'retentionPeriod',
+                label: 'Retention Period (days)',
+                type: 'number',
+                min: 1,
+                max: 365,
+                default: 30
+              }
+            }
+          }
+        }
       },
-      {
-        name: 'vectorStore',
-        label: 'Vector Store',
-        type: 'select',
-        options: [
-          { value: 'pinecone', label: 'Pinecone' },
-          { value: 'chroma', label: 'ChromaDB' }
-        ],
-        required: true,
-        description: 'Vector database for storing and retrieving task results'
-      },
-      {
-        name: 'pineconeApiKey',
-        label: 'Pinecone API Key',
-        type: 'password',
-        required: false,
-        showIf: { field: 'vectorStore', value: 'pinecone' },
-        description: 'API key for Pinecone vector database'
-      },
-      {
-        name: 'pineconeEnvironment',
-        label: 'Pinecone Environment',
-        type: 'text',
-        required: false,
-        showIf: { field: 'vectorStore', value: 'pinecone' },
-        description: 'Pinecone environment (e.g., "us-west1-gcp")'
-      },
-      {
-        name: 'pineconeIndex',
-        label: 'Pinecone Index',
-        type: 'text',
-        required: false,
-        showIf: { field: 'vectorStore', value: 'pinecone' },
-        description: 'Name of the Pinecone index to use'
-      },
+
+      // API Keys Configuration
       {
         name: 'apiKeys',
         label: 'API Keys',
-        type: 'apiKeys',
-        fields: [
-          { name: 'openai', label: 'OpenAI API Key', required: true },
-          { name: 'pinecone', label: 'Pinecone API Key' }
-        ]
+        type: 'group',
+        fields: {
+          openai: {
+            name: 'openai',
+            label: 'OpenAI API Key',
+            type: 'password',
+            required: true
+          },
+          pinecone: {
+            name: 'pinecone',
+            label: 'Pinecone API Key',
+            type: 'password',
+            showWhen: { field: 'vectorStore', value: 'pinecone' }
+          },
+          weaviate: {
+            name: 'weaviate',
+            label: 'Weaviate API Key',
+            type: 'password',
+            showWhen: { field: 'vectorStore', value: 'weaviate' }
+          }
+        }
       },
+
+      // Advanced Configuration
       {
-        name: 'foundationModel',
-        label: 'Foundation Model',
-        type: 'select',
-        options: [
-          { value: 'gpt-4', label: 'GPT-4' },
-          { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
-        ]
+        name: 'advancedConfig',
+        label: 'Advanced Configuration',
+        type: 'group',
+        fields: {
+          logging: {
+            name: 'logging',
+            label: 'Logging Configuration',
+            type: 'group',
+            fields: {
+              logLevel: {
+                name: 'logLevel',
+                label: 'Log Level',
+                type: 'select',
+                options: [
+                  { value: 'debug', label: 'Debug' },
+                  { value: 'info', label: 'Info' },
+                  { value: 'warning', label: 'Warning' },
+                  { value: 'error', label: 'Error' }
+                ],
+                default: 'info'
+              },
+              logFormat: {
+                name: 'logFormat',
+                label: 'Log Format',
+                type: 'select',
+                options: [
+                  { value: 'text', label: 'Plain Text' },
+                  { value: 'json', label: 'JSON' }
+                ]
+              }
+            }
+          },
+          performance: {
+            name: 'performance',
+            label: 'Performance Settings',
+            type: 'group',
+            fields: {
+              batchSize: {
+                name: 'batchSize',
+                label: 'Batch Size',
+                type: 'number',
+                min: 1,
+                max: 50,
+                default: 5
+              },
+              concurrentTasks: {
+                name: 'concurrentTasks',
+                label: 'Concurrent Tasks',
+                type: 'number',
+                min: 1,
+                max: 10,
+                default: 3
+              }
+            }
+          }
+        }
       }
     ]
   },
