@@ -16,68 +16,80 @@ A powerful visual flow-based platform for orchestrating AI agents. Republic enab
 ### Agent Frameworks
 
 #### 🤖 Eliza Agent Framework
-- **Content & Strategy**
-  - Advanced content planning and creation
-  - Strategic decision-making capabilities
-  - Document analysis and synthesis
-  
-- **Tools & Integration**
-  - Web search and research capabilities
-  - Document processing and management
-  - Code execution and analysis
-  - File system operations
-  
-- **Memory Systems**
-  - Retrievable memory for context retention
-  - Document store for knowledge management
-  - Conversation history tracking
-  
-- **Client Integration**
-  - Discord bot integration
-  - Twitter API support
-  - Telegram bot capabilities
+A sophisticated conversational agent inspired by the classic ELIZA program, enhanced with modern AI capabilities:
 
-#### 🚀 ZerePy Agent Framework
-- **Social Platform Integration**
-  - Twitter engagement and analytics
-  - Farcaster social protocol support
-  - Discord community management
-  - Echo Chambers integration
-  
-- **Blockchain Capabilities**
-  - Multi-chain support
-  - Smart contract interaction
-  - Web3 protocol integration
+- **Personality & Adaptation**
+  - Configurable personality traits and conversation styles
+  - Dynamic emotional state tracking
+  - Context-aware responses
   
 - **Advanced Features**
-  - GOAT plugin system
-  - Task prioritization with weights
-  - Time-based execution scheduling
-  - Performance analytics and reporting
+  - Pattern-based response generation
+  - Emotional memory system
+  - Conversation history analysis
   
-- **Configuration Options**
-  - Agent personality traits
-  - Task management preferences
-  - Engagement strategies
-  - Response templating
+- **Integration Capabilities**
+  - Discord bot functionality
+  - Twitter API integration
+  - Telegram bot support
 
-#### 🔗 Additional Agent Types
-- **LangChain Agent**: General-purpose language model integration
-- **AutoGPT Agent**: Autonomous task execution
-- **BabyAGI Agent**: Task management and planning
+#### 🚀 ZerePy Agent Framework
+A versatile social media management and engagement agent:
 
-### Input/Output System
-- **Input Types**
-  - Text input with formatting
-  - File upload support
-  - API endpoint integration
-  - Structured data parsing
+- **Core Capabilities**
+  - Multi-platform content creation
+  - Engagement strategy optimization
+  - Audience analysis and insights
   
-- **Output Formats**
-  - JSON/XML/YAML formatting
-  - API response handling
-  - File export capabilities
-  - Custom format templates
+- **Platform Support**
+  - Twitter engagement and analytics
+  - Farcaster social protocol integration
+  - Discord community management
+  
+- **Smart Features**
+  - Content performance tracking
+  - Automated response generation
+  - Engagement pattern analysis
+
+#### 🔍 LangChain Agent
+A flexible, general-purpose language model agent:
+
+- **Key Features**
+  - Tool-using capabilities
+  - Web search integration
+  - Document analysis
+  
+- **Use Cases**
+  - Research and analysis
+  - Content generation
+  - Question answering
+
+#### 🤓 AutoGPT Agent
+An autonomous agent capable of breaking down and executing complex tasks:
+
+- **Core Features**
+  - Goal-oriented task execution
+  - Self-prompted task planning
+  - Tool utilization
+  
+- **Capabilities**
+  - Web research
+  - Content creation
+  - Code generation
+  - Data analysis
+
+#### 👶 BabyAGI Agent
+A task management and execution agent focused on iterative improvement:
+
+- **Key Features**
+  - Task prioritization
+  - Objective breakdown
+  - Result analysis
+  
+- **Applications**
+  - Project planning
+  - Research organization
+  - Learning optimization
 
 ## 🛠 Setup
 
@@ -179,12 +191,9 @@ python app.py
 ```
 Python LLM Service will run on http://localhost:5001
 
-2. **Environment Setup**
-Create `.env` files in each service directory with the required API keys.
-
 ## 📚 Usage Examples
 
-### 1. Content Creation & Distribution Flow
+### 1. Social Media Content Creation and Distribution
 ```javascript
 {
   "nodes": [
@@ -219,39 +228,120 @@ Create `.env` files in each service directory with the required API keys.
           }
         }
       }
-    },
-    {
-      "id": "output",
-      "type": "output",
-      "data": {
-        "format": "json"
-      }
     }
   ],
   "edges": [
     {"source": "input", "target": "eliza"},
-    {"source": "eliza", "target": "zerepy"},
-    {"source": "zerepy", "target": "output"}
+    {"source": "eliza", "target": "zerepy"}
   ]
 }
 ```
 
-### 2. Research & Analysis Flow
-See more examples in the [examples](./examples) directory.
+### 2. Research and Analysis Pipeline
+```javascript
+{
+  "nodes": [
+    {
+      "id": "input",
+      "type": "input",
+      "data": {
+        "text": "Research the impact of AI on healthcare"
+      }
+    },
+    {
+      "id": "langchain",
+      "type": "langchain",
+      "data": {
+        "config": {
+          "tools": ["web-search", "wikipedia"],
+          "memory": "conversation"
+        }
+      }
+    },
+    {
+      "id": "autogpt",
+      "type": "autogpt",
+      "data": {
+        "config": {
+          "goals": [
+            "Analyze research findings",
+            "Identify key trends",
+            "Generate insights"
+          ]
+        }
+      }
+    },
+    {
+      "id": "eliza",
+      "type": "eliza",
+      "data": {
+        "config": {
+          "role": "analyst",
+          "style": "analytical",
+          "outputFormat": "report"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {"source": "input", "target": "langchain"},
+    {"source": "langchain", "target": "autogpt"},
+    {"source": "autogpt", "target": "eliza"}
+  ]
+}
+```
 
-## 🏗 Architecture
-
-### Core Components
-- **Frontend**: React-based flow editor with real-time updates
-- **Orchestrator**: Node.js service for workflow management
-- **Agent Services**: Specialized services for each agent framework
-- **Memory System**: Distributed storage for agent state and data
-
-### Data Flow
-1. User creates workflow in visual editor
-2. Orchestrator validates and processes flow
-3. Agents execute in sequence with data passing
-4. Results collected and formatted for output
+### 3. Task Management and Learning Flow
+```javascript
+{
+  "nodes": [
+    {
+      "id": "input",
+      "type": "input",
+      "data": {
+        "text": "Learn and implement machine learning concepts"
+      }
+    },
+    {
+      "id": "babyagi",
+      "type": "babyagi",
+      "data": {
+        "config": {
+          "objective": "Master ML fundamentals",
+          "maxIterations": 10,
+          "learningStyle": "incremental"
+        }
+      }
+    },
+    {
+      "id": "autogpt",
+      "type": "autogpt",
+      "data": {
+        "config": {
+          "tools": ["code-execution", "documentation"],
+          "goals": ["Implement examples", "Test understanding"]
+        }
+      }
+    },
+    {
+      "id": "zerepy",
+      "type": "zerepy",
+      "data": {
+        "config": {
+          "platforms": ["discord"],
+          "role": "tutor",
+          "style": "educational"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {"source": "input", "target": "babyagi"},
+    {"source": "babyagi", "target": "autogpt"},
+    {"source": "autogpt", "target": "zerepy"}
+  ]
+}
+```
 
 ## 🤝 Contributing
 

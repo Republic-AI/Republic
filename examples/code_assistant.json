@@ -1,0 +1,198 @@
+{
+  "name": "Intelligent Code Assistant Flow",
+  "description": "Advanced code development, review, and documentation pipeline",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "code-input",
+      "type": "input",
+      "position": { "x": 100, "y": 100 },
+      "data": {
+        "text": "Create a React component for a dynamic form builder",
+        "config": {
+          "inputType": "code-request",
+          "language": "javascript",
+          "framework": "react"
+        }
+      }
+    },
+    {
+      "id": "requirements-analyzer",
+      "type": "langchain",
+      "position": { "x": 400, "y": 100 },
+      "data": {
+        "config": {
+          "tools": [
+            "code-search",
+            "documentation-search",
+            "github-api"
+          ],
+          "memory": "conversation",
+          "foundationModel": "gpt-4",
+          "modelParams": {
+            "temperature": 0.3,
+            "maxTokens": 2000
+          },
+          "analysisConfig": {
+            "checkDependencies": true,
+            "suggestPatterns": true,
+            "considerPerformance": true
+          }
+        }
+      }
+    },
+    {
+      "id": "code-generator",
+      "type": "autogpt",
+      "position": { "x": 700, "y": 100 },
+      "data": {
+        "config": {
+          "goals": [
+            "Generate modular code",
+            "Implement best practices",
+            "Ensure type safety",
+            "Add error handling"
+          ],
+          "tools": [
+            "code-completion",
+            "type-checker",
+            "linter"
+          ],
+          "foundationModel": "claude-3-opus",
+          "modelParams": {
+            "temperature": 0.4
+          },
+          "codeStyle": {
+            "format": "prettier",
+            "standard": "eslint:recommended"
+          }
+        }
+      }
+    },
+    {
+      "id": "test-generator",
+      "type": "eliza",
+      "position": { "x": 1000, "y": 100 },
+      "data": {
+        "config": {
+          "role": "test-engineer",
+          "testTypes": [
+            "unit",
+            "integration",
+            "e2e"
+          ],
+          "frameworks": {
+            "unit": "jest",
+            "e2e": "cypress"
+          },
+          "coverage": {
+            "target": 90,
+            "includeEdgeCases": true
+          },
+          "foundationModel": "gpt-4",
+          "modelParams": {
+            "temperature": 0.3
+          }
+        }
+      }
+    },
+    {
+      "id": "code-reviewer",
+      "type": "babyagi",
+      "position": { "x": 1300, "y": 100 },
+      "data": {
+        "config": {
+          "objective": "Comprehensive code review and improvement suggestions",
+          "reviewCriteria": [
+            "code_quality",
+            "performance",
+            "security",
+            "maintainability"
+          ],
+          "foundationModel": "claude-3-opus",
+          "modelParams": {
+            "temperature": 0.4
+          },
+          "suggestions": {
+            "maxIssues": 10,
+            "priorityLevels": ["critical", "major", "minor"]
+          }
+        }
+      }
+    },
+    {
+      "id": "documentation-generator",
+      "type": "zerepy",
+      "position": { "x": 1600, "y": 100 },
+      "data": {
+        "config": {
+          "docTypes": [
+            "api-docs",
+            "usage-guide",
+            "examples"
+          ],
+          "format": "markdown",
+          "includeTypes": true,
+          "generateDiagrams": true,
+          "foundationModel": "gpt-4",
+          "modelParams": {
+            "temperature": 0.4
+          }
+        }
+      }
+    },
+    {
+      "id": "code-output",
+      "type": "output",
+      "position": { "x": 1900, "y": 100 },
+      "data": {
+        "config": {
+          "format": "repository",
+          "outputs": [
+            "source-code",
+            "tests",
+            "documentation",
+            "review-report"
+          ],
+          "packaging": {
+            "createRelease": true,
+            "bundleAssets": true,
+            "generateChangelog": true
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "code-input",
+      "target": "requirements-analyzer",
+      "type": "main"
+    },
+    {
+      "source": "requirements-analyzer",
+      "target": "code-generator",
+      "type": "requirements"
+    },
+    {
+      "source": "code-generator",
+      "target": "test-generator",
+      "type": "code"
+    },
+    {
+      "source": "test-generator",
+      "target": "code-reviewer",
+      "type": "tests"
+    },
+    {
+      "source": "code-reviewer",
+      "target": "documentation-generator",
+      "type": "review"
+    },
+    {
+      "source": "documentation-generator",
+      "target": "code-output",
+      "type": "documentation"
+    }
+  ]
+} 

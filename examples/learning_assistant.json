@@ -1,0 +1,228 @@
+{
+  "name": "Adaptive Learning Assistant Flow",
+  "description": "Personalized learning experience with adaptive content generation and progress tracking",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "learning-input",
+      "type": "input",
+      "position": { "x": 100, "y": 100 },
+      "data": {
+        "text": "Help me learn machine learning fundamentals",
+        "config": {
+          "inputType": "learning-request",
+          "subject": "machine-learning",
+          "level": "beginner"
+        }
+      }
+    },
+    {
+      "id": "skill-assessor",
+      "type": "langchain",
+      "position": { "x": 400, "y": 100 },
+      "data": {
+        "config": {
+          "tools": [
+            "knowledge-assessment",
+            "skill-mapping",
+            "learning-path-generator"
+          ],
+          "memory": "conversation",
+          "foundationModel": "gpt-4",
+          "modelParams": {
+            "temperature": 0.3
+          },
+          "assessment": {
+            "type": "adaptive",
+            "topics": [
+              "statistics",
+              "linear-algebra",
+              "programming",
+              "ml-concepts"
+            ],
+            "difficultyLevels": ["basic", "intermediate", "advanced"]
+          }
+        }
+      }
+    },
+    {
+      "id": "curriculum-planner",
+      "type": "babyagi",
+      "position": { "x": 700, "y": 100 },
+      "data": {
+        "config": {
+          "objective": "Create personalized learning path",
+          "maxIterations": 5,
+          "foundationModel": "claude-3-opus",
+          "modelParams": {
+            "temperature": 0.4
+          },
+          "curriculumConfig": {
+            "pacing": "adaptive",
+            "includeProjects": true,
+            "resourceTypes": [
+              "video",
+              "text",
+              "interactive",
+              "practice"
+            ],
+            "milestones": {
+              "frequency": "weekly",
+              "assessmentType": "project-based"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "content-generator",
+      "type": "autogpt",
+      "position": { "x": 1000, "y": 100 },
+      "data": {
+        "config": {
+          "goals": [
+            "Generate engaging content",
+            "Include practical examples",
+            "Create exercises",
+            "Provide explanations"
+          ],
+          "tools": [
+            "content-creation",
+            "example-generator",
+            "visualization-tools"
+          ],
+          "foundationModel": "gpt-4",
+          "modelParams": {
+            "temperature": 0.6
+          },
+          "contentStyle": {
+            "format": "interactive",
+            "difficulty": "adaptive",
+            "includeVisuals": true
+          }
+        }
+      }
+    },
+    {
+      "id": "tutor-agent",
+      "type": "eliza",
+      "position": { "x": 1300, "y": 100 },
+      "data": {
+        "config": {
+          "role": "tutor",
+          "personality": {
+            "style": "encouraging",
+            "patience": "high",
+            "adaptability": "dynamic"
+          },
+          "teachingMethods": [
+            "socratic",
+            "example-based",
+            "problem-solving"
+          ],
+          "foundationModel": "claude-3-opus",
+          "modelParams": {
+            "temperature": 0.7
+          },
+          "feedback": {
+            "type": "constructive",
+            "frequency": "continuous",
+            "detail": "comprehensive"
+          }
+        }
+      }
+    },
+    {
+      "id": "progress-tracker",
+      "type": "zerepy",
+      "position": { "x": 1600, "y": 100 },
+      "data": {
+        "config": {
+          "metrics": [
+            "completion_rate",
+            "understanding_level",
+            "engagement",
+            "retention"
+          ],
+          "analytics": {
+            "type": "detailed",
+            "visualizations": true,
+            "recommendations": true
+          },
+          "adaptiveConfig": {
+            "adjustDifficulty": true,
+            "modifyPacing": true,
+            "suggestReview": true
+          },
+          "reporting": {
+            "frequency": "daily",
+            "format": "dashboard",
+            "includeInsights": true
+          }
+        }
+      }
+    },
+    {
+      "id": "learning-output",
+      "type": "output",
+      "position": { "x": 1900, "y": 100 },
+      "data": {
+        "config": {
+          "format": "learning-portal",
+          "components": [
+            "course-material",
+            "progress-report",
+            "achievements",
+            "next-steps"
+          ],
+          "export": {
+            "formats": ["pdf", "html", "interactive"],
+            "includeProgress": true,
+            "certificates": true
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "learning-input",
+      "target": "skill-assessor",
+      "type": "main"
+    },
+    {
+      "source": "skill-assessor",
+      "target": "curriculum-planner",
+      "type": "assessment"
+    },
+    {
+      "source": "curriculum-planner",
+      "target": "content-generator",
+      "type": "curriculum"
+    },
+    {
+      "source": "content-generator",
+      "target": "tutor-agent",
+      "type": "content"
+    },
+    {
+      "source": "tutor-agent",
+      "target": "progress-tracker",
+      "type": "interaction"
+    },
+    {
+      "source": "progress-tracker",
+      "target": "learning-output",
+      "type": "progress"
+    },
+    {
+      "source": "progress-tracker",
+      "target": "curriculum-planner",
+      "type": "feedback",
+      "config": {
+        "adaptive": true,
+        "updateFrequency": "session"
+      }
+    }
+  ]
+} 
