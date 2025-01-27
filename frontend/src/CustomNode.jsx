@@ -259,12 +259,6 @@ export default function CustomNode({ data, isConnectable }) {
           keys[f.name] = '';
         });
         config[field.name] = keys;
-      } else if (field.id === 'modelConfig') {
-        const keys = {};
-        field.fields.forEach(f => {
-          keys[f.id] = '';
-        });
-        config[field.id] = keys;
       } else {
         config[field.name] = field.default || 
           (field.type === 'select' ? field.options[0].value : '') ||
@@ -447,8 +441,8 @@ export default function CustomNode({ data, isConnectable }) {
                 <label>{subField.label}</label>
                 {renderConfigField({
                   ...subField,
-                  name: `${subField.id}`,
-                  value: value[subField.id]
+                  name: `${subField.name}`,
+                  value: value[fieldName]
                 })}
               </div>
             ))}

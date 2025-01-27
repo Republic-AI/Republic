@@ -121,9 +121,9 @@ export const agentFrameworks = [
         id: 'modelConfig',
         label: 'AI Model Configuration',
         type: 'group',
-        fields: [
-          {
-            id: 'foundationModel',
+        fields: {
+          foundationModel : {
+            name: 'foundationModel',
             label: 'AI Model',
             type: 'select',
             options: [
@@ -135,15 +135,15 @@ export const agentFrameworks = [
             required: true,
             tooltip: 'Select the AI model to use for this node'
           },
-          {
-            id: 'apiKey',
+          apiKey : {
+            name: 'apiKey',
             label: 'API Key',
             type: 'password',
             required: true,
             tooltip: 'Enter your API key for the selected model (OpenAI key for GPT models, Anthropic key for Claude models)'
           },
-          {
-            id: 'modelParams',
+          modelParams : {
+            name: 'modelParams',
             label: 'Model Parameters',
             type: 'group',
             fields: {
@@ -175,7 +175,7 @@ export const agentFrameworks = [
               }
             }
           }
-        ]
+        }
       },
 
       // Core Agent Settings
