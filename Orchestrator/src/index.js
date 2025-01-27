@@ -292,13 +292,13 @@ class BaseAgent {
     this.memory = new AdvancedMemory(config.memoryConfig?.memoryType);
     
     // Initialize the model based on the foundation model type
-    const modelName = config.foundationModel || 'gpt-3.5-turbo';
+    const modelName = config.modelConfig?.foundationModel || 'gpt-3.5-turbo';
     
     // Log the config structure to debug
     console.log('BaseAgent config:', JSON.stringify(config, null, 2));
     
-    // Try to get API key from different possible locations
-    const apiKey = config.modelConfig?.apiKey || config.apiKey || process.env.OPENAI_API_KEY;
+    // Get API key from top-level config or environment
+    const apiKey = config.apiKey || process.env.OPENAI_API_KEY;
     
     console.log('Found API key:', apiKey ? 'Yes' : 'No');
     
@@ -309,10 +309,10 @@ class BaseAgent {
     if (modelName.startsWith('claude')) {
       // Use Anthropic for Claude models
       const anthropicConfig = {
-        temperature: config.modelParams?.temperature || 0.7,
+        temperature: config.modelConfig?.modelParams?.temperature || 0.7,
         modelName: modelName,
-        maxTokens: config.modelParams?.maxTokens || 1000,
-        topP: config.modelParams?.topP || 1,
+        maxTokens: config.modelConfig?.modelParams?.maxTokens || 1000,
+        topP: config.modelConfig?.modelParams?.topP || 1,
         apiKey: apiKey
       };
       
@@ -320,10 +320,10 @@ class BaseAgent {
     } else {
       // Use OpenAI for GPT models
       const openAIConfig = {
-        temperature: config.modelParams?.temperature || 0.7,
+        temperature: config.modelConfig?.modelParams?.temperature || 0.7,
         modelName: modelName === 'openai' ? 'gpt-3.5-turbo' : modelName,
-        maxTokens: config.modelParams?.maxTokens || 1000,
-        topP: config.modelParams?.topP || 1,
+        maxTokens: config.modelConfig?.modelParams?.maxTokens || 1000,
+        topP: config.modelConfig?.modelParams?.topP || 1,
         openAIApiKey: apiKey
       };
       
@@ -1119,10 +1119,7 @@ const agentHandlers = {
     
     const elizaConfig = {
       foundationModel: config.modelConfig?.foundationModel || 'gpt-3.5-turbo',
-      modelConfig: {
-        apiKey: config.apiKey
-      },
-      apiKey: config.apiKey,  // Also pass directly
+      apiKey: config.apiKey,  // Get API key from top level
       modelParams: config.modelConfig?.modelParams || {
         temperature: 0.7,
         maxTokens: 1000,
@@ -1145,7 +1142,7 @@ const agentHandlers = {
   'zerepy': async (input, config) => {
     const zerepyConfig = {
       foundationModel: config.modelConfig?.foundationModel || 'gpt-3.5-turbo',
-      apiKey: config?.apiKey,  // Get API key from modelConfig
+      apiKey: config.apiKey,  // Get API key from top level
       modelParams: config.modelConfig?.modelParams || {
         temperature: 0.7,
         maxTokens: 1000,

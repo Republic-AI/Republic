@@ -6,19 +6,26 @@ require("dotenv").config();
 const app = express();
 app.use(bodyParser.json());
 
-// 在 .env 或环境变量中设置 OPENAI_API_KEY
-// 这里用 langchain.js 的 OpenAI LLM
 app.post("/run", async (req, res) => {
   try {
-    const { input } = req.body;
+    const { input, config } = req.body;
 
-    // 创建 OpenAI LLM
+    // Get API key from config or environment
+    const apiKey = config?.apiKey || process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OpenAI API key not found in config or environment variables');
+    }
+
+    // Create OpenAI LLM with consistent config structure
     const model = new OpenAI({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      temperature: 0.7
+      openAIApiKey: apiKey,
+      temperature: config?.modelConfig?.modelParams?.temperature || 0.7,
+      modelName: config?.modelConfig?.foundationModel || 'gpt-3.5-turbo',
+      maxTokens: config?.modelConfig?.modelParams?.maxTokens || 1000,
+      topP: config?.modelConfig?.modelParams?.topP || 1
     });
 
-    // 构造提示
+    // Construct prompt
     const prompt = `
       You are a helpful Node.js-based AI.
       The user says: ${input}

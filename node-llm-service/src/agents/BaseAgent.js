@@ -8,18 +8,18 @@ class BaseAgent {
     this.memory = new AdvancedMemory(config.memoryType);
     
     // Initialize the model based on the foundation model type
-    const modelName = config.foundationModel || 'gpt-3.5-turbo';
+    const modelName = config.modelConfig?.foundationModel || 'gpt-3.5-turbo';
     
     if (modelName.startsWith('claude')) {
       // Use Anthropic for Claude models
       const anthropicConfig = {
-        temperature: config.modelParams?.temperature || 0.7,
+        temperature: config.modelConfig?.modelParams?.temperature || 0.7,
         modelName: modelName,
-        maxTokens: config.modelParams?.maxTokens || 1000,
-        topP: config.modelParams?.topP || 1,
+        maxTokens: config.modelConfig?.modelParams?.maxTokens || 1000,
+        topP: config.modelConfig?.modelParams?.topP || 1,
       };
 
-      const anthropicKey = config.apiKeys?.anthropic || process.env.ANTHROPIC_API_KEY;
+      const anthropicKey = config.apiKey || process.env.ANTHROPIC_API_KEY;
       if (!anthropicKey) {
         throw new Error('Anthropic API key not found in config or environment variables');
       }
@@ -29,13 +29,13 @@ class BaseAgent {
     } else {
       // Use OpenAI for GPT models
       const openAIConfig = {
-        temperature: config.modelParams?.temperature || 0.7,
+        temperature: config.modelConfig?.modelParams?.temperature || 0.7,
         modelName: modelName === 'openai' ? 'gpt-3.5-turbo' : modelName,
-        maxTokens: config.modelParams?.maxTokens || 1000,
-        topP: config.modelParams?.topP || 1,
+        maxTokens: config.modelConfig?.modelParams?.maxTokens || 1000,
+        topP: config.modelConfig?.modelParams?.topP || 1,
       };
 
-      const openAIKey = config.apiKeys?.openai || process.env.OPENAI_API_KEY;
+      const openAIKey = config.apiKey || process.env.OPENAI_API_KEY;
       if (!openAIKey) {
         throw new Error('OpenAI API key not found in config or environment variables');
       }

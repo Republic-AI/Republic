@@ -5,13 +5,13 @@ import { agentFrameworks } from './agentFrameworks';
 const defaultConfig = {
   modelConfig: {
     foundationModel: 'gpt-3.5-turbo',
-    apiKey: '',
     modelParams: {
       temperature: 0.7,
       maxTokens: 1000,
       topP: 1
     }
-  }
+  },
+  apiKey: ''
 };
 
 // Configuration fields for different node types
@@ -480,8 +480,8 @@ export default function CustomNode({ data, isConnectable }) {
               <input
                 type="password"
                 placeholder="API Key"
-                value={config.modelConfig?.apiKey || ''}
-                onChange={(e) => handleConfigChange('modelConfig', { ...config.modelConfig, apiKey: e.target.value })}
+                value={config.apiKey || ''}
+                onChange={(e) => handleConfigChange('apiKey', e.target.value)}
               />
               
               <input
