@@ -921,7 +921,7 @@ const executeLangChainAgent = async (input, config) => {
   });
   
   // Get API key from modelConfig
-  const apiKey = config.apiKey;
+  const apiKey = config.modelConfig.apiKey;
   if (!apiKey) {
     throw new Error(`API key not found. Please provide it in the node configuration.`);
   }
@@ -1196,7 +1196,7 @@ const agentHandlers = {
     const langchainConfig = {
       modelConfig: {
         foundationModel: config.modelConfig?.foundationModel || 'gpt-3.5-turbo',
-        apiKey: config.modelConfig?.apiKey,  // Get API key from modelConfig
+        apiKey: config.apiKey,  // Get API key from modelConfig
         modelParams: config.modelConfig?.modelParams || {
           temperature: 0.7,
           maxTokens: 1000,
@@ -1206,7 +1206,7 @@ const agentHandlers = {
       toolsConfig: config.toolsConfig,
       maxIterations: config.maxIterations || 3
     };
-
+    console.log('Executing LangChain agent with config:', langchainConfig);
     return await executeLangChainAgent(input, langchainConfig);
   }
 };
