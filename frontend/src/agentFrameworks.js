@@ -118,7 +118,7 @@ export const agentFrameworks = [
     configFields: [
       // AI Model Configuration
       {
-        id: 'modelConfig',
+        name: 'modelConfig',
         label: 'AI Model Configuration',
         type: 'group',
         fields: {
@@ -1072,8 +1072,8 @@ export const agentFrameworks = [
         label: 'API Keys',
         type: 'group',
         fields: {
-          openai: {
-            name: 'openai',
+          apiKey: {
+            name: 'apiKey',
             label: 'OpenAI API Key',
             type: 'password',
             required: true
@@ -1394,8 +1394,8 @@ export const agentFrameworks = [
         label: 'API Keys',
         type: 'group',
         fields: {
-          openai: {
-            name: 'openai',
+          apiKey: {
+            name: 'apiKey',
             label: 'OpenAI API Key',
             type: 'password',
             required: true
@@ -1690,8 +1690,8 @@ export const agentFrameworks = [
         label: 'API Keys',
         type: 'group',
         fields: {
-          openai: {
-            name: 'openai',
+          apiKey: {
+            name: 'apiKey',
             label: 'OpenAI API Key',
             type: 'password',
             required: true

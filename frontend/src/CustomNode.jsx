@@ -441,7 +441,7 @@ export default function CustomNode({ data, isConnectable }) {
                 <label>{subField.label}</label>
                 {renderConfigField({
                   ...subField,
-                  name: `${subField.name}`,
+                  name: `${fieldName}`,
                   value: value[fieldName]
                 })}
               </div>

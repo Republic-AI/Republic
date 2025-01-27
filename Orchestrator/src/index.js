@@ -921,7 +921,7 @@ const executeLangChainAgent = async (input, config) => {
   });
   
   // Get API key from modelConfig
-  const apiKey = config.modelConfig?.apiKey;
+  const apiKey = config.apiKey;
   if (!apiKey) {
     throw new Error(`API key not found. Please provide it in the node configuration.`);
   }
