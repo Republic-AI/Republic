@@ -1161,7 +1161,7 @@ const agentHandlers = {
   'autogpt': async (input, config) => {
     const autogptConfig = {
       foundationModel: config.modelConfig?.foundationModel || 'gpt-4',
-      apiKey: config.modelConfig?.apiKey,  // Get API key from modelConfig
+      apiKey: config.apiKey,  // Get API key from top level, consistent with other handlers
       modelParams: config.modelConfig?.modelParams || {
         temperature: 0.7,
         maxTokens: 1000,

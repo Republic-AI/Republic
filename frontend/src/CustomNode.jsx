@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Handle } from 'reactflow';
 import { agentFrameworks } from './agentFrameworks';
 
@@ -219,17 +219,28 @@ const NODE_CONFIGS = {
 
 export default function CustomNode({ data, isConnectable }) {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [config, setConfig] = useState(data.config || defaultConfig);
+  const [config, setConfig] = useState(() => {
+    // Initialize with default config if none exists
+    return data.config || { ...defaultConfig };
+  });
+  
+  // Update config when data changes
+  useEffect(() => {
+    if (data.config) {
+      setConfig(data.config);
+    }
+  }, [data.config]);
+
   const framework = data.framework ? agentFrameworks.find(f => f.id === data.framework) : null;
 
   const handleTypeChange = (newType) => {
     const framework = agentFrameworks.find(f => f.id === newType);
-    const config = framework ? createDefaultConfig(framework) : {};
+    const newConfig = framework ? createDefaultConfig(framework) : { ...defaultConfig };
     data.onChange({
       ...data,
       type: newType,
       framework: framework?.id,
-      config
+      config: newConfig
     });
   };
 
@@ -264,25 +275,35 @@ export default function CustomNode({ data, isConnectable }) {
   };
 
   const handleConfigChange = (fieldName, value, subField = null) => {
-    console.log(fieldName + "aaa" + value + "aaaa");
-    if (subField) {
-      data.onChange({
-        ...data,
-        config: {
-          ...data.config,
-          [fieldName]: {
-            ...data.config[fieldName],
-            [subField]: value
+    try {
+      console.log(`Updating config - Field: ${fieldName}, Value: ${value ? '[PRESENT]' : '[EMPTY]'}`);
+      
+      if (subField) {
+        data.onChange({
+          ...data,
+          config: {
+            ...data.config,
+            [fieldName]: {
+              ...(data.config?.[fieldName] || {}),
+              [subField]: value
+            }
           }
-        }
-      });
-    } else {
+        });
+      } else {
+        data.onChange({
+          ...data,
+          config: {
+            ...(data.config || defaultConfig),
+            [fieldName]: value
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error updating config:', error);
+      // Keep the previous state on error
       data.onChange({
         ...data,
-        config: {
-          ...data.config,
-          [fieldName]: value
-        }
+        config: data.config || defaultConfig
       });
     }
   };
