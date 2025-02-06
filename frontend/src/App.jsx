@@ -150,7 +150,7 @@ export default function App() {
 
           {/* AI Agent Node */}
           <div className="node-buttons-group">
-            <h4>AI Agent</h4>
+            <h4>Create Your AI Agent</h4>
             <button 
               onClick={() => handleAddNode()}
               className="add-node-button agent-button"
@@ -158,6 +158,31 @@ export default function App() {
               <span className="button-icon">+</span>
               Add AI Agent
             </button>
+          </div>
+
+          {/* Import AI Agents */}
+          <div className="node-buttons-group">
+            <h4>Import AI Agents</h4>
+            <ul className="import-agents-list">
+              <li>
+                <button className="import-agent-button twitter-fetcher-button">
+                  <span className="button-icon">🐦</span>
+                  Twitter Fetcher
+                </button>
+                <p className="agent-description">
+                  Fetches tweets from multiple target Twitter accounts in one minute.
+                </p>
+              </li>
+              <li>
+                <button className="import-agent-button smart-wallet-follower-button">
+                  <span className="button-icon">💰</span>
+                  Smart Wallet Follower
+                </button>
+                <p className="agent-description">
+                  Follows the transactions of multiple target smart wallets.
+                </p>
+              </li>
+            </ul>
           </div>
 
           {/* Run Flow Button */}
