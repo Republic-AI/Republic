@@ -13,10 +13,14 @@ import './styles.css';
 import CustomNode from './CustomNode';
 import { initialNodes, initialEdges } from './initialData';
 import axios from 'axios';
+import TwitterFetcherNode from './TwitterFetcherNode';
+import SmartWalletFollowerNode from './SmartWalletFollowerNode';
 
 // Define node types
 const nodeTypes = {
-  custom: CustomNode
+  custom: CustomNode,
+  twitterFetcher: TwitterFetcherNode,
+  smartWalletFollower: SmartWalletFollowerNode
 };
 
 export default function App() {
@@ -41,15 +45,57 @@ export default function App() {
     const newNode = {
       id: `node-${nodes.length + 1}`,
       type: 'custom',
-      position: { 
-        x: 100 + Math.random() * 100, 
-        y: 100 + Math.random() * 100 
+      position: {
+        x: 100 + Math.random() * 100,
+        y: 100 + Math.random() * 100
       },
       data: {
         type: type || '',
         framework: type || '',
         inputText: '',
         config: {}
+      }
+    };
+    setNodes((nds) => [...nds, newNode]);
+  };
+
+  const handleAddTwitterFetcher = () => {
+    const newNode = {
+      id: `node-${nodes.length + 1}`,
+      type: 'twitterFetcher',
+      position: {
+        x: 100 + Math.random() * 100,
+        y: 100 + Math.random() * 100
+      },
+      data: {
+        type: 'twitterFetcher',
+        framework: 'twitterFetcher',
+        targetAccounts: [],
+        fetchInterval: 60000, // 1 minute in milliseconds
+        lastFetchTime: null,
+        tweets: [],
+        onChange: (newData) => handleNodeDataChange(newNode.id, newData)
+      }
+    };
+    setNodes((nds) => [...nds, newNode]);
+  };
+
+  const handleAddSmartWalletFollower = () => {
+    const newNode = {
+      id: `node-${nodes.length + 1}`,
+      type: 'smartWalletFollower',
+      position: {
+        x: 100 + Math.random() * 100,
+        y: 100 + Math.random() * 100
+      },
+      data: {
+        type: 'smartWalletFollower',
+        framework: 'smartWalletFollower',
+        targetWallets: [],
+        fetchInterval: 60000, // 1 minute in milliseconds
+        lastFetchTime: null,
+        transactions: [],
+        onChange: (newData) => handleNodeDataChange(newNode.id, newData)
       }
     };
     setNodes((nds) => [...nds, newNode]);
@@ -83,9 +129,9 @@ export default function App() {
             const inputNodeIds = edges
               .filter(e => e.target === node.id)
               .map(e => e.source);
-            
+
             console.log('Output node connected to:', inputNodeIds);
-            
+
             let results = '';
             inputNodeIds.forEach(sourceId => {
               const sourceNode = nodes.find(n => n.id === sourceId);
@@ -165,7 +211,10 @@ export default function App() {
             <h4>Import AI Agents</h4>
             <ul className="import-agents-list">
               <li>
-                <button className="import-agent-button twitter-fetcher-button">
+                <button 
+                  className="import-agent-button twitter-fetcher-button"
+                  onClick={handleAddTwitterFetcher}
+                >
                   <span className="button-icon">🐦</span>
                   Twitter Fetcher
                 </button>
@@ -174,7 +223,10 @@ export default function App() {
                 </p>
               </li>
               <li>
-                <button className="import-agent-button smart-wallet-follower-button">
+                <button 
+                  className="import-agent-button smart-wallet-follower-button"
+                  onClick={handleAddSmartWalletFollower}
+                >
                   <span className="button-icon">💰</span>
                   Smart Wallet Follower
                 </button>
@@ -200,7 +252,6 @@ export default function App() {
         <ReactFlow
           nodes={nodes.map(node => ({
             ...node,
-            type: 'custom',
             data: {
               ...node.data,
               onChange: (newData) => handleNodeDataChange(node.id, newData)

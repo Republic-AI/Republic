@@ -779,3 +779,94 @@ html, body {
 .smart-wallet-follower-button .button-icon {
   font-size: 18px;
 }
+
+/* Twitter Fetcher Node Styles */
+.account-input-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.add-account-btn {
+  padding: 4px 8px;
+  background: #1da1f2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.account-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.account-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.remove-account-btn {
+  padding: 2px 6px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.last-fetch-time {
+  font-size: 12px;
+  color: #666;
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* Smart Wallet Follower Node Styles */
+.wallet-input-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.add-wallet-btn {
+  padding: 4px 8px;
+  background: #1da1f2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.wallet-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.wallet-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.remove-wallet-btn {
+  padding: 2px 6px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
