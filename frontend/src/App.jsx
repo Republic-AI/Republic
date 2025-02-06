@@ -117,8 +117,15 @@ export default function App() {
       data: {
         type: 'tradingAgent',
         framework: 'tradingAgent',
-        tradingPairs: [],
-        fetchInterval: 60000, // 1 minute in milliseconds
+        settings: {
+          fixedBuy: '',
+          maxBuy: '',
+          sellStrategy: 'copy',
+          gas: '',
+          autoSlippage: false,
+          antiMEV: false
+        },
+        fetchInterval: 60000,
         lastFetchTime: null,
         tradingData: [],
         onChange: (newData) => handleNodeDataChange(newNode.id, newData)
