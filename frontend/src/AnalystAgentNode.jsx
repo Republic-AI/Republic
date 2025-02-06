@@ -2,39 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { Handle } from 'reactflow';
 
 export default function AnalystAgentNode({ data }) {
-  const [analysisParameters, setAnalysisParameters] = useState(data.analysisParameters || []);
-  const [newParameter, setNewParameter] = useState('');
   const [isConfigOpen, setIsConfigOpen] = useState(true);
+  const [parameters, setParameters] = useState(data.parameters || {
+    mktCap: 0,
+    liquidity: 0,
+    holders: 0,
+    snipers: 0,
+    blueChip: 0,
+    top10: 0,
+    hasAudit: false
+  });
 
-  const handleAddParameter = () => {
-    if (newParameter && !analysisParameters.includes(newParameter)) {
-      const updatedParams = [...analysisParameters, newParameter];
-      setAnalysisParameters(updatedParams);
-      data.onChange({
-        ...data,
-        analysisParameters: updatedParams
-      });
-      setNewParameter('');
-    }
-  };
-
-  const handleRemoveParameter = (parameter) => {
-    const updatedParams = analysisParameters.filter(item => item !== parameter);
-    setAnalysisParameters(updatedParams);
+  const handleParameterChange = (paramName, value) => {
+    const updatedParams = {
+      ...parameters,
+      [paramName]: value
+    };
+    setParameters(updatedParams);
     data.onChange({
       ...data,
-      analysisParameters: updatedParams
+      parameters: updatedParams
     });
   };
 
   useEffect(() => {
     const fetchAnalysis = async () => {
-      if (analysisParameters.length === 0) return;
       try {
         const response = await fetch('http://localhost:5002/fetch-analysis', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ parameters: analysisParameters })
+          body: JSON.stringify({ parameters })
         });
         const result = await response.json();
         data.onChange({
@@ -49,7 +46,7 @@ export default function AnalystAgentNode({ data }) {
 
     const interval = setInterval(fetchAnalysis, data.fetchInterval);
     return () => clearInterval(interval);
-  }, [analysisParameters, data.fetchInterval]);
+  }, [parameters, data.fetchInterval]);
 
   return (
     <div className={`custom-node ${isConfigOpen ? 'expanded' : ''}`}>
@@ -70,36 +67,97 @@ export default function AnalystAgentNode({ data }) {
       {isConfigOpen && (
         <div className="node-config">
           <div className="config-section">
-            <h4>Analysis Parameters</h4>
-            <div className="parameter-input-container">
-              <input 
-                type="text"
-                value={newParameter}
-                onChange={(e) => setNewParameter(e.target.value)}
-                placeholder="Enter analysis parameter"
-                className="node-input"
-              />
-              <button 
-                onClick={handleAddParameter}
-                className="add-parameter-btn"
-              >
-                Add
-              </button>
-            </div>
+            <h4>Market Analysis Parameters</h4>
             
-            <ul className="parameter-list">
-              {analysisParameters.map((param, index) => (
-                <li key={index} className="parameter-item">
-                  {param}
-                  <button
-                    onClick={() => handleRemoveParameter(param)}
-                    className="remove-parameter-btn"
-                  >
-                    ✕
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className="slider-group">
+              <label>Market Cap (0 - $1B)</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="1000000000"
+                  value={parameters.mktCap}
+                  onChange={(e) => handleParameterChange('mktCap', Number(e.target.value))}
+                  className="node-slider"
+                />
+                <span className="slider-value">${(parameters.mktCap / 1000000).toFixed(1)}M</span>
+              </div>
+
+              <label>Liquidity (0 - $1B)</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="1000000000"
+                  value={parameters.liquidity}
+                  onChange={(e) => handleParameterChange('liquidity', Number(e.target.value))}
+                  className="node-slider"
+                />
+                <span className="slider-value">${(parameters.liquidity / 1000000).toFixed(1)}M</span>
+              </div>
+
+              <label>Holders (0 - 5K)</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="5000"
+                  value={parameters.holders}
+                  onChange={(e) => handleParameterChange('holders', Number(e.target.value))}
+                  className="node-slider"
+                />
+                <span className="slider-value">{parameters.holders}</span>
+              </div>
+
+              <label>Snipers (0/70 - 70/70)</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="70"
+                  value={parameters.snipers}
+                  onChange={(e) => handleParameterChange('snipers', Number(e.target.value))}
+                  className="node-slider"
+                />
+                <span className="slider-value">{parameters.snipers}/70</span>
+              </div>
+
+              <label>Blue Chip (%)</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={parameters.blueChip}
+                  onChange={(e) => handleParameterChange('blueChip', Number(e.target.value))}
+                  className="node-slider"
+                />
+                <span className="slider-value">{parameters.blueChip}%</span>
+              </div>
+
+              <label>Top 10 (%)</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={parameters.top10}
+                  onChange={(e) => handleParameterChange('top10', Number(e.target.value))}
+                  className="node-slider"
+                />
+                <span className="slider-value">{parameters.top10}%</span>
+              </div>
+
+              <div className="toggle-container">
+                <label>Audit</label>
+                <input
+                  type="checkbox"
+                  checked={parameters.hasAudit}
+                  onChange={(e) => handleParameterChange('hasAudit', e.target.checked)}
+                  className="node-toggle"
+                />
+              </div>
+            </div>
 
             {data.lastFetchTime && (
               <div className="last-fetch-time">

@@ -75,7 +75,8 @@ export default function App() {
         type: 'twitterFetcher',
         framework: 'twitterFetcher',
         targetAccounts: [],
-        fetchInterval: 60000, // 1 minute in milliseconds
+        bearerToken: '',
+        fetchInterval: 60000,
         lastFetchTime: null,
         tweets: [],
         onChange: (newData) => handleNodeDataChange(newNode.id, newData)
@@ -137,8 +138,16 @@ export default function App() {
       data: {
         type: 'analystAgent',
         framework: 'analystAgent',
-        analysisParameters: [],
-        fetchInterval: 60000, // 1 minute in milliseconds
+        parameters: {
+          mktCap: 0,
+          liquidity: 0,
+          holders: 0,
+          snipers: 0,
+          blueChip: 0,
+          top10: 0,
+          hasAudit: false
+        },
+        fetchInterval: 60000,
         lastFetchTime: null,
         analysisData: [],
         onChange: (newData) => handleNodeDataChange(newNode.id, newData)

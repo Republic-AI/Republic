@@ -962,3 +962,55 @@ html, body {
 .analyst-agent-button .button-icon {
   font-size: 18px;
 }
+
+.api-config-container {
+  margin-bottom: 16px;
+}
+
+.api-config-container input[type="password"] {
+  font-family: monospace;
+  letter-spacing: 2px;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.slider-group label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.node-slider {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  background: #ddd;
+  border-radius: 2px;
+  outline: none;
+}
+
+.node-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #007bff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider-value {
+  min-width: 60px;
+  text-align: right;
+  font-size: 12px;
+  color: #666;
+}

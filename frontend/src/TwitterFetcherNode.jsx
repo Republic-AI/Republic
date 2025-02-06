@@ -4,7 +4,17 @@ import { Handle } from 'reactflow';
 export default function TwitterFetcherNode({ data }) {
   const [accounts, setAccounts] = useState(data.targetAccounts || []);
   const [newAccount, setNewAccount] = useState('');
+  const [bearerToken, setBearerToken] = useState(data.bearerToken || '');
   const [isConfigOpen, setIsConfigOpen] = useState(true);
+
+  const handleBearerTokenChange = (e) => {
+    const newToken = e.target.value;
+    setBearerToken(newToken);
+    data.onChange({
+      ...data,
+      bearerToken: newToken
+    });
+  };
 
   const handleAddAccount = () => {
     if (newAccount && !accounts.includes(newAccount)) {
@@ -12,6 +22,7 @@ export default function TwitterFetcherNode({ data }) {
       setAccounts(updatedAccounts);
       data.onChange({
         ...data,
+        bearerToken,
         targetAccounts: updatedAccounts
       });
       setNewAccount('');
@@ -41,9 +52,19 @@ export default function TwitterFetcherNode({ data }) {
         });
 
         const result = await response.json();
+        
+        // Filter tweets or retweets in the last 24 hours and extract only the text
+        let recentTweets = [];
+        if (Array.isArray(result.tweets)) {
+          recentTweets = result.tweets.filter(tweet => {
+            if (!tweet.createdAt) return false;
+            const tweetTime = new Date(tweet.createdAt).getTime();
+            return (Date.now() - tweetTime) <= (24 * 60 * 60 * 1000);
+          }).map(tweet => tweet.text);
+        }
+        
         data.onChange({
-          ...data,
-          tweets: result.tweets,
+          tweets: recentTweets,
           lastFetchTime: new Date().toISOString()
         });
       } catch (error) {
@@ -75,6 +96,17 @@ export default function TwitterFetcherNode({ data }) {
       {isConfigOpen && (
         <div className="node-config">
           <div className="config-section">
+            <h4>Twitter API Configuration</h4>
+            <div className="api-config-container">
+              <input
+                type="password"
+                value={bearerToken}
+                onChange={handleBearerTokenChange}
+                placeholder="Enter Twitter API Bearer Token"
+                className="node-input"
+              />
+            </div>
+            
             <h4>Target Twitter Accounts</h4>
             <div className="account-input-container">
               <input
