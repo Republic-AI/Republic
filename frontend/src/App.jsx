@@ -15,12 +15,16 @@ import { initialNodes, initialEdges } from './initialData';
 import axios from 'axios';
 import TwitterFetcherNode from './TwitterFetcherNode';
 import SmartWalletFollowerNode from './SmartWalletFollowerNode';
+import TradingAgentNode from './TradingAgentNode';
+import AnalystAgentNode from './AnalystAgentNode';
 
 // Define node types
 const nodeTypes = {
   custom: CustomNode,
   twitterFetcher: TwitterFetcherNode,
-  smartWalletFollower: SmartWalletFollowerNode
+  smartWalletFollower: SmartWalletFollowerNode,
+  tradingAgent: TradingAgentNode,
+  analystAgent: AnalystAgentNode
 };
 
 export default function App() {
@@ -95,6 +99,48 @@ export default function App() {
         fetchInterval: 60000, // 1 minute in milliseconds
         lastFetchTime: null,
         transactions: [],
+        onChange: (newData) => handleNodeDataChange(newNode.id, newData)
+      }
+    };
+    setNodes((nds) => [...nds, newNode]);
+  };
+
+  const handleAddTradingAgent = () => {
+    const newNode = {
+      id: `node-${nodes.length + 1}`,
+      type: 'tradingAgent',
+      position: {
+        x: 100 + Math.random() * 100,
+        y: 100 + Math.random() * 100
+      },
+      data: {
+        type: 'tradingAgent',
+        framework: 'tradingAgent',
+        tradingPairs: [],
+        fetchInterval: 60000, // 1 minute in milliseconds
+        lastFetchTime: null,
+        tradingData: [],
+        onChange: (newData) => handleNodeDataChange(newNode.id, newData)
+      }
+    };
+    setNodes((nds) => [...nds, newNode]);
+  };
+
+  const handleAddAnalystAgent = () => {
+    const newNode = {
+      id: `node-${nodes.length + 1}`,
+      type: 'analystAgent',
+      position: {
+        x: 100 + Math.random() * 100,
+        y: 100 + Math.random() * 100
+      },
+      data: {
+        type: 'analystAgent',
+        framework: 'analystAgent',
+        analysisParameters: [],
+        fetchInterval: 60000, // 1 minute in milliseconds
+        lastFetchTime: null,
+        analysisData: [],
         onChange: (newData) => handleNodeDataChange(newNode.id, newData)
       }
     };
@@ -232,6 +278,30 @@ export default function App() {
                 </button>
                 <p className="agent-description">
                   Follows the transactions of multiple target smart wallets.
+                </p>
+              </li>
+              <li>
+                <button 
+                  className="import-agent-button analyst-agent-button"
+                  onClick={handleAddAnalystAgent}
+                >
+                  <span className="button-icon">🔍</span>
+                  Analyst Agent
+                </button>
+                <p className="agent-description">
+                  Analyzes specified parameters to generate insights.
+                </p>
+              </li>
+              <li>
+                <button 
+                  className="import-agent-button trading-agent-button"
+                  onClick={handleAddTradingAgent}
+                >
+                  <span className="button-icon">📈</span>
+                  Trading Agent
+                </button>
+                <p className="agent-description">
+                  Fetches trading data for designated trading pairs.
                 </p>
               </li>
             </ul>
