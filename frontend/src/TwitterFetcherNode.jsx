@@ -48,22 +48,33 @@ export default function TwitterFetcherNode({ data }) {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ accounts })
+          body: JSON.stringify({ 
+            accounts,
+            bearerToken,
+            includeRetweets: true,
+            includeProfiles: true
+          })
         });
 
         const result = await response.json();
         
-        // Filter tweets or retweets in the last 24 hours and extract only the text
         let recentTweets = [];
         if (Array.isArray(result.tweets)) {
           recentTweets = result.tweets.filter(tweet => {
             if (!tweet.createdAt) return false;
             const tweetTime = new Date(tweet.createdAt).getTime();
             return (Date.now() - tweetTime) <= (24 * 60 * 60 * 1000);
-          }).map(tweet => tweet.text);
+          }).map(tweet => ({
+            type: tweet.isRetweet ? 'retweet' : 'tweet',
+            text: tweet.text,
+            createdAt: tweet.createdAt,
+            author: tweet.author,
+            retweetedProfile: tweet.isRetweet ? tweet.retweetedProfile : null
+          }));
         }
         
         data.onChange({
+          ...data,
           tweets: recentTweets,
           lastFetchTime: new Date().toISOString()
         });
@@ -72,10 +83,9 @@ export default function TwitterFetcherNode({ data }) {
       }
     };
 
-    // Set up interval for fetching tweets
     const interval = setInterval(fetchTweets, data.fetchInterval);
     return () => clearInterval(interval);
-  }, [accounts, data.fetchInterval]);
+  }, [accounts, bearerToken, data.fetchInterval]);
 
   return (
     <div className={`custom-node ${isConfigOpen ? 'expanded' : ''}`}>

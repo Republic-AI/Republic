@@ -14,7 +14,7 @@ import CustomNode from './CustomNode';
 import { initialNodes, initialEdges } from './initialData';
 import axios from 'axios';
 import TwitterFetcherNode from './TwitterFetcherNode';
-import SmartWalletFollowerNode from './SmartWalletFollowerNode';
+import SmartMoneyFollowerNode from './SmartMoneyFollowerNode';
 import TradingAgentNode from './TradingAgentNode';
 import AnalystAgentNode from './AnalystAgentNode';
 
@@ -22,7 +22,7 @@ import AnalystAgentNode from './AnalystAgentNode';
 const nodeTypes = {
   custom: CustomNode,
   twitterFetcher: TwitterFetcherNode,
-  smartWalletFollower: SmartWalletFollowerNode,
+  smartMoneyFollower: SmartMoneyFollowerNode,
   tradingAgent: TradingAgentNode,
   analystAgent: AnalystAgentNode
 };
@@ -85,19 +85,19 @@ export default function App() {
     setNodes((nds) => [...nds, newNode]);
   };
 
-  const handleAddSmartWalletFollower = () => {
+  const handleAddSmartMoneyFollower = () => {
     const newNode = {
       id: `node-${nodes.length + 1}`,
-      type: 'smartWalletFollower',
+      type: 'smartMoneyFollower',
       position: {
         x: 100 + Math.random() * 100,
         y: 100 + Math.random() * 100
       },
       data: {
-        type: 'smartWalletFollower',
-        framework: 'smartWalletFollower',
+        type: 'smartMoneyFollower',
+        framework: 'smartMoneyFollower',
         targetWallets: [],
-        fetchInterval: 60000, // 1 minute in milliseconds
+        fetchInterval: 60000,
         lastFetchTime: null,
         transactions: [],
         onChange: (newData) => handleNodeDataChange(newNode.id, newData)
@@ -286,14 +286,14 @@ export default function App() {
               </li>
               <li>
                 <button 
-                  className="import-agent-button smart-wallet-follower-button"
-                  onClick={handleAddSmartWalletFollower}
+                  className="import-agent-button smart-money-follower-button"
+                  onClick={handleAddSmartMoneyFollower}
                 >
                   <span className="button-icon">💰</span>
-                  Smart Wallet Follower
+                  Smart Money Follower
                 </button>
                 <p className="agent-description">
-                  Follows the transactions of multiple target smart wallets.
+                  Follows the transactions of multiple smart money addresses.
                 </p>
               </li>
               <li>
