@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactFlow, {
   addEdge,
   Background,
@@ -17,6 +17,7 @@ import TwitterFetcherNode from './TwitterFetcherNode';
 import SmartMoneyFollowerNode from './SmartMoneyFollowerNode';
 import TradingAgentNode from './TradingAgentNode';
 import AnalystAgentNode from './AnalystAgentNode';
+import TwitterAgentNode from './TwitterAgentNode';
 
 // Define node types
 const nodeTypes = {
@@ -24,12 +25,15 @@ const nodeTypes = {
   twitterFetcher: TwitterFetcherNode,
   smartMoneyFollower: SmartMoneyFollowerNode,
   tradingAgent: TradingAgentNode,
-  analystAgent: AnalystAgentNode
+  analystAgent: AnalystAgentNode,
+  twitterAgent: TwitterAgentNode
 };
 
 export default function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [isSocialMediaHubOpen, setIsSocialMediaHubOpen] = useState(false);
+  const [isDefiHubOpen, setIsDefiHubOpen] = useState(false);
 
   const onConnect = (params) => {
     setEdges((eds) => addEdge(params, eds));
@@ -163,6 +167,47 @@ export default function App() {
     setNodes((nds) => [...nds, newNode]);
   };
 
+  const handleAddTwitterAgent = () => {
+    const newNode = {
+      id: `node-${nodes.length + 1}`,
+      type: 'twitterAgent',
+      position: {
+        x: 100 + Math.random() * 100,
+        y: 100 + Math.random() * 100
+      },
+      data: {
+        type: 'twitterAgent',
+        framework: 'eliza',
+        bearerToken: '',
+        pullConfig: {
+          prompt: '',
+          realTime: false,
+          timeLength: '24',
+          targetAccounts: [],
+          newAccount: '',
+          fetchInterval: 60000,
+          lastFetchTime: null,
+          checkCA: false,
+          checkCoin: false
+        },
+        postConfig: {
+          elizaPrompt: '',
+          customRules: '',
+          targetAccounts: [],
+          newAccount: ''
+        },
+        replyConfig: {
+          elizaPrompt: '',
+          customRules: '',
+          targetAccounts: [],
+          newAccount: ''
+        },
+        onChange: (newData) => handleNodeDataChange(newNode.id, newData)
+      }
+    };
+    setNodes((nds) => [...nds, newNode]);
+  };
+
   const handleRunFlow = async () => {
     try {
       const requestBody = {
@@ -268,59 +313,86 @@ export default function App() {
             </button>
           </div>
 
-          {/* Import AI Agents */}
+          {/* AI Agent Marketplace */}
           <div className="node-buttons-group">
-            <h4>Import AI Agents</h4>
-            <ul className="import-agents-list">
-              <li>
-                <button 
-                  className="import-agent-button twitter-fetcher-button"
-                  onClick={handleAddTwitterFetcher}
-                >
-                  <span className="button-icon">🐦</span>
-                  Twitter Fetcher
-                </button>
-                <p className="agent-description">
-                  Fetches tweets from multiple target Twitter accounts in one minute.
-                </p>
-              </li>
-              <li>
-                <button 
-                  className="import-agent-button smart-money-follower-button"
-                  onClick={handleAddSmartMoneyFollower}
-                >
-                  <span className="button-icon">💰</span>
-                  Smart Money Follower
-                </button>
-                <p className="agent-description">
-                  Follows the transactions of multiple smart money addresses.
-                </p>
-              </li>
-              <li>
-                <button 
-                  className="import-agent-button analyst-agent-button"
-                  onClick={handleAddAnalystAgent}
-                >
-                  <span className="button-icon">🔍</span>
-                  Analyst Agent
-                </button>
-                <p className="agent-description">
-                  Analyzes specified parameters to generate insights.
-                </p>
-              </li>
-              <li>
-                <button 
-                  className="import-agent-button trading-agent-button"
-                  onClick={handleAddTradingAgent}
-                >
-                  <span className="button-icon">📈</span>
-                  Trading Agent
-                </button>
-                <p className="agent-description">
-                  Fetches trading data for designated trading pairs.
-                </p>
-              </li>
-            </ul>
+            <h4>AI Agent Marketplace</h4>
+            <div className="marketplace-folders">
+              {/* Info Hub Folder */}
+              <div className="marketplace-folder">
+                <div className="folder-header" onClick={() => setIsSocialMediaHubOpen(!isSocialMediaHubOpen)}>
+                  <span className="folder-icon">{isSocialMediaHubOpen ? '📂' : '📁'}</span>
+                  <span className="folder-name">Social Media Hub</span>
+                  <span className="folder-arrow">{isSocialMediaHubOpen ? '▼' : '▶'}</span>
+                </div>
+                
+                {isSocialMediaHubOpen && (
+                  <ul className="import-agents-list">
+                    <li>
+                      <button 
+                        className="import-agent-button twitter-agent-button"
+                        onClick={handleAddTwitterAgent}
+                      >
+                        <span className="button-icon">🤖</span>
+                        Twitter Agent (Eliza)
+                      </button>
+                      <p className="agent-description">
+                        Eliza-based Twitter agent for pulling, posting, and replying to tweets.
+                      </p>
+                    </li>
+                  </ul>
+                )}
+              </div>
+
+              {/* DeFi Hub Folder */}
+              <div className="marketplace-folder">
+                <div className="folder-header" onClick={() => setIsDefiHubOpen(!isDefiHubOpen)}>
+                  <span className="folder-icon">{isDefiHubOpen ? '📂' : '📁'}</span>
+                  <span className="folder-name">DeFi Hub</span>
+                  <span className="folder-arrow">{isDefiHubOpen ? '▼' : '▶'}</span>
+                </div>
+                
+                {isDefiHubOpen && (
+                  <ul className="import-agents-list">
+                    <li>
+                      <button 
+                        className="import-agent-button smart-money-follower-button"
+                        onClick={handleAddSmartMoneyFollower}
+                      >
+                        <span className="button-icon">💰</span>
+                        Smart Money Follower
+                      </button>
+                      <p className="agent-description">
+                        Follows the transactions of multiple smart money addresses.
+                      </p>
+                    </li>
+                    <li>
+                      <button 
+                        className="import-agent-button analyst-agent-button"
+                        onClick={handleAddAnalystAgent}
+                      >
+                        <span className="button-icon">🔍</span>
+                        Analyst Agent
+                      </button>
+                      <p className="agent-description">
+                        Analyzes specified parameters to generate insights.
+                      </p>
+                    </li>
+                    <li>
+                      <button 
+                        className="import-agent-button trading-agent-button"
+                        onClick={handleAddTradingAgent}
+                      >
+                        <span className="button-icon">📈</span>
+                        Trading Agent
+                      </button>
+                      <p className="agent-description">
+                        Fetches trading data for designated trading pairs.
+                      </p>
+                    </li>
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Run Flow Button */}
