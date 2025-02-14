@@ -7,6 +7,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     ports:
       - "5001:5001"
+    image: mirror.gcr.io/library/python:3.9-slim
 
   node-llm-service:
     build: ./node-llm-service
@@ -15,6 +16,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     ports:
       - "5002:5002"
+    image: mirror.gcr.io/library/node:18-alpine
 
   orchestrator:
     build: ./orchestrator

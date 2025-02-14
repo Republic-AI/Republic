@@ -3,6 +3,7 @@ import { Handle } from 'reactflow';
 
 export default function AnalystAgentNode({ data }) {
   const [isConfigOpen, setIsConfigOpen] = useState(true);
+  const [contractAddress, setContractAddress] = useState('');
   const [parameters, setParameters] = useState(data.parameters || {
     mktCap: 0,
     liquidity: 0,
@@ -25,28 +26,36 @@ export default function AnalystAgentNode({ data }) {
     });
   };
 
-  useEffect(() => {
-    const fetchAnalysis = async () => {
-      try {
-        const response = await fetch('http://localhost:5002/fetch-analysis', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ parameters })
-        });
-        const result = await response.json();
-        data.onChange({
-          ...data,
-          analysisData: result.analysisData,
-          lastFetchTime: new Date().toISOString()
-        });
-      } catch (error) {
-        console.error('Error fetching analysis data:', error);
-      }
-    };
+  const handleContractAddressChange = (event) => {
+    setContractAddress(event.target.value);
+    data.onChange({
+      ...data,
+      contractAddress: event.target.value
+    });
+  };
 
-    const interval = setInterval(fetchAnalysis, data.fetchInterval);
-    return () => clearInterval(interval);
-  }, [parameters, data.fetchInterval]);
+  useEffect(() => {
+    // No longer fetching on an interval.  Fetch is triggered by button.
+  }, []);
+
+  const handleRunAnalysis = async () => {
+    try {
+      const response = await fetch('http://localhost:5002/fetch-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contractAddress, parameters }) // Send contractAddress
+      });
+      const result = await response.json();
+      data.onChange({
+        ...data,
+        analysisData: result.analysisData, // Expecting analysisData from backend
+        lastFetchTime: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching analysis data:', error);
+      alert(`Error fetching analysis: ${error.message}`); // Display error
+    }
+  };
 
   return (
     <div className={`custom-node ${isConfigOpen ? 'expanded' : ''}`}>
@@ -66,6 +75,16 @@ export default function AnalystAgentNode({ data }) {
 
       {isConfigOpen && (
         <div className="node-config">
+          <div className="config-section">
+            <h4>Contract Address</h4>
+            <input
+              type="text"
+              value={contractAddress}
+              onChange={handleContractAddressChange}
+              placeholder="Enter contract address"
+              className="node-input"
+            />
+          </div>
           <div className="config-section">
             <h4>Market Analysis Parameters</h4>
             
@@ -159,11 +178,9 @@ export default function AnalystAgentNode({ data }) {
               </div>
             </div>
 
-            {data.lastFetchTime && (
-              <div className="last-fetch-time">
-                Last fetch: {new Date(data.lastFetchTime).toLocaleTimeString()}
-              </div>
-            )}
+            <button onClick={handleRunAnalysis} className="run-analysis-button">
+              Run Analysis
+            </button>
           </div>
         </div>
       )}

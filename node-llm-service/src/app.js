@@ -1,49 +1,77 @@
 const express = require("express");
-const bodyParser = require("body-parser");
-const { OpenAI } = require("langchain/llms/openai");
 require("dotenv").config();
+const axios = require('axios');
+const cors = require('cors');
+const handlers = require('./handlers');
 
 const app = express();
-app.use(bodyParser.json());
+const port = process.env.PORT || 5002;
 
-app.post("/run", async (req, res) => {
+// Enable CORS for all origins (for development)
+app.use(cors());
+app.use(express.json());
+
+// Endpoint to handle fetching analysis data
+app.post('/fetch-analysis', async (req, res) => {
+    try {
+        const { contractAddress, parameters } = req.body;
+
+        if (!contractAddress) {
+            return res.status(400).json({ error: "Missing required parameter: contractAddress" });
+        }
+
+        // Call the handler directly (assuming it's properly registered)
+        const handler = handlers['analystAgent'];
+        if (!handler) {
+            return res.status(500).json({ error: "Analyst agent handler not found" });
+        }
+
+        // Create a mock node object – in a real flow, this would come from the /execute-flow endpoint
+        const mockNode = {
+            data: {
+                type: 'analystAgent',
+                contractAddress,
+                parameters
+            }
+        };
+
+        const result = await handler(mockNode);
+        res.json(result); // Send the entire result object
+
+    } catch (error) {
+        console.error('Error in /fetch-analysis:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- Main Flow Execution Endpoint ---
+app.post('/execute-flow', async (req, res) => {
   try {
-    const { input, config } = req.body;
+    const { nodes, edges } = req.body;
 
-    // Get API key from config or environment
-    const apiKey = config?.apiKey || process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error('OpenAI API key not found in config or environment variables');
+    if (!nodes || !Array.isArray(nodes)) {
+      return res.status(400).json({ error: "Invalid 'nodes' data provided." });
+    }
+    if (!edges) { // Edges can be null or an array
+      return res.status(400).json({ error: "Invalid 'edges' data provided." });
     }
 
-    // Create OpenAI LLM with consistent config structure
-    const model = new OpenAI({
-      openAIApiKey: apiKey,
-      temperature: config?.modelConfig?.modelParams?.temperature || 0.7,
-      modelName: config?.modelConfig?.foundationModel || 'gpt-3.5-turbo',
-      maxTokens: config?.modelConfig?.modelParams?.maxTokens || 1000,
-      topP: config?.modelConfig?.modelParams?.topP || 1
-    });
+    const results = {};
+    for (const node of nodes) {
+      const handler = handlers[node.data.type];
+      if (!handler) {
+        throw new Error(`No handler found for node type: ${node.data.type}`);
+      }
+      results[node.id] = await handler(node);
+    }
 
-    // Construct prompt
-    const prompt = `
-      You are a helpful Node.js-based AI.
-      The user says: ${input}
-      Please respond in a brief and friendly manner.
-    `;
-
-    const response = await model.call(prompt);
-
-    res.json({
-      result: `[Node LLM] ${response.trim()}`
-    });
-  } catch (err) {
-    console.error("Error in node-llm-service:", err);
-    res.status(500).json({ error: err.message });
+    res.json({ results });
+  } catch (error) {
+    console.error('Error in /execute-flow:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
-const PORT = 5002;
-app.listen(PORT, () => {
-  console.log(`Node LLM service listening on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
 });

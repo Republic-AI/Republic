@@ -1,5 +1,5 @@
 # Build stage
-FROM node:18-alpine as builder
+FROM node:18-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -10,41 +10,20 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy project files
+# Copy the rest of the application
 COPY . .
 
-# Build project
+# Build the application
 RUN npm run build
 
 # Production stage
 FROM nginx:stable-alpine
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Copy built files
+# Copy built files from builder stage
 COPY --from=builder /app/build /usr/share/nginx/html
 
 # Expose port
 EXPOSE 80
 
 # Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
-
-
-RUN apk add --no-cache python3 make g++
-
-
-
-
-
-# FROM node:18-alpine as builder
-# WORKDIR /app
-# COPY . /app
-# RUN npm install
-# RUN npm run build
-
-# FROM nginx:alpine
-# COPY --from=builder /app/build /usr/share/nginx/html
-# EXPOSE 80
-# CMD ["nginx", "-g", "daemon off;"] 
+CMD ["nginx", "-g", "daemon off;"] 

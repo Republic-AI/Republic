@@ -1169,3 +1169,132 @@ html, body {
   font-size: 12px;
   color: #495057;
 }
+
+.test-button {
+  background: #1da1f2;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.test-button:hover {
+  background: #1a91da;
+}
+
+.discord-agent-button {
+  background-color: #7289da; /* Discord Blue */
+}
+
+.telegram-agent-button {
+  background-color: #229ED9; /* Telegram Blue */
+}
+
+.twitter-kol-button {
+  background-color: #1da1f2; /* Twitter Blue */
+  color: white;
+}
+
+.run-analysis-button {
+  background-color: #4CAF50; /* Green */
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.run-analysis-button:hover {
+  background-color: #367c39; /* Darker Green */
+}
+
+/* Wallet Node Styles */
+.wallet-node {
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 200px;
+}
+
+.wallet-node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.wallet-title {
+  font-weight: bold;
+  color: #333;
+}
+
+.wallet-content {
+  padding: 10px 0;
+}
+
+.connect-wallet-button {
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.connect-wallet-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.connect-wallet-button:hover {
+  background-color: #1557b0;
+}
+
+.connect-wallet-button:disabled:hover {
+  background-color: #ccc;
+}
+
+.disconnect-wallet-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.disconnect-wallet-button:hover {
+  background-color: #c82333;
+}
+
+.wallet-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8f9fa;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.wallet-address {
+  font-family: monospace;
+  color: #666;
+}
+
+/* Add this to your existing sidebar button styles */
+.wallet-button {
+  background-color: #1a73e8;
+  color: white;
+}
+
+.wallet-button:hover {
+  background-color: #1557b0;
+}

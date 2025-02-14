@@ -1,13 +1,13 @@
-const customHandler = require('./custom');
-const inputHandler = require('./input');
-const outputHandler = require('./output');
-const twitterFetcherHandler = require('./twitterFetcher');
+const twitterAgentHandler = require('./twitterAgent');
+const discordAgentHandler = require('./discordAgent');
+const telegramAgentHandler = require('./telegramAgent');
+const analystAgentHandler = require('./analystAgent');
 
 const handlers = {
-  custom: customHandler,
-  input: inputHandler,
-  output: outputHandler,
-  twitterFetcher: twitterFetcherHandler
+  twitterAgent: twitterAgentHandler,
+  discordAgent: discordAgentHandler,
+  telegramAgent: telegramAgentHandler,
+  analystAgent: analystAgentHandler
 };
 
 module.exports = handlers; 

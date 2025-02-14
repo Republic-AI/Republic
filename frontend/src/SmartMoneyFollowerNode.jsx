@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Handle } from 'reactflow';
 
-export default function SmartMoneyFollowerNode({ data }) {
+export default function SmartMoneyAddressNode({ data }) {
   const [wallets, setWallets] = useState(data.targetWallets || []);
   const [newWallet, setNewWallet] = useState('');
   const [isConfigOpen, setIsConfigOpen] = useState(true);

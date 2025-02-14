@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Handle } from 'reactflow';
+import { ElizaBot } from './utils/eliza';
 
 export default function TwitterAgentNode({ data }) {
   const [isConfigOpen, setIsConfigOpen] = useState(true);
@@ -14,7 +15,9 @@ export default function TwitterAgentNode({ data }) {
     targetAccounts: [],
     newAccount: '',
     checkCA: false,
-    checkCoin: false
+    checkCoin: false,
+    tweets: [],
+    lastFetchTime: null,
   });
   const [postConfig, setPostConfig] = useState({
     elizaPrompt: '',
@@ -28,6 +31,26 @@ export default function TwitterAgentNode({ data }) {
     targetAccounts: [],
     newAccount: ''
   });
+  const [elizaBot, setElizaBot] = useState(null);
+
+  useEffect(() => {
+    // Initialize Eliza with custom rules when they change
+    const postRules = parseRules(postConfig.customRules);
+    const replyRules = parseRules(replyConfig.customRules);
+    
+    setElizaBot({
+      post: new ElizaBot(postRules),
+      reply: new ElizaBot(replyRules)
+    });
+  }, [postConfig.customRules, replyConfig.customRules]);
+
+  const parseRules = (rulesText) => {
+    try {
+      return JSON.parse(rulesText);
+    } catch {
+      return {};
+    }
+  };
 
   const handleApiConfigChange = (value) => {
     setApiConfig({ bearerToken: value });
@@ -101,6 +124,119 @@ export default function TwitterAgentNode({ data }) {
       handleReplyConfigChange('newAccount', '');
     }
   };
+
+  const handlePostTweet = async (account) => {
+    if (!elizaBot || !apiConfig.bearerToken) return;
+    
+    try {
+      const tweet = elizaBot.post.generateTweet(postConfig.elizaPrompt);
+      
+      const response = await fetch('http://localhost:5002/post-tweet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bearerToken: apiConfig.bearerToken,
+          account,
+          tweet
+        })
+      });
+      
+      const result = await response.json();
+      console.log('Posted tweet:', result);
+    } catch (error) {
+      console.error('Error posting tweet:', error);
+      alert(`Error posting tweet: ${error.message}`); // Display error to user
+    }
+  };
+
+  const handleReplyTweet = async (account, originalTweet) => {
+    if (!elizaBot || !apiConfig.bearerToken) return;
+    
+    try {
+      const reply = elizaBot.reply.generateReply(
+        originalTweet,
+        replyConfig.elizaPrompt
+      );
+      
+      const response = await fetch('http://localhost:5002/reply-tweet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bearerToken: apiConfig.bearerToken,
+          account,
+          originalTweet,
+          reply
+        })
+      });
+      
+      const result = await response.json();
+      console.log('Posted reply:', result);
+    } catch (error) {
+      console.error('Error posting reply:', error);
+      alert(`Error posting reply: ${error.message}`); // Display error to user
+    }
+  };
+
+  useEffect(() => {
+    const fetchTweets = async () => {
+      if (pullConfig.targetAccounts.length === 0 || !apiConfig.bearerToken) return;
+
+      try {
+        const response = await fetch('http://localhost:5002/fetch-tweets', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            accounts: pullConfig.targetAccounts,
+            bearerToken: apiConfig.bearerToken,
+            includeRetweets: true,
+            includeProfiles: true,
+            prompt: pullConfig.prompt,
+            checkCA: pullConfig.checkCA,
+            checkCoin: pullConfig.checkCoin
+          })
+        });
+
+        const result = await response.json();
+
+        let recentTweets = [];
+        if (Array.isArray(result.tweets)) {
+          recentTweets = result.tweets.filter(tweet => {
+            if (!tweet.createdAt) return false;
+            const tweetTime = new Date(tweet.createdAt).getTime();
+            const timeLimit = parseInt(pullConfig.timeLength) * 60 * 60 * 1000;
+            return (Date.now() - tweetTime) <= timeLimit;
+          }).map(tweet => ({
+            type: tweet.isRetweet ? 'retweet' : 'tweet',
+            text: tweet.text,
+            createdAt: tweet.createdAt,
+            author: tweet.author,
+            retweetedProfile: tweet.isRetweet ? tweet.retweetedProfile : null
+          }));
+        }
+
+        handlePullConfigChange('tweets', recentTweets);
+        handlePullConfigChange('lastFetchTime', new Date().toISOString());
+      } catch (error) {
+        console.error('Error fetching tweets:', error);
+        alert(`Error fetching tweets: ${error.message}`); // Display error to user
+      }
+    };
+
+    let interval;
+    if (pullConfig.realTime) {
+      interval = setInterval(fetchTweets, 60000); // Fetch every minute if realTime is true
+    } else {
+      fetchTweets(); // Fetch once immediately if realTime is false
+    }
+
+    return () => clearInterval(interval);
+  }, [pullConfig.targetAccounts, apiConfig.bearerToken, pullConfig.realTime, pullConfig.timeLength, pullConfig.prompt, pullConfig.checkCA, pullConfig.checkCoin]);
 
   return (
     <div className={`custom-node ${isConfigOpen ? 'expanded' : ''}`}>
@@ -208,7 +344,7 @@ export default function TwitterAgentNode({ data }) {
                       checked={pullConfig.checkCA}
                       onChange={(e) => handlePullConfigChange('checkCA', e.target.checked)}
                     />
-                    Check CA (Contract Address)
+                    CA (Contract Address)
                   </label>
                   <label className="checkbox-label">
                     <input
@@ -216,7 +352,7 @@ export default function TwitterAgentNode({ data }) {
                       checked={pullConfig.checkCoin}
                       onChange={(e) => handlePullConfigChange('checkCoin', e.target.checked)}
                     />
-                    Check $Coin
+                    $Coin
                   </label>
                 </div>
                 <div className="config-field">
@@ -226,7 +362,7 @@ export default function TwitterAgentNode({ data }) {
                       checked={pullConfig.realTime}
                       onChange={(e) => handlePullConfigChange('realTime', e.target.checked)}
                     />
-                    Real-time Check
+                    Real-time
                   </label>
                 </div>
                 <div className="config-field">
@@ -242,6 +378,11 @@ export default function TwitterAgentNode({ data }) {
                     <option value="48">48 hours</option>
                   </select>
                 </div>
+                {pullConfig.lastFetchTime && (
+                  <div className="last-fetch-time">
+                    Last fetch: {new Date(pullConfig.lastFetchTime).toLocaleTimeString()}
+                  </div>
+                )}
               </div>
             )}
 
@@ -299,6 +440,14 @@ export default function TwitterAgentNode({ data }) {
                     className="node-textarea"
                   />
                 </div>
+                <div className="config-field">
+                  <button
+                    onClick={() => postConfig.targetAccounts.forEach(handlePostTweet)}
+                    className="test-button"
+                  >
+                    Test Post
+                  </button>
+                </div>
               </div>
             )}
 
@@ -355,6 +504,16 @@ export default function TwitterAgentNode({ data }) {
                     placeholder="Enter custom rules for Eliza..."
                     className="node-textarea"
                   />
+                </div>
+                <div className="config-field">
+                  <button
+                    onClick={() => replyConfig.targetAccounts.forEach(account => 
+                      handleReplyTweet(account, "Test tweet to reply to")
+                    )}
+                    className="test-button"
+                  >
+                    Test Reply
+                  </button>
                 </div>
               </div>
             )}

@@ -13,20 +13,26 @@ import './styles.css';
 import CustomNode from './CustomNode';
 import { initialNodes, initialEdges } from './initialData';
 import axios from 'axios';
-import TwitterFetcherNode from './TwitterFetcherNode';
-import SmartMoneyFollowerNode from './SmartMoneyFollowerNode';
+import SmartMoneyAddressNode from './SmartMoneyFollowerNode';
 import TradingAgentNode from './TradingAgentNode';
 import AnalystAgentNode from './AnalystAgentNode';
 import TwitterAgentNode from './TwitterAgentNode';
+import DiscordAgentNode from './DiscordAgentNode';
+import TelegramAgentNode from './TelegramAgentNode';
+import TwitterKOLNode from './TwitterKOLNode';
+import WalletNode from './WalletNode';
 
 // Define node types
 const nodeTypes = {
   custom: CustomNode,
-  twitterFetcher: TwitterFetcherNode,
-  smartMoneyFollower: SmartMoneyFollowerNode,
   tradingAgent: TradingAgentNode,
   analystAgent: AnalystAgentNode,
-  twitterAgent: TwitterAgentNode
+  twitterAgent: TwitterAgentNode,
+  discordAgent: DiscordAgentNode,
+  telegramAgent: TelegramAgentNode,
+  smartMoneyFollower: SmartMoneyAddressNode,
+  twitterKOL: TwitterKOLNode,
+  wallet: WalletNode,
 };
 
 export default function App() {
@@ -34,6 +40,7 @@ export default function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isSocialMediaHubOpen, setIsSocialMediaHubOpen] = useState(false);
   const [isDefiHubOpen, setIsDefiHubOpen] = useState(false);
+  const [isDataHubOpen, setIsDataHubOpen] = useState(false);
 
   const onConnect = (params) => {
     setEdges((eds) => addEdge(params, eds));
@@ -61,28 +68,7 @@ export default function App() {
         type: type || '',
         framework: type || '',
         inputText: '',
-        config: {}
-      }
-    };
-    setNodes((nds) => [...nds, newNode]);
-  };
-
-  const handleAddTwitterFetcher = () => {
-    const newNode = {
-      id: `node-${nodes.length + 1}`,
-      type: 'twitterFetcher',
-      position: {
-        x: 100 + Math.random() * 100,
-        y: 100 + Math.random() * 100
-      },
-      data: {
-        type: 'twitterFetcher',
-        framework: 'twitterFetcher',
-        targetAccounts: [],
-        bearerToken: '',
-        fetchInterval: 60000,
-        lastFetchTime: null,
-        tweets: [],
+        config: {},
         onChange: (newData) => handleNodeDataChange(newNode.id, newData)
       }
     };
@@ -121,17 +107,9 @@ export default function App() {
       data: {
         type: 'tradingAgent',
         framework: 'tradingAgent',
-        settings: {
-          fixedBuy: '',
-          maxBuy: '',
-          sellStrategy: 'copy',
-          gas: '',
-          autoSlippage: false,
-          antiMEV: false
-        },
+        settings: {},
         fetchInterval: 60000,
         lastFetchTime: null,
-        tradingData: [],
         onChange: (newData) => handleNodeDataChange(newNode.id, newData)
       }
     };
@@ -149,18 +127,10 @@ export default function App() {
       data: {
         type: 'analystAgent',
         framework: 'analystAgent',
-        parameters: {
-          mktCap: 0,
-          liquidity: 0,
-          holders: 0,
-          snipers: 0,
-          blueChip: 0,
-          top10: 0,
-          hasAudit: false
-        },
+        parameters: {},
+        contractAddress: '',
         fetchInterval: 60000,
         lastFetchTime: null,
-        analysisData: [],
         onChange: (newData) => handleNodeDataChange(newNode.id, newData)
       }
     };
@@ -177,101 +147,96 @@ export default function App() {
       },
       data: {
         type: 'twitterAgent',
-        framework: 'eliza',
+        framework: 'twitterAgent',
         bearerToken: '',
-        pullConfig: {
-          prompt: '',
-          realTime: false,
-          timeLength: '24',
-          targetAccounts: [],
-          newAccount: '',
-          fetchInterval: 60000,
-          lastFetchTime: null,
-          checkCA: false,
-          checkCoin: false
-        },
-        postConfig: {
-          elizaPrompt: '',
-          customRules: '',
-          targetAccounts: [],
-          newAccount: ''
-        },
-        replyConfig: {
-          elizaPrompt: '',
-          customRules: '',
-          targetAccounts: [],
-          newAccount: ''
-        },
+        pullConfig: {},
+        postConfig: {},
+        replyConfig: {},
         onChange: (newData) => handleNodeDataChange(newNode.id, newData)
       }
     };
     setNodes((nds) => [...nds, newNode]);
   };
 
+  const handleAddDiscordAgent = () => {
+    const newNode = {
+      id: `node-${nodes.length + 1}`,
+      type: 'discordAgent',
+      position: {
+        x: 100 + Math.random() * 100,
+        y: 100 + Math.random() * 100
+      },
+      data: {
+        type: 'discordAgent',
+        framework: 'discordAgent',
+        botToken: '',
+        messageConfig: {},
+        onChange: (newData) => handleNodeDataChange(newNode.id, newData)
+      }
+    };
+    setNodes((nds) => [...nds, newNode]);
+  };
+
+  const handleAddTelegramAgent = () => {
+    const newNode = {
+      id: `node-${nodes.length + 1}`,
+      type: 'telegramAgent',
+      position: {
+        x: 100 + Math.random() * 100,
+        y: 100 + Math.random() * 100
+      },
+      data: {
+        type: 'telegramAgent',
+        framework: 'telegramAgent',
+        botToken: '',
+        messageConfig: {},
+        onChange: (newData) => handleNodeDataChange(newNode.id, newData)
+      }
+    };
+    setNodes((nds) => [...nds, newNode]);
+  };
+
+  const handleAddTwitterKOL = () => {
+    const newNode = {
+      id: `node-${nodes.length + 1}`,
+      type: 'twitterKOL',
+      position: {
+        x: 100 + Math.random() * 100,
+        y: 100 + Math.random() * 100
+      },
+      data: {
+        type: 'twitterKOL',
+        kolList: [],
+        onChange: (newData) => handleNodeDataChange(newNode.id, newData)
+      }
+    };
+    setNodes((nds) => [...nds, newNode]);
+  };
+
+  const handleAddWalletNode = () => {
+    const newNode = {
+      id: `node-${nodes.length + 1}`,
+      type: 'wallet',
+      position: { x: 250, y: 50 },
+      data: {
+        walletAddress: '',
+        isConnected: false,
+        onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 1}`, newData)
+      }
+    };
+    setNodes([...nodes, newNode]);
+  };
+
   const handleRunFlow = async () => {
     try {
-      const requestBody = {
-        nodes: nodes.map(n => ({
-          id: n.id,
-          type: n.data.type,
-          framework: n.data.framework,
-          config: n.data.config,
-          inputText: n.data.inputText
-        })),
-        edges: edges.map(e => ({
-          source: e.source,
-          target: e.target
-        }))
-      };
+      const response = await axios.post('http://localhost:5002/execute-flow', {
+        nodes: nodes,
+        edges: edges
+      });
 
-      console.log('Sending request:', JSON.stringify(requestBody, null, 2));
-      const resp = await axios.post("http://localhost:3000/execute-flow", requestBody);
-      console.log('Received response:', resp.data);
-
-      // Update nodes with their results
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.data.type === 'output') {
-            // For output nodes, collect results from all connected nodes
-            const inputNodeIds = edges
-              .filter(e => e.target === node.id)
-              .map(e => e.source);
-
-            console.log('Output node connected to:', inputNodeIds);
-
-            let results = '';
-            inputNodeIds.forEach(sourceId => {
-              const sourceNode = nodes.find(n => n.id === sourceId);
-              const result = resp.data.results[sourceId];
-              if (result) {
-                const content = result.content || result;
-                results += `Results from ${sourceNode.data.type} (${sourceId}):\n${content}\n\n`;
-              }
-            });
-
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                inputText: results || 'No results available'
-              }
-            };
-          }
-
-          // For non-output nodes, store their results
-          const result = resp.data.results[node.id];
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              outputResult: result ? (result.content || result) : undefined
-            }
-          };
-        })
-      );
+      console.log('Flow execution result:', response.data);
     } catch (error) {
-      console.error('Error executing flow:', error);
-      alert(`Error executing flow: ${error.message}`);
+      console.error('Error running flow:', error);
     }
   };
 
@@ -339,6 +304,30 @@ export default function App() {
                         Eliza-based Twitter agent for pulling, posting, and replying to tweets.
                       </p>
                     </li>
+                    <li>
+                      <button
+                        className="import-agent-button discord-agent-button"
+                        onClick={handleAddDiscordAgent}
+                      >
+                        <span className="button-icon">🤖</span>
+                        Discord Agent
+                      </button>
+                      <p className="agent-description">
+                        Eliza-based Discord agent for sending and receiving messages.
+                      </p>
+                    </li>
+                    <li>
+                      <button
+                        className="import-agent-button telegram-agent-button"
+                        onClick={handleAddTelegramAgent}
+                      >
+                        <span className="button-icon">🤖</span>
+                        Telegram Agent
+                      </button>
+                      <p className="agent-description">
+                        Eliza-based Telegram agent for sending and receiving messages.
+                      </p>
+                    </li>
                   </ul>
                 )}
               </div>
@@ -354,45 +343,83 @@ export default function App() {
                 {isDefiHubOpen && (
                   <ul className="import-agents-list">
                     <li>
-                      <button 
+                      <button
+                        className="import-agent-button trading-agent-button"
+                        onClick={handleAddTradingAgent}
+                      >
+                        <span className="button-icon">🤖</span>
+                        Trading Agent
+                      </button>
+                      <p className="agent-description">
+                        Automated trading agent for various DeFi protocols.
+                      </p>
+                    </li>
+                    <li>
+                      <button
+                        className="import-agent-button analyst-agent-button"
+                        onClick={handleAddAnalystAgent}
+                      >
+                        <span className="button-icon">📈</span>
+                        Analyst Agent
+                      </button>
+                      <p className="agent-description">
+                        Analyzes on-chain data and provides insights.
+                      </p>
+                    </li>
+                  </ul>
+                )}
+              </div>
+
+              {/* Data Hub Folder */}
+              <div className="marketplace-folder">
+                <div className="folder-header" onClick={() => setIsDataHubOpen(!isDataHubOpen)}>
+                  <span className="folder-icon">{isDataHubOpen ? '📂' : '📁'}</span>
+                  <span className="folder-name">Data Hub</span>
+                  <span className="folder-arrow">{isDataHubOpen ? '▼' : '▶'}</span>
+                </div>
+
+                {isDataHubOpen && (
+                  <ul className="import-agents-list">
+                    <li>
+                      <button
                         className="import-agent-button smart-money-follower-button"
                         onClick={handleAddSmartMoneyFollower}
                       >
                         <span className="button-icon">💰</span>
-                        Smart Money Follower
+                        Smart Money Address
                       </button>
                       <p className="agent-description">
-                        Follows the transactions of multiple smart money addresses.
+                        Follows transactions of multiple smart money addresses.
                       </p>
                     </li>
                     <li>
-                      <button 
-                        className="import-agent-button analyst-agent-button"
-                        onClick={handleAddAnalystAgent}
+                      <button
+                        className="import-agent-button twitter-kol-button"
+                        onClick={handleAddTwitterKOL}
                       >
-                        <span className="button-icon">🔍</span>
-                        Analyst Agent
+                        <span className="button-icon">🐦</span>
+                        Twitter KOL List
                       </button>
                       <p className="agent-description">
-                        Analyzes specified parameters to generate insights.
-                      </p>
-                    </li>
-                    <li>
-                      <button 
-                        className="import-agent-button trading-agent-button"
-                        onClick={handleAddTradingAgent}
-                      >
-                        <span className="button-icon">📈</span>
-                        Trading Agent
-                      </button>
-                      <p className="agent-description">
-                        Fetches trading data for designated trading pairs.
+                        Manages a list of Twitter KOLs.
                       </p>
                     </li>
                   </ul>
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Add Wallet Button */}
+          <div className="node-buttons-group">
+            <h4>Wallet</h4>
+            <button
+              onClick={handleAddWalletNode}
+              className="add-node-button wallet-button"
+            >
+              <span className="button-icon">👛</span>
+              Connect Wallet
+            </button>
           </div>
 
           {/* Run Flow Button */}
