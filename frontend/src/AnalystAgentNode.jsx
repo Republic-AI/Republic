@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Handle } from 'reactflow';
 
 export default function AnalystAgentNode({ data }) {
   const [isConfigOpen, setIsConfigOpen] = useState(true);
   const [contractAddress, setContractAddress] = useState('');
   const [parameters, setParameters] = useState(data.parameters || {
-    mktCap: 0,
-    liquidity: 0,
-    holders: 0,
-    snipers: 0,
-    blueChip: 0,
-    top10: 0,
-    hasAudit: false
+    mktCap: 0,           // Market cap in millions
+    liquidity: 0,        // Liquidity in millions
+    holders: 0,          // Number of holders
+    snipers: 0,          // Sniper score (0-70)
+    blueChip: 0,         // Blue chip holder percentage
+    top10: 0,            // Top 10 holders percentage
+    hasAudit: false      // Has audit flag
   });
 
   const handleParameterChange = (paramName, value) => {
@@ -27,33 +27,48 @@ export default function AnalystAgentNode({ data }) {
   };
 
   const handleContractAddressChange = (event) => {
-    setContractAddress(event.target.value);
+    const address = event.target.value;
+    setContractAddress(address);
     data.onChange({
       ...data,
-      contractAddress: event.target.value
+      contractAddress: address
     });
   };
 
-  useEffect(() => {
-    // No longer fetching on an interval.  Fetch is triggered by button.
-  }, []);
-
   const handleRunAnalysis = async () => {
+    if (!contractAddress) {
+      alert('Please enter a Solana token contract address');
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:5002/fetch-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contractAddress, parameters }) // Send contractAddress
+        body: JSON.stringify({ contractAddress, parameters })
       });
+
+      if (!response.ok) {
+        throw new Error('Analysis request failed');
+      }
+
       const result = await response.json();
+      
+      if (result.error) {
+        alert(`Analysis error: ${result.error}`);
+        return;
+      }
+
+      // Update node data with analysis results
       data.onChange({
         ...data,
-        analysisData: result.analysisData, // Expecting analysisData from backend
-        lastFetchTime: new Date().toISOString()
+        analysisData: result.analysisData,
+        lastAnalysisTime: new Date().toISOString()
       });
+
     } catch (error) {
-      console.error('Error fetching analysis data:', error);
-      alert(`Error fetching analysis: ${error.message}`); // Display error
+      console.error('Error running analysis:', error);
+      alert(`Error running analysis: ${error.message}`);
     }
   };
 
@@ -63,7 +78,7 @@ export default function AnalystAgentNode({ data }) {
       
       <div className="node-header">
         <select className="node-type-select" value="analystAgent" disabled>
-          <option value="analystAgent">Analyst Agent</option>
+          <option value="analystAgent">Token Analyst</option>
         </select>
         <button 
           className="config-toggle"
@@ -76,17 +91,18 @@ export default function AnalystAgentNode({ data }) {
       {isConfigOpen && (
         <div className="node-config">
           <div className="config-section">
-            <h4>Contract Address</h4>
+            <h4>Token Contract Address</h4>
             <input
               type="text"
               value={contractAddress}
               onChange={handleContractAddressChange}
-              placeholder="Enter contract address"
+              placeholder="Enter Solana token address"
               className="node-input"
             />
           </div>
+
           <div className="config-section">
-            <h4>Market Analysis Parameters</h4>
+            <h4>Analysis Parameters</h4>
             
             <div className="slider-group">
               <label>Market Cap (0 - $1B)</label>
@@ -181,6 +197,26 @@ export default function AnalystAgentNode({ data }) {
             <button onClick={handleRunAnalysis} className="run-analysis-button">
               Run Analysis
             </button>
+
+            {data.analysisData && (
+              <div className="analysis-results">
+                <h4>Analysis Results</h4>
+                <div className="result-item">
+                  <span>Token Name:</span> {data.analysisData.name}
+                </div>
+                <div className="result-item">
+                  <span>Symbol:</span> {data.analysisData.symbol}
+                </div>
+                <div className="result-item">
+                  <span>Meets Criteria:</span> {data.analysisData.meetsCriteria ? 'Yes' : 'No'}
+                </div>
+                {data.analysisData.meetsCriteria && (
+                  <div className="result-item">
+                    <span>Contract Address:</span> {data.analysisData.contractAddress}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

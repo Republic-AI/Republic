@@ -20,7 +20,7 @@ import TwitterAgentNode from './TwitterAgentNode';
 import DiscordAgentNode from './DiscordAgentNode';
 import TelegramAgentNode from './TelegramAgentNode';
 import TwitterKOLNode from './TwitterKOLNode';
-import WalletNode from './WalletNode';
+import WebViewNode from './WebViewNode';
 
 // Define node types
 const nodeTypes = {
@@ -32,7 +32,7 @@ const nodeTypes = {
   telegramAgent: TelegramAgentNode,
   smartMoneyFollower: SmartMoneyAddressNode,
   twitterKOL: TwitterKOLNode,
-  wallet: WalletNode,
+  webview: WebViewNode,
 };
 
 export default function App() {
@@ -213,14 +213,13 @@ export default function App() {
     setNodes((nds) => [...nds, newNode]);
   };
 
-  const handleAddWalletNode = () => {
+  const handleAddWebViewNode = () => {
     const newNode = {
       id: `node-${nodes.length + 1}`,
-      type: 'wallet',
+      type: 'webview',
       position: { x: 250, y: 50 },
       data: {
-        walletAddress: '',
-        isConnected: false,
+        url: '',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 1}`, newData)
       }
     };
@@ -410,15 +409,15 @@ export default function App() {
             </div>
           </div>
 
-          {/* Add Wallet Button */}
+          {/* Add Web View Button */}
           <div className="node-buttons-group">
-            <h4>Wallet</h4>
+            <h4>Tools</h4>
             <button
-              onClick={handleAddWalletNode}
-              className="add-node-button wallet-button"
+              onClick={handleAddWebViewNode}
+              className="add-node-button webview-button"
             >
-              <span className="button-icon">👛</span>
-              Connect Wallet
+              <span className="button-icon">🌐</span>
+              Web View
             </button>
           </div>
 

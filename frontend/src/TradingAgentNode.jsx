@@ -3,6 +3,8 @@ import { Handle } from 'reactflow';
 
 export default function TradingAgentNode({ data }) {
   const [isConfigOpen, setIsConfigOpen] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
   const [settings, setSettings] = useState(data.settings || {
     fixedBuy: '',
     maxBuy: '',
@@ -12,15 +14,104 @@ export default function TradingAgentNode({ data }) {
     antiMEV: false
   });
 
-  const handleSettingChange = (setting, value) => {
+  useEffect(() => {
+    checkConnection();
+
+    if (window.okxwallet) {
+      window.okxwallet.on('accountsChanged', handleAccountsChanged);
+      window.okxwallet.on('chainChanged', handleChainChanged);
+      window.okxwallet.on('disconnect', handleDisconnect);
+    }
+
+    return () => {
+      if (window.okxwallet) {
+        window.okxwallet.removeListener('accountsChanged', handleAccountsChanged);
+        window.okxwallet.removeListener('chainChanged', handleChainChanged);
+        window.okxwallet.removeListener('disconnect', handleDisconnect);
+      }
+    };
+  }, []);
+
+  const checkConnection = async () => {
+    if (typeof window.okxwallet !== 'undefined') {
+      try {
+        const accounts = await window.okxwallet.request({
+          method: 'eth_accounts'
+        });
+        if (accounts.length > 0) {
+          handleAccountsChanged(accounts);
+        }
+      } catch (error) {
+        console.error('Error checking connection:', error);
+      }
+    }
+  };
+
+  const connectOKXWallet = async () => {
+    try {
+      if (typeof window.okxwallet === 'undefined') {
+        window.open('https://www.okx.com/web3', '_blank');
+        alert('Please install OKX Wallet extension first');
+        return;
+      }
+
+      // Request accounts
+      const accounts = await window.okxwallet.request({
+        method: 'eth_requestAccounts'
+      });
+
+      handleAccountsChanged(accounts);
+
+    } catch (error) {
+      console.error('Error connecting to OKX wallet:', error);
+      if (error.code === 4001) {
+        alert('Please accept the connection request in your OKX wallet');
+      } else {
+        alert('Failed to connect to OKX wallet. Please make sure it is unlocked.');
+      }
+    }
+  };
+
+  const handleAccountsChanged = (accounts) => {
+    if (accounts.length > 0) {
+      setWalletAddress(accounts[0]);
+      setIsConnected(true);
+      updateNodeData(accounts[0], true);
+    } else {
+      handleDisconnect();
+    }
+  };
+
+  const handleChainChanged = (chainId) => {
+    console.log('Chain changed:', chainId);
+  };
+
+  const handleDisconnect = () => {
+    setWalletAddress('');
+    setIsConnected(false);
+    updateNodeData('', false);
+  };
+
+  const updateNodeData = (address, connected) => {
+    data.onChange({
+      ...data,
+      walletAddress: address,
+      isConnected: connected,
+      settings
+    });
+  };
+
+  const handleSettingChange = (settingName, value) => {
     const updatedSettings = {
       ...settings,
-      [setting]: value
+      [settingName]: value
     };
     setSettings(updatedSettings);
     data.onChange({
       ...data,
-      settings: updatedSettings
+      settings: updatedSettings,
+      walletAddress,
+      isConnected
     });
   };
 
@@ -48,7 +139,7 @@ export default function TradingAgentNode({ data }) {
   }, [settings, data.fetchInterval]);
 
   return (
-    <div className={`custom-node ${isConfigOpen ? 'expanded' : ''}`}>
+    <div className="custom-node">
       <Handle type="target" position="left" />
 
       <div className="node-header">
@@ -65,78 +156,95 @@ export default function TradingAgentNode({ data }) {
 
       {isConfigOpen && (
         <div className="node-config">
-          <div className="config-section">
-            <h4>Trading Settings</h4>
-            <div className="trading-settings">
-              {/* Buy Settings */}
-              <div className="setting-group">
-                <label>Fixed Buy</label>
-                <input
-                  type="text"
-                  value={settings.fixedBuy}
-                  onChange={(e) => handleSettingChange('fixedBuy', e.target.value)}
-                  placeholder="Enter fixed buy amount"
-                  className="node-input"
-                />
-              </div>
-
-              <div className="setting-group">
-                <label>Max Buy</label>
-                <input
-                  type="text"
-                  value={settings.maxBuy}
-                  onChange={(e) => handleSettingChange('maxBuy', e.target.value)}
-                  placeholder="Enter max buy amount"
-                  className="node-input"
-                />
-              </div>
-
-              {/* Sell Strategy */}
-              <div className="setting-group">
-                <label>Sell Strategy</label>
-                <select
-                  value={settings.sellStrategy}
-                  onChange={(e) => handleSettingChange('sellStrategy', e.target.value)}
-                  className="node-select"
-                >
-                  <option value="copy">Copy Sell</option>
-                  <option value="auto">Auto Sell</option>
-                  <option value="none">Not Sell</option>
-                </select>
-              </div>
-
-              {/* Gas Settings */}
-              <div className="setting-group">
-                <label>Gas</label>
-                <input
-                  type="text"
-                  value={settings.gas}
-                  onChange={(e) => handleSettingChange('gas', e.target.value)}
-                  placeholder="Enter gas amount"
-                  className="node-input"
-                />
-              </div>
-
-              {/* Toggles */}
-              <div className="toggle-group">
-                <div className="toggle-container">
-                  <label>Auto Slippage</label>
-                  <input
-                    type="checkbox"
-                    checked={settings.autoSlippage}
-                    onChange={(e) => handleSettingChange('autoSlippage', e.target.checked)}
-                    className="node-toggle"
-                  />
+          <div className="wallet-section">
+            {!isConnected ? (
+              <button
+                onClick={connectOKXWallet}
+                className="connect-wallet-button"
+              >
+                Connect OKX Wallet
+              </button>
+            ) : (
+              <div className="wallet-info">
+                <div className="wallet-address">
+                  {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
                 </div>
+                <button
+                  onClick={handleDisconnect}
+                  className="disconnect-wallet-button"
+                >
+                  Disconnect
+                </button>
+              </div>
+            )}
+          </div>
 
-                <div className="toggle-container">
-                  <label>Anti-MEV</label>
-                  <input
-                    type="checkbox"
-                    checked={settings.antiMEV}
-                    onChange={(e) => handleSettingChange('antiMEV', e.target.checked)}
-                    className="node-toggle"
-                  />
+          <div className="trading-settings">
+            <div className="setting-group">
+              <label>Fixed Buy Amount (USDC)</label>
+              <input
+                type="number"
+                value={settings.fixedBuy}
+                onChange={(e) => handleSettingChange('fixedBuy', e.target.value)}
+                placeholder="Enter amount"
+                className="node-input"
+              />
+            </div>
+
+            <div className="setting-group">
+              <label>Max Buy Amount (USDC)</label>
+              <input
+                type="number"
+                value={settings.maxBuy}
+                onChange={(e) => handleSettingChange('maxBuy', e.target.value)}
+                placeholder="Enter max amount"
+                className="node-input"
+              />
+            </div>
+
+            <div className="setting-group">
+              <label>Sell Strategy</label>
+              <select
+                value={settings.sellStrategy}
+                onChange={(e) => handleSettingChange('sellStrategy', e.target.value)}
+                className="node-select"
+              >
+                <option value="copy">Copy</option>
+                <option value="auto">Auto</option>
+                <option value="none">None</option>
+              </select>
+            </div>
+
+            <div className="setting-group">
+              <label>Gas (Gwei)</label>
+              <input
+                type="number"
+                value={settings.gas}
+                onChange={(e) => handleSettingChange('gas', e.target.value)}
+                placeholder="Enter gas amount"
+                className="node-input"
+              />
+            </div>
+
+            <div className="toggle-group">
+              <div className="toggle-item">
+                <label>Auto Slippage</label>
+                <div 
+                  className={`toggle-switch ${settings.autoSlippage ? 'active' : ''}`}
+                  onClick={() => handleSettingChange('autoSlippage', !settings.autoSlippage)}
+                >
+                  <span className="toggle-status">
+                    {settings.autoSlippage ? 'On' : 'Off'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="toggle-item">
+                <label>Anti-MEV</label>
+                <div 
+                  className={`toggle-switch ${settings.antiMEV ? 'active' : ''}`}
+                  onClick={() => handleSettingChange('antiMEV', !settings.antiMEV)}
+                >
                   <span className="toggle-status">
                     {settings.antiMEV ? 'On' : 'Off'}
                   </span>
