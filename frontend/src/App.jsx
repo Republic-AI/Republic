@@ -9,6 +9,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './styles.css';
+import ErrorBoundary from './ErrorBoundary';
 
 import CustomNode from './CustomNode';
 import { initialNodes, initialEdges } from './initialData';
@@ -433,25 +434,27 @@ export default function App() {
 
       {/* Flow Area */}
       <div className="flow-container">
-        <ReactFlow
-          nodes={nodes.map(node => ({
-            ...node,
-            data: {
-              ...node.data,
-              onChange: (newData) => handleNodeDataChange(node.id, newData)
-            }
-          }))}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          fitView
-        >
-          <Background />
-          <Controls />
-          <MiniMap />
-        </ReactFlow>
+        <ErrorBoundary>
+          <ReactFlow
+            nodes={nodes.map(node => ({
+              ...node,
+              data: {
+                ...node.data,
+                onChange: (newData) => handleNodeDataChange(node.id, newData)
+              }
+            }))}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            nodeTypes={nodeTypes}
+            fitView
+          >
+            <Background />
+            <Controls />
+            <MiniMap />
+          </ReactFlow>
+        </ErrorBoundary>
       </div>
     </div>
   );

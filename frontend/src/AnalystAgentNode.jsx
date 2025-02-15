@@ -1,23 +1,24 @@
 import React, { useState } from 'react';
 import { Handle } from 'reactflow';
+import './styles.css';
 
 export default function AnalystAgentNode({ data }) {
   const [isConfigOpen, setIsConfigOpen] = useState(true);
   const [contractAddress, setContractAddress] = useState('');
-  const [parameters, setParameters] = useState(data.parameters || {
-    mktCap: 0,           // Market cap in millions
-    liquidity: 0,        // Liquidity in millions
-    holders: 0,          // Number of holders
-    snipers: 0,          // Sniper score (0-70)
-    blueChip: 0,         // Blue chip holder percentage
-    top10: 0,            // Top 10 holders percentage
-    hasAudit: false      // Has audit flag
-  });
+  const [parameters, setParameters] = useState(() => ({
+    mktCap: data.parameters?.mktCap || [0, 1000],       // Market cap in millions
+    liquidity: data.parameters?.liquidity || [0, 100],    // Liquidity in millions
+    holders: data.parameters?.holders || [0, 10000],    // Number of holders
+    snipers: data.parameters?.snipers || [0, 70],       // Sniper score (0-70)
+    blueChip: data.parameters?.blueChip || [0, 100],     // Blue chip holder percentage
+    top10: data.parameters?.top10 || [0, 100],        // Top 10 holders percentage
+    hasAudit: data.parameters?.hasAudit || false         // Has audit flag
+  }));
 
-  const handleParameterChange = (paramName, value) => {
+  const handleRangeChange = (paramName, value) => {
     const updatedParams = {
       ...parameters,
-      [paramName]: value
+      [paramName]: value,
     };
     setParameters(updatedParams);
     data.onChange({
@@ -49,38 +50,32 @@ export default function AnalystAgentNode({ data }) {
       });
 
       if (!response.ok) {
-        throw new Error('Analysis request failed');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       const result = await response.json();
-      
-      if (result.error) {
-        alert(`Analysis error: ${result.error}`);
-        return;
-      }
-
-      // Update node data with analysis results
       data.onChange({
         ...data,
-        analysisData: result.analysisData,
-        lastAnalysisTime: new Date().toISOString()
+        analysisData: result.analysisData
       });
-
     } catch (error) {
-      console.error('Error running analysis:', error);
-      alert(`Error running analysis: ${error.message}`);
+      console.error('Error fetching analysis:', error);
+      alert('Error fetching analysis: ' + error.message);
+      data.onChange({
+        ...data,
+        analysisData: null
+      });
     }
   };
 
   return (
-    <div className={`custom-node ${isConfigOpen ? 'expanded' : ''}`}>
+    <div className={`custom-node analyst-agent ${isConfigOpen ? 'expanded' : ''}`}>
       <Handle type="target" position="left" />
-      
+
       <div className="node-header">
         <select className="node-type-select" value="analystAgent" disabled>
-          <option value="analystAgent">Token Analyst</option>
+          <option value="analystAgent">Analyst Agent</option>
         </select>
-        <button 
+        <button
           className="config-toggle"
           onClick={() => setIsConfigOpen(!isConfigOpen)}
         >
@@ -91,96 +86,197 @@ export default function AnalystAgentNode({ data }) {
       {isConfigOpen && (
         <div className="node-config">
           <div className="config-section">
-            <h4>Token Contract Address</h4>
+            <h4>Contract Address</h4>
             <input
               type="text"
               value={contractAddress}
               onChange={handleContractAddressChange}
-              placeholder="Enter Solana token address"
+              placeholder="Enter Solana token contract address"
               className="node-input"
             />
           </div>
 
           <div className="config-section">
             <h4>Analysis Parameters</h4>
-            
-            <div className="slider-group">
-              <label>Market Cap (0 - $1B)</label>
+            <div className="parameters-grid">
               <div className="slider-container">
-                <input
-                  type="range"
-                  min="0"
-                  max="1000000000"
-                  value={parameters.mktCap}
-                  onChange={(e) => handleParameterChange('mktCap', Number(e.target.value))}
-                  className="node-slider"
-                />
-                <span className="slider-value">${(parameters.mktCap / 1000000).toFixed(1)}M</span>
+                <label>Market Cap (Millions)</label>
+                <div className="range-slider">
+                  <input
+                    type="range"
+                    min="0"
+                    max="1000"
+                    value={parameters.mktCap[0]}
+                    onChange={(e) => handleRangeChange('mktCap', [Number(e.target.value), parameters.mktCap[1]])}
+                    className="slider"
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max="1000"
+                    value={parameters.mktCap[1]}
+                    onChange={(e) => handleRangeChange('mktCap', [parameters.mktCap[0], Number(e.target.value)])}
+                    className="slider"
+                  />
+                  <div className="range-between" style={{
+                    left: `${(parameters.mktCap[0] / 1000) * 100}%`,
+                    width: `${((parameters.mktCap[1] - parameters.mktCap[0]) / 1000) * 100}%`
+                  }}></div>
+                </div>
+                <div className="slider-values">
+                  <span>{parameters.mktCap[0]}</span>
+                  <span>{parameters.mktCap[1]}</span>
+                </div>
               </div>
 
-              <label>Liquidity (0 - $1B)</label>
               <div className="slider-container">
-                <input
-                  type="range"
-                  min="0"
-                  max="1000000000"
-                  value={parameters.liquidity}
-                  onChange={(e) => handleParameterChange('liquidity', Number(e.target.value))}
-                  className="node-slider"
-                />
-                <span className="slider-value">${(parameters.liquidity / 1000000).toFixed(1)}M</span>
+                <label>Liquidity (Millions)</label>
+                <div className="range-slider">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={parameters.liquidity[0]}
+                    onChange={(e) => handleRangeChange('liquidity', [Number(e.target.value), parameters.liquidity[1]])}
+                    className="slider"
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={parameters.liquidity[1]}
+                    onChange={(e) => handleRangeChange('liquidity', [parameters.liquidity[0], Number(e.target.value)])}
+                    className="slider"
+                  />
+                  <div className="range-between" style={{
+                    left: `${(parameters.liquidity[0] / 100) * 100}%`,
+                    width: `${((parameters.liquidity[1] - parameters.liquidity[0]) / 100) * 100}%`
+                  }}></div>
+                </div>
+                <div className="slider-values">
+                  <span>{parameters.liquidity[0]}</span>
+                  <span>{parameters.liquidity[1]}</span>
+                </div>
               </div>
 
-              <label>Holders (0 - 5K)</label>
               <div className="slider-container">
-                <input
-                  type="range"
-                  min="0"
-                  max="5000"
-                  value={parameters.holders}
-                  onChange={(e) => handleParameterChange('holders', Number(e.target.value))}
-                  className="node-slider"
-                />
-                <span className="slider-value">{parameters.holders}</span>
+                <label>Holders</label>
+                <div className="range-slider">
+                  <input
+                    type="range"
+                    min="0"
+                    max="10000"
+                    value={parameters.holders[0]}
+                    onChange={(e) => handleRangeChange('holders', [Number(e.target.value), parameters.holders[1]])}
+                    className="slider"
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max="10000"
+                    value={parameters.holders[1]}
+                    onChange={(e) => handleRangeChange('holders', [parameters.holders[0], Number(e.target.value)])}
+                    className="slider"
+                  />
+                  <div className="range-between" style={{
+                    left: `${(parameters.holders[0] / 10000) * 100}%`,
+                    width: `${((parameters.holders[1] - parameters.holders[0]) / 10000) * 100}%`
+                  }}></div>
+                </div>
+                <div className="slider-values">
+                  <span>{parameters.holders[0]}</span>
+                  <span>{parameters.holders[1]}</span>
+                </div>
               </div>
 
-              <label>Snipers (0/70 - 70/70)</label>
               <div className="slider-container">
-                <input
-                  type="range"
-                  min="0"
-                  max="70"
-                  value={parameters.snipers}
-                  onChange={(e) => handleParameterChange('snipers', Number(e.target.value))}
-                  className="node-slider"
-                />
-                <span className="slider-value">{parameters.snipers}/70</span>
+                <label>Snipers (0-70)</label>
+                <div className="range-slider">
+                  <input
+                    type="range"
+                    min="0"
+                    max="70"
+                    value={parameters.snipers[0]}
+                    onChange={(e) => handleRangeChange('snipers', [Number(e.target.value), parameters.snipers[1]])}
+                    className="slider"
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max="70"
+                    value={parameters.snipers[1]}
+                    onChange={(e) => handleRangeChange('snipers', [parameters.snipers[0], Number(e.target.value)])}
+                    className="slider"
+                  />
+                  <div className="range-between" style={{
+                    left: `${(parameters.snipers[0] / 70) * 100}%`,
+                    width: `${((parameters.snipers[1] - parameters.snipers[0]) / 70) * 100}%`
+                  }}></div>
+                </div>
+                <div className="slider-values">
+                  <span>{parameters.snipers[0]}</span>
+                  <span>{parameters.snipers[1]}</span>
+                </div>
               </div>
 
-              <label>Blue Chip (%)</label>
               <div className="slider-container">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={parameters.blueChip}
-                  onChange={(e) => handleParameterChange('blueChip', Number(e.target.value))}
-                  className="node-slider"
-                />
-                <span className="slider-value">{parameters.blueChip}%</span>
+                <label>Blue Chip Holders (%)</label>
+                <div className="range-slider">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={parameters.blueChip[0]}
+                    onChange={(e) => handleRangeChange('blueChip', [Number(e.target.value), parameters.blueChip[1]])}
+                    className="slider"
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={parameters.blueChip[1]}
+                    onChange={(e) => handleRangeChange('blueChip', [parameters.blueChip[0], Number(e.target.value)])}
+                    className="slider"
+                  />
+                  <div className="range-between" style={{
+                    left: `${parameters.blueChip[0]}%`,
+                    width: `${parameters.blueChip[1] - parameters.blueChip[0]}%`
+                  }}></div>
+                </div>
+                <div className="slider-values">
+                  <span>{parameters.blueChip[0]}</span>
+                  <span>{parameters.blueChip[1]}</span>
+                </div>
               </div>
 
-              <label>Top 10 (%)</label>
               <div className="slider-container">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={parameters.top10}
-                  onChange={(e) => handleParameterChange('top10', Number(e.target.value))}
-                  className="node-slider"
-                />
-                <span className="slider-value">{parameters.top10}%</span>
+                <label>Top 10 Holders (%)</label>
+                <div className="range-slider">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={parameters.top10[0]}
+                    onChange={(e) => handleRangeChange('top10', [Number(e.target.value), parameters.top10[1]])}
+                    className="slider"
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={parameters.top10[1]}
+                    onChange={(e) => handleRangeChange('top10', [parameters.top10[0], Number(e.target.value)])}
+                    className="slider"
+                  />
+                  <div className="range-between" style={{
+                    left: `${parameters.top10[0]}%`,
+                    width: `${parameters.top10[1] - parameters.top10[0]}%`
+                  }}></div>
+                </div>
+                <div className="slider-values">
+                  <span>{parameters.top10[0]}</span>
+                  <span>{parameters.top10[1]}</span>
+                </div>
               </div>
 
               <div className="toggle-container">
@@ -188,7 +284,7 @@ export default function AnalystAgentNode({ data }) {
                 <input
                   type="checkbox"
                   checked={parameters.hasAudit}
-                  onChange={(e) => handleParameterChange('hasAudit', e.target.checked)}
+                  onChange={(e) => handleRangeChange('hasAudit', e.target.checked)}
                   className="node-toggle"
                 />
               </div>
