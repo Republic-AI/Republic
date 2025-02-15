@@ -1,8 +1,62 @@
 const { Connection, PublicKey } = require('@solana/web3.js');
-const { Metaplex } = require('@metaplex-foundation/js');
 const axios = require('axios');
 
 require('dotenv').config();
+
+async function fetchPriceData(mintAddress) {
+  try {
+    console.log('Fetching price data for:', mintAddress);
+    const response = await axios.get(`https://api.jup.ag/price/v2`, {
+      params: {
+        ids: mintAddress,
+        showExtraInfo: true  // To get more detailed price info
+      },
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('Jupiter API Response:', JSON.stringify(response.data, null, 2));
+
+    if (!response.data?.data?.[mintAddress]) {
+      console.warn('No price data available for token:', mintAddress);
+      return {
+        price: 0,
+        liquidity: 0,
+        price24hChange: 0,
+        volume24h: 0,
+        confidenceLevel: 'low'
+      };
+    }
+
+    const tokenData = response.data.data[mintAddress];
+    const extraInfo = tokenData.extraInfo || {};
+    const quotedPrice = extraInfo.quotedPrice || {};
+    const depth = extraInfo.depth || {};
+
+    return {
+      price: tokenData.price || 0,
+      liquidity: depth.buyPriceImpactRatio?.depth?.[1000] || 0, // Using depth as liquidity indicator
+      price24hChange: ((quotedPrice.buyPrice - quotedPrice.sellPrice) / quotedPrice.sellPrice) * 100 || 0,
+      volume24h: 0, // Volume not directly provided in v2 API
+      confidenceLevel: extraInfo.confidenceLevel || 'low'
+    };
+  } catch (error) {
+    console.error('Error fetching price data:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.data
+    });
+    return {
+      price: 0,
+      liquidity: 0,
+      price24hChange: 0,
+      volume24h: 0,
+      confidenceLevel: 'low'
+    };
+  }
+}
 
 async function analystAgentHandler(node) {
   try {
@@ -15,11 +69,13 @@ async function analystAgentHandler(node) {
     // Connect to Solana using QuickNode
     const connection = new Connection(
       process.env.SOLANA_RPC_URL,
-      "confirmed"
+      {
+        commitment: "confirmed",
+        httpHeaders: {
+          "Content-Type": "application/json",
+        }
+      }
     );
-
-    // Initialize Metaplex
-    const metaplex = new Metaplex(connection);
 
     // Get the Token's Mint Address
     let mint;
@@ -32,48 +88,47 @@ async function analystAgentHandler(node) {
     // Fetch token data in parallel
     const [
       tokenSupply,
-      largestAccounts,
-      priceData,
-      birdseyeData
+      tokenAccounts,
+      metadata,
+      priceData
     ] = await Promise.all([
       // Get total supply
       connection.getTokenSupply(mint),
       
-      // Get largest token holders
-      connection.getTokenLargestAccounts(mint),
+      // Get all token accounts
+      connection.getParsedProgramAccounts(mint, {
+        filters: [
+          {
+            dataSize: 165, // Size of token account
+          },
+        ],
+      }),
+
+      // Get token metadata
+      connection.getAccountInfo(mint),
 
       // Get price data from Jupiter
-      fetchPriceData(mint.toBase58()),
-
-      // Get additional data from Birdseye API
-      fetchBirdseyeData(mint.toBase58())
+      fetchPriceData(contractAddress)
     ]);
 
-    // Try to get metadata separately as it might fail
-    let metadata = null;
-    try {
-      metadata = await metaplex.nfts().findByMint({ mintAddress: mint });
-    } catch (error) {
-      console.warn('Failed to fetch metadata:', error);
-      metadata = {
-        name: 'Unknown',
-        symbol: 'UNKNOWN',
-        description: '',
-        uri: ''
-      };
-    }
+    // Calculate holder metrics
+    const numHolders = tokenAccounts.length;
+    const sortedHolders = tokenAccounts
+      .map(account => ({
+        address: account.pubkey.toString(),
+        balance: account.account.data.parsed.info.tokenAmount.uiAmount
+      }))
+      .sort((a, b) => b.balance - a.balance);
 
-    // Calculate metrics
+    const top10Holders = sortedHolders.slice(0, 10);
     const totalSupply = tokenSupply.value.uiAmount;
-    const numHolders = birdseyeData.holders || 0;
-    const top10Holders = largestAccounts.value.slice(0, 10);
-    const top10Supply = top10Holders.reduce((sum, holder) => sum + holder.uiAmount, 0);
+    const top10Supply = top10Holders.reduce((sum, holder) => sum + holder.balance, 0);
     const top10Percentage = (top10Supply / totalSupply) * 100;
 
-    // Calculate market cap and liquidity using Jupiter price data
-    const price = priceData.price || 0;
+    // Calculate market metrics
+    const price = priceData.price;
     const marketCap = totalSupply * price;
-    const liquidityValue = priceData.liquidity || 0;
+    const liquidityValue = priceData.liquidity;
 
     // Check if token meets criteria
     const meetsCriteria = 
@@ -84,8 +139,8 @@ async function analystAgentHandler(node) {
 
     const analysisData = {
       contractAddress: contractAddress,
-      name: metadata.name,
-      symbol: metadata.symbol,
+      name: metadata?.data?.name || 'Unknown',
+      symbol: metadata?.data?.symbol || 'UNKNOWN',
       price,
       marketCap,
       liquidity: liquidityValue,
@@ -93,13 +148,15 @@ async function analystAgentHandler(node) {
       top10Percentage,
       meetsCriteria,
       totalSupply,
-      metadata: {
-        uri: metadata.uri,
-        description: metadata.description,
-      },
       priceMetrics: {
         price24hChange: priceData.price24hChange,
         volume24h: priceData.volume24h,
+      },
+      holderMetrics: {
+        top10Holders: top10Holders.map(holder => ({
+          address: holder.address,
+          percentage: (holder.balance / totalSupply) * 100
+        }))
       }
     };
 
@@ -108,67 +165,6 @@ async function analystAgentHandler(node) {
   } catch (error) {
     console.error('Error in analyst agent handler:', error);
     return { error: error.message };
-  }
-}
-
-// Helper function to fetch price and liquidity data from Jupiter
-async function fetchPriceData(mintAddress) {
-  try {
-    const response = await axios.get(`${process.env.JUPITER_API_URL}?id=${mintAddress}&vsToken=USDC`);
-    
-    if (response.data.error) {
-      console.error('Jupiter API error:', response.data.error);
-      return {
-        price: 0,
-        liquidity: 0,
-        price24hChange: 0,
-        volume24h: 0
-      };
-    }
-
-    const data = response.data.data;
-    return {
-      price: data.price || 0,
-      liquidity: data.liquidity || 0,
-      price24hChange: data.price24hChange || 0,
-      volume24h: data.volume24h || 0
-    };
-  } catch (error) {
-    console.error('Error fetching price data:', error);
-    return {
-      price: 0,
-      liquidity: 0,
-      price24hChange: 0,
-      volume24h: 0
-    };
-  }
-}
-
-// Helper function to fetch additional data from Birdseye API
-async function fetchBirdseyeData(mintAddress) {
-  try {
-    const response = await axios.get(`https://public-api.birdeye.so/public/token_list?address=${mintAddress}`, {
-      headers: {
-        'X-API-KEY': '3f5d5c90d6c54a8d9a90a129c84b69b5'  // This is a public API key
-      }
-    });
-    
-    if (response.data.error) {
-      console.error('Birdseye API error:', response.data.error);
-      return {
-        holders: 0
-      };
-    }
-
-    const tokenData = response.data.data?.[0] || {};
-    return {
-      holders: tokenData.holder || 0
-    };
-  } catch (error) {
-    console.error('Error fetching Birdseye data:', error);
-    return {
-      holders: 0
-    };
   }
 }
 

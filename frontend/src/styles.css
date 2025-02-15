@@ -1532,3 +1532,21 @@ html, body {
   cursor: pointer;
   margin-top: 10px;
 }
+
+.wallet-connect-section {
+  padding: 10px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.wallet-info {
+    padding: 10px;
+    background-color: #e9f5e9; /* Light green background */
+    border: 1px solid #4CAF50;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    text-align: center;
+}

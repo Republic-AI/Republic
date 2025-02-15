@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactFlow, {
   addEdge,
   Background,
@@ -10,6 +10,20 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import './styles.css';
 import ErrorBoundary from './ErrorBoundary';
+import {
+  ConnectionProvider,
+  WalletProvider,
+} from '@solana/wallet-adapter-react';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import {
+  getPhantomWallet,
+  getSolflareWallet,
+} from '@solana/wallet-adapter-wallets';
+import {
+  WalletModalProvider,
+  WalletDisconnectButton,
+  WalletMultiButton,
+} from '@solana/wallet-adapter-react-ui';
 
 import CustomNode from './CustomNode';
 import { initialNodes, initialEdges } from './initialData';
@@ -42,6 +56,20 @@ export default function App() {
   const [isSocialMediaHubOpen, setIsSocialMediaHubOpen] = useState(false);
   const [isDefiHubOpen, setIsDefiHubOpen] = useState(false);
   const [isDataHubOpen, setIsDataHubOpen] = useState(false);
+  const [network, setNetwork] = useState(WalletAdapterNetwork.Mainnet);
+  const endpoint = useMemo(() => {
+      if (network === WalletAdapterNetwork.Mainnet) {
+          return "https://attentive-lingering-general.solana-mainnet.quiknode.pro/b510e1a738a9447f3a963bc61b7f002287b72eb1/";
+      }
+  }, [network]);
+
+  const wallets = useMemo(
+    () => [
+      getPhantomWallet(),
+      getSolflareWallet(),
+    ],
+    [network]
+  );
 
   const onConnect = (params) => {
     setEdges((eds) => addEdge(params, eds));
@@ -241,221 +269,233 @@ export default function App() {
   };
 
   return (
-    <div className="app-container">
-      {/* Sidebar */}
-      <div className="sidebar">
-        <div className="sidebar-content">
-          <h3>AI Agent Flow</h3>
-          
-          {/* Data Flow Nodes */}
-          <div className="node-buttons-group">
-            <h4>Data Flow</h4>
-            <button 
-              onClick={() => handleAddNode('input')}
-              className="add-node-button input-button"
-            >
-              <span className="button-icon">⇥</span>
-              Add Input Node
-            </button>
-            <button 
-              onClick={() => handleAddNode('output')}
-              className="add-node-button output-button"
-            >
-              <span className="button-icon">⇤</span>
-              Add Output Node
-            </button>
-          </div>
-
-          {/* AI Agent Node */}
-          <div className="node-buttons-group">
-            <h4>Create Your AI Agent</h4>
-            <button 
-              onClick={() => handleAddNode()}
-              className="add-node-button agent-button"
-            >
-              <span className="button-icon">+</span>
-              Add AI Agent
-            </button>
-          </div>
-
-          {/* AI Agent Marketplace */}
-          <div className="node-buttons-group">
-            <h4>AI Agent Marketplace</h4>
-            <div className="marketplace-folders">
-              {/* Info Hub Folder */}
-              <div className="marketplace-folder">
-                <div className="folder-header" onClick={() => setIsSocialMediaHubOpen(!isSocialMediaHubOpen)}>
-                  <span className="folder-icon">{isSocialMediaHubOpen ? '📂' : '📁'}</span>
-                  <span className="folder-name">Social Media Hub</span>
-                  <span className="folder-arrow">{isSocialMediaHubOpen ? '▼' : '▶'}</span>
-                </div>
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>
+          <div className="app-container">
+            {/* Sidebar */}
+            <div className="sidebar">
+              <div className="sidebar-content">
+                <h3>AI Agent Flow</h3>
                 
-                {isSocialMediaHubOpen && (
-                  <ul className="import-agents-list">
-                    <li>
-                      <button 
-                        className="import-agent-button twitter-agent-button"
-                        onClick={handleAddTwitterAgent}
-                      >
-                        <span className="button-icon">🤖</span>
-                        Twitter Agent (Eliza)
-                      </button>
-                      <p className="agent-description">
-                        Eliza-based Twitter agent for pulling, posting, and replying to tweets.
-                      </p>
-                    </li>
-                    <li>
-                      <button
-                        className="import-agent-button discord-agent-button"
-                        onClick={handleAddDiscordAgent}
-                      >
-                        <span className="button-icon">🤖</span>
-                        Discord Agent
-                      </button>
-                      <p className="agent-description">
-                        Eliza-based Discord agent for sending and receiving messages.
-                      </p>
-                    </li>
-                    <li>
-                      <button
-                        className="import-agent-button telegram-agent-button"
-                        onClick={handleAddTelegramAgent}
-                      >
-                        <span className="button-icon">🤖</span>
-                        Telegram Agent
-                      </button>
-                      <p className="agent-description">
-                        Eliza-based Telegram agent for sending and receiving messages.
-                      </p>
-                    </li>
-                  </ul>
-                )}
-              </div>
-
-              {/* DeFi Hub Folder */}
-              <div className="marketplace-folder">
-                <div className="folder-header" onClick={() => setIsDefiHubOpen(!isDefiHubOpen)}>
-                  <span className="folder-icon">{isDefiHubOpen ? '📂' : '📁'}</span>
-                  <span className="folder-name">DeFi Hub</span>
-                  <span className="folder-arrow">{isDefiHubOpen ? '▼' : '▶'}</span>
-                </div>
-                
-                {isDefiHubOpen && (
-                  <ul className="import-agents-list">
-                    <li>
-                      <button
-                        className="import-agent-button trading-agent-button"
-                        onClick={handleAddTradingAgent}
-                      >
-                        <span className="button-icon">🤖</span>
-                        Trading Agent
-                      </button>
-                      <p className="agent-description">
-                        Automated trading agent for various DeFi protocols.
-                      </p>
-                    </li>
-                    <li>
-                      <button
-                        className="import-agent-button analyst-agent-button"
-                        onClick={handleAddAnalystAgent}
-                      >
-                        <span className="button-icon">📈</span>
-                        Analyst Agent
-                      </button>
-                      <p className="agent-description">
-                        Analyzes on-chain data and provides insights.
-                      </p>
-                    </li>
-                  </ul>
-                )}
-              </div>
-
-              {/* Data Hub Folder */}
-              <div className="marketplace-folder">
-                <div className="folder-header" onClick={() => setIsDataHubOpen(!isDataHubOpen)}>
-                  <span className="folder-icon">{isDataHubOpen ? '📂' : '📁'}</span>
-                  <span className="folder-name">Data Hub</span>
-                  <span className="folder-arrow">{isDataHubOpen ? '▼' : '▶'}</span>
+                {/* Data Flow Nodes */}
+                <div className="node-buttons-group">
+                  <h4>Data Flow</h4>
+                  <button 
+                    onClick={() => handleAddNode('input')}
+                    className="add-node-button input-button"
+                  >
+                    <span className="button-icon">⇥</span>
+                    Add Input Node
+                  </button>
+                  <button 
+                    onClick={() => handleAddNode('output')}
+                    className="add-node-button output-button"
+                  >
+                    <span className="button-icon">⇤</span>
+                    Add Output Node
+                  </button>
                 </div>
 
-                {isDataHubOpen && (
-                  <ul className="import-agents-list">
-                    <li>
-                      <button
-                        className="import-agent-button smart-money-follower-button"
-                        onClick={handleAddSmartMoneyFollower}
-                      >
-                        <span className="button-icon">💰</span>
-                        Smart Money Address
-                      </button>
-                      <p className="agent-description">
-                        Follows transactions of multiple smart money addresses.
-                      </p>
-                    </li>
-                    <li>
-                      <button
-                        className="import-agent-button twitter-kol-button"
-                        onClick={handleAddTwitterKOL}
-                      >
-                        <span className="button-icon">🐦</span>
-                        Twitter KOL List
-                      </button>
-                      <p className="agent-description">
-                        Manages a list of Twitter KOLs.
-                      </p>
-                    </li>
-                  </ul>
-                )}
+                {/* AI Agent Node */}
+                <div className="node-buttons-group">
+                  <h4>Create Your AI Agent</h4>
+                  <button 
+                    onClick={() => handleAddNode()}
+                    className="add-node-button agent-button"
+                  >
+                    <span className="button-icon">+</span>
+                    Add AI Agent
+                  </button>
+                </div>
+
+                {/* AI Agent Marketplace */}
+                <div className="node-buttons-group">
+                  <h4>AI Agent Marketplace</h4>
+                  <div className="marketplace-folders">
+                    {/* Info Hub Folder */}
+                    <div className="marketplace-folder">
+                      <div className="folder-header" onClick={() => setIsSocialMediaHubOpen(!isSocialMediaHubOpen)}>
+                        <span className="folder-icon">{isSocialMediaHubOpen ? '📂' : '📁'}</span>
+                        <span className="folder-name">Social Media Hub</span>
+                        <span className="folder-arrow">{isSocialMediaHubOpen ? '▼' : '▶'}</span>
+                      </div>
+                      
+                      {isSocialMediaHubOpen && (
+                        <ul className="import-agents-list">
+                          <li>
+                            <button 
+                              className="import-agent-button twitter-agent-button"
+                              onClick={handleAddTwitterAgent}
+                            >
+                              <span className="button-icon">🤖</span>
+                              Twitter Agent (Eliza)
+                            </button>
+                            <p className="agent-description">
+                              Eliza-based Twitter agent for pulling, posting, and replying to tweets.
+                            </p>
+                          </li>
+                          <li>
+                            <button
+                              className="import-agent-button discord-agent-button"
+                              onClick={handleAddDiscordAgent}
+                            >
+                              <span className="button-icon">🤖</span>
+                              Discord Agent
+                            </button>
+                            <p className="agent-description">
+                              Eliza-based Discord agent for sending and receiving messages.
+                            </p>
+                          </li>
+                          <li>
+                            <button
+                              className="import-agent-button telegram-agent-button"
+                              onClick={handleAddTelegramAgent}
+                            >
+                              <span className="button-icon">🤖</span>
+                              Telegram Agent
+                            </button>
+                            <p className="agent-description">
+                              Eliza-based Telegram agent for sending and receiving messages.
+                            </p>
+                          </li>
+                        </ul>
+                      )}
+                    </div>
+
+                    {/* DeFi Hub Folder */}
+                    <div className="marketplace-folder">
+                      <div className="folder-header" onClick={() => setIsDefiHubOpen(!isDefiHubOpen)}>
+                        <span className="folder-icon">{isDefiHubOpen ? '📂' : '📁'}</span>
+                        <span className="folder-name">DeFi Hub</span>
+                        <span className="folder-arrow">{isDefiHubOpen ? '▼' : '▶'}</span>
+                      </div>
+                      
+                      {isDefiHubOpen && (
+                        <ul className="import-agents-list">
+                          <li>
+                            <button
+                              className="import-agent-button trading-agent-button"
+                              onClick={handleAddTradingAgent}
+                            >
+                              <span className="button-icon">🤖</span>
+                              Trading Agent
+                            </button>
+                            <p className="agent-description">
+                              Automated trading agent for various DeFi protocols.
+                            </p>
+                          </li>
+                          <li>
+                            <button
+                              className="import-agent-button analyst-agent-button"
+                              onClick={handleAddAnalystAgent}
+                            >
+                              <span className="button-icon">📈</span>
+                              Analyst Agent
+                            </button>
+                            <p className="agent-description">
+                              Analyzes on-chain data and provides insights.
+                            </p>
+                          </li>
+                        </ul>
+                      )}
+                    </div>
+
+                    {/* Data Hub Folder */}
+                    <div className="marketplace-folder">
+                      <div className="folder-header" onClick={() => setIsDataHubOpen(!isDataHubOpen)}>
+                        <span className="folder-icon">{isDataHubOpen ? '📂' : '📁'}</span>
+                        <span className="folder-name">Data Hub</span>
+                        <span className="folder-arrow">{isDataHubOpen ? '▼' : '▶'}</span>
+                      </div>
+
+                      {isDataHubOpen && (
+                        <ul className="import-agents-list">
+                          <li>
+                            <button
+                              className="import-agent-button smart-money-follower-button"
+                              onClick={handleAddSmartMoneyFollower}
+                            >
+                              <span className="button-icon">💰</span>
+                              Smart Money Address
+                            </button>
+                            <p className="agent-description">
+                              Follows transactions of multiple smart money addresses.
+                            </p>
+                          </li>
+                          <li>
+                            <button
+                              className="import-agent-button twitter-kol-button"
+                              onClick={handleAddTwitterKOL}
+                            >
+                              <span className="button-icon">🐦</span>
+                              Twitter KOL List
+                            </button>
+                            <p className="agent-description">
+                              Manages a list of Twitter KOLs.
+                            </p>
+                          </li>
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Add Web View Button */}
+                <div className="node-buttons-group">
+                  <h4>Tools</h4>
+                  <button
+                    onClick={handleAddWebViewNode}
+                    className="add-node-button webview-button"
+                  >
+                    <span className="button-icon">🌐</span>
+                    Web View
+                  </button>
+                </div>
+
+                {/* Run Flow Button */}
+                <button 
+                  onClick={handleRunFlow}
+                  className="run-flow-button"
+                >
+                  Run Flow
+                </button>
               </div>
             </div>
+
+            {/* Flow Area */}
+            <div className="flow-container">
+              <ErrorBoundary>
+                <ReactFlow
+                  nodes={nodes.map(node => ({
+                    ...node,
+                    data: {
+                      ...node.data,
+                      onChange: (newData) => handleNodeDataChange(node.id, newData)
+                    }
+                  }))}
+                  edges={edges}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onConnect={onConnect}
+                  nodeTypes={nodeTypes}
+                  fitView
+                >
+                  <Background />
+                  <Controls />
+                  <MiniMap />
+                </ReactFlow>
+              </ErrorBoundary>
+            </div>
+
+            {/* Add a wallet connection status display (optional) */}
+            <div className="wallet-status">
+              <WalletMultiButton />
+              <WalletDisconnectButton />
+            </div>
           </div>
-
-          {/* Add Web View Button */}
-          <div className="node-buttons-group">
-            <h4>Tools</h4>
-            <button
-              onClick={handleAddWebViewNode}
-              className="add-node-button webview-button"
-            >
-              <span className="button-icon">🌐</span>
-              Web View
-            </button>
-          </div>
-
-          {/* Run Flow Button */}
-          <button 
-            onClick={handleRunFlow}
-            className="run-flow-button"
-          >
-            Run Flow
-          </button>
-        </div>
-      </div>
-
-      {/* Flow Area */}
-      <div className="flow-container">
-        <ErrorBoundary>
-          <ReactFlow
-            nodes={nodes.map(node => ({
-              ...node,
-              data: {
-                ...node.data,
-                onChange: (newData) => handleNodeDataChange(node.id, newData)
-              }
-            }))}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            nodeTypes={nodeTypes}
-            fitView
-          >
-            <Background />
-            <Controls />
-            <MiniMap />
-          </ReactFlow>
-        </ErrorBoundary>
-      </div>
-    </div>
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
   );
 }

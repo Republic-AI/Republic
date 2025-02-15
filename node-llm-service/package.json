@@ -8,8 +8,13 @@
         "dev": "nodemon src/app.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
     "dependencies": {
         "@metaplex-foundation/js": "^0.20.1",
+        "@project-serum/serum": "^0.13.65",
+        "@solana/spl-token-registry": "^0.2.4574",
         "@solana/web3.js": "^1.98.0",
         "axios": "^1.7.9",
         "cors": "^2.8.5",
