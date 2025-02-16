@@ -1,9 +1,13 @@
 const axios = require('axios');
+const twitterFetcherHandler = require('./twitterFetcher');
 
 async function twitterAgentHandler(node) {
   const { bearerToken, pullConfig, postConfig, replyConfig } = node.data;
+  const rapidApiKey = "17ce04b49amsh78d1d9d3603c65ep12fc75jsn4c9521e3459f"
   
-  if (!bearerToken) {
+  console.log("twitterAgentHandler called. Node data:", node);
+
+  if (!rapidApiKey) {
     return {
       error: "No Twitter API Bearer Token provided"
     };
@@ -12,23 +16,29 @@ async function twitterAgentHandler(node) {
   // Handle different subagent operations based on the active one
   switch (node.data.activeSubAgent) {
     case 'post':
-      return handlePostTweet(bearerToken, postConfig);
+      return handlePostTweet(rapidApiKey, postConfig);
     case 'reply':
-      return handleReplyTweet(bearerToken, replyConfig);
+      return handleReplyTweet(rapidApiKey, replyConfig);
+    case 'pull':
+      return twitterFetcherHandler(node);
     default:
       return { error: "Invalid subagent type" };
   }
 }
 
-async function handlePostTweet(bearerToken, config) {
+async function handlePostTweet(rapidApiKey, config) {
   try {
-    // Twitter API v2 endpoint for posting tweets
+    // Replace with the actual RapidAPI endpoint for posting tweets
     const response = await axios.post(
-      'https://api.twitter.com/2/tweets',
-      { text: config.tweet },
+      'https://rapidapi.example.com/post-tweet',
+      {
+        text: config.tweet,
+        // Add any other required parameters for the RapidAPI endpoint
+      },
       {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          'x-rapidapi-host': 'rapidapi.example.com', // Replace with the correct host
+          'x-rapidapi-key': rapidApiKey,
           'Content-Type': 'application/json',
         }
       }
@@ -46,20 +56,20 @@ async function handlePostTweet(bearerToken, config) {
   }
 }
 
-async function handleReplyTweet(bearerToken, config) {
+async function handleReplyTweet(rapidApiKey, config) {
   try {
-    // Twitter API v2 endpoint for posting replies
+    // Replace with the actual RapidAPI endpoint for replying to tweets
     const response = await axios.post(
-      'https://api.twitter.com/2/tweets',
+      'https://rapidapi.example.com/reply-to-tweet',
       {
         text: config.reply,
-        reply: {
-          in_reply_to_tweet_id: config.originalTweet.id
-        }
+        in_reply_to_tweet_id: config.originalTweet.id, // Add the tweet ID to reply to
+        // Add any other required parameters for the RapidAPI endpoint
       },
       {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          'x-rapidapi-host': 'rapidapi.example.com',  // Replace with the correct host
+          'x-rapidapi-key': rapidApiKey,
           'Content-Type': 'application/json',
         }
       }

@@ -47,22 +47,22 @@ app.post('/fetch-analysis', async (req, res) => {
 // --- Main Flow Execution Endpoint ---
 app.post('/execute-flow', async (req, res) => {
   try {
-    const { nodes, edges } = req.body;
+    const { nodes } = req.body;
+    console.log("/execute-flow route hit. Request body:", req.body);
 
     if (!nodes || !Array.isArray(nodes)) {
       return res.status(400).json({ error: "Invalid 'nodes' data provided." });
     }
-    if (!edges) { // Edges can be null or an array
-      return res.status(400).json({ error: "Invalid 'edges' data provided." });
-    }
 
     const results = {};
     for (const node of nodes) {
-      const handler = handlers[node.data.type];
-      if (!handler) {
-        throw new Error(`No handler found for node type: ${node.data.type}`);
+      const handler = handlers[node.type];
+      if (handler) {
+        console.log("Calling handler:", handler.name, "for node type:", node.type);
+        results[node.id] = await handler(node);
+      } else {
+        console.warn(`No handler found for node type: ${node.type}`);
       }
-      results[node.id] = await handler(node);
     }
 
     res.json({ results });

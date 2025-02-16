@@ -8,142 +8,156 @@ function isBase58(str) {
 
 // Function to extract base58 strings from text
 function extractBase58Strings(text) {
+    if (!text || typeof text !== 'string') {
+        return [];
+    }
     const words = text.split(/\s+/);
     return words.filter(word => isBase58(word));
 }
 
 async function twitterFetcherHandler(node) {
+    console.log("twitterFetcherHandler called. Node data:", node);
     try {
         // Get the target accounts from the node data
-        const targetAccounts = node.data.targetAccounts || [];
-        const bearerToken = node.data.bearerToken;
+        const targetAccounts = node.data.pullConfig.targetAccounts || [];
+        const newAccount = node.data.pullConfig.newAccount;
         
-        if (!bearerToken) {
+        // Combine existing accounts with new account if it exists
+        const accountsToFetch = newAccount ? 
+          [...new Set([...targetAccounts, newAccount])] : 
+          targetAccounts;
+        
+        const rapidApiKey = "17ce04b49amsh78d1d9d3603c65ep12fc75jsn4c9521e3459f";
+        
+        if (!rapidApiKey) {
             return {
-                content: "No Twitter API Bearer Token provided",
+                content: "No RapidAPI Key provided",
                 tweets: []
             };
         }
         
-        if (targetAccounts.length === 0) {
+        if (accountsToFetch.length === 0) {
             return {
                 content: "No target accounts specified",
                 tweets: []
             };
         }
 
-        // Fetch tweets for each account
-        const tweets = await Promise.all(targetAccounts.map(async (account) => {
+        const tweetsPromises = accountsToFetch.map(async (account) => {
             try {
-                // Get user ID first
-                const userResponse = await axios.get(`https://api.twitter.com/2/users/by/username/${account}`, {
-                    headers: {
-                        'Authorization': `Bearer ${bearerToken}`
+                console.log("Fetching tweets for account:", account, "URL:", `https://twttrapi.p.rapidapi.com/user-tweets?username=${account}`);
+                const response = await axios.get(
+                    `https://twttrapi.p.rapidapi.com/user-tweets?username=${account}`,
+                    {
+                        headers: {
+                            'x-rapidapi-host': 'twttrapi.p.rapidapi.com',
+                            'x-rapidapi-key': rapidApiKey,
+                        },
                     }
-                });
-                
-                const userId = userResponse.data.data.id;
-                
-                // Fetch tweets with expanded info
-                const response = await axios.get(`https://api.twitter.com/2/users/${userId}/tweets`, {
-                    headers: {
-                        'Authorization': `Bearer ${bearerToken}`
-                    },
-                    params: {
-                        'max_results': 100,
-                        'tweet.fields': 'created_at,text,referenced_tweets,author_id',
-                        'user.fields': 'description,profile_image_url,public_metrics',
-                        'expansions': 'referenced_tweets.id,referenced_tweets.id.author_id'
-                    }
+                );
+                console.log("RapidAPI Response Data Structure:", {
+                    type: typeof response.data,
+                    isArray: Array.isArray(response.data),
+                    keys: Object.keys(response.data),
+                    sample: JSON.stringify(response.data).slice(0, 200)
                 });
 
-                const tweets = response.data.data || [];
-                const includes = response.data.includes || {};
+                // Handle different possible response structures
+                let tweets = [];
+                if (Array.isArray(response.data)) {
+                    tweets = response.data;
+                } else if (response.data && Array.isArray(response.data.data)) {
+                    tweets = response.data.data;
+                } else if (response.data && typeof response.data === 'object') {
+                    tweets = [response.data]; // Single tweet object
+                } else {
+                    console.error("Unexpected response structure:", response.data);
+                    return [];
+                }
 
-                // Process each tweet
-                return tweets.map(tweet => {
-                    const isRetweet = tweet.referenced_tweets?.some(ref => ref.type === 'retweeted');
-                    let retweetedProfile = null;
+                // Filter out any invalid tweets and map to our format
+                return tweets
+                    .filter(tweet => tweet && (tweet.text || tweet.full_text)) // Ensure tweet has text
+                    .map(tweet => {
+                        const tweetText = tweet.text || tweet.full_text || '';
+                        const author = tweet.user?.screen_name || tweet.username || 'unknown';
+                        return {
+                            id: tweet.id_str || tweet.id || String(Date.now()),
+                            text: tweetText,
+                            author,
+                            retweetedProfile: tweet.retweeted_status ? {
+                                username: tweet.retweeted_status.user?.screen_name || 'unknown',
+                                profile_image_url: tweet.retweeted_status.user?.profile_image_url_https || null
+                            } : null
+                        };
+                    });
 
-                    if (isRetweet) {
-                        const retweetId = tweet.referenced_tweets.find(ref => ref.type === 'retweeted').id;
-                        const retweetedTweet = includes.tweets?.find(t => t.id === retweetId);
-                        const retweetedAuthorId = retweetedTweet?.author_id;
-                        const retweetedUser = includes.users?.find(u => u.id === retweetedAuthorId);
-
-                        if (retweetedUser) {
-                            retweetedProfile = {
-                                username: retweetedUser.username,
-                                description: retweetedUser.description,
-                                profileImage: retweetedUser.profile_image_url,
-                                metrics: retweetedUser.public_metrics
-                            };
-                        }
-                    }
-
-                    return {
-                        text: tweet.text,
-                        createdAt: tweet.created_at,
-                        isRetweet,
-                        author: account,
-                        retweetedProfile
-                    };
-                });
             } catch (error) {
-                console.error(`Error fetching tweets for ${account}:`, error);
+                console.error(`Error fetching tweets for @${account}:`, error);
+                if (error.response) {
+                    console.error("RapidAPI Response Error Data:", {
+                        status: error.response.status,
+                        statusText: error.response.statusText,
+                        data: error.response.data
+                    });
+                    console.log("Full response:", JSON.stringify(error.response, null, 2));
+                }
                 return [];
             }
-        }));
+        });
 
-        // Flatten and filter tweets
-        const recentTweets = tweets
-            .flat()
-            .filter(tweet => {
-                if (!tweet.createdAt) return false;
-                const tweetTime = new Date(tweet.createdAt).getTime();
-                return (Date.now() - tweetTime) <= (24 * 60 * 60 * 1000);
-            });
+        const allTweets = (await Promise.all(tweetsPromises)).flat();
 
-        // Extract base58 strings and format the content
-        const formattedContent = recentTweets.map(tweet => {
-            const base58Strings = extractBase58Strings(tweet.text);
-            
-            if (base58Strings.length === 0) {
-                return null; // Skip tweets without base58 strings
-            }
-            
-            if (tweet.isRetweet) {
-                return [
-                    `🔄 @${tweet.author} Retweeted:`,
-                    'Base58 Encoded Strings:',
-                    ...base58Strings.map(str => `- ${str}`),
-                    '',
-                    'From Account:',
-                    `@${tweet.retweetedProfile.username}`,
-                    '---'
-                ].join('\n');
-            } else {
-                return [
-                    `📝 @${tweet.author} Tweeted:`,
-                    'Base58 Encoded Strings:',
-                    ...base58Strings.map(str => `- ${str}`),
-                    '---'
-                ].join('\n');
-            }
-        })
-        .filter(content => content !== null) // Remove null entries (tweets without base58 strings)
-        .join('\n\n');
+        // Filter tweets to include only those with base58 strings
+        const recentTweets = allTweets
+            .filter(tweet => tweet && typeof tweet.text === 'string')
+            .map(tweet => ({
+                ...tweet,
+                base58Strings: extractBase58Strings(tweet.text)
+            }))
+            // Remove the base58 filter to see all tweets
+
+        // Format the content for display
+        const formattedContent = recentTweets
+            .map(tweet => {
+                if (tweet.retweetedProfile) {
+                    return [
+                        `Retweeted by @${tweet.author}:`,
+                        tweet.text,
+                        'From Account:',
+                        `@${tweet.retweetedProfile.username}`,
+                        '---'
+                    ].join('\n');
+                } else {
+                    return [
+                        `📝 @${tweet.author} Tweeted:`,
+                        'Base58 Encoded Strings:',
+                        ...tweet.base58Strings.map(str => `- ${str}`),
+                        '---'
+                    ].join('\n');
+                }
+            })
+            .filter(content => content !== null)
+            .join('\n\n');
+
+        // If no tweets were found, provide a meaningful message
+        if (recentTweets.length === 0) {
+            return {
+                content: `No relevant tweets found for account(s): ${accountsToFetch.join(', ')}`,
+                tweets: []
+            };
+        }
 
         return {
             content: formattedContent,
-            tweets: recentTweets.map(tweet => ({
-                ...tweet,
-                base58Strings: extractBase58Strings(tweet.text)
-            })).filter(tweet => tweet.base58Strings.length > 0)
+            tweets: recentTweets
         };
     } catch (error) {
         console.error('Error in Twitter Fetcher handler:', error);
-        throw error;
+        return {
+            content: `Error fetching tweets: ${error.message}`,
+            tweets: []
+        };
     }
 }
 

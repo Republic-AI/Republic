@@ -487,12 +487,6 @@ export default function App() {
                 </ReactFlow>
               </ErrorBoundary>
             </div>
-
-            {/* Add a wallet connection status display (optional) */}
-            <div className="wallet-status">
-              <WalletMultiButton />
-              <WalletDisconnectButton />
-            </div>
           </div>
         </WalletModalProvider>
       </WalletProvider>

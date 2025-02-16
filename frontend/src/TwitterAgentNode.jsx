@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Handle } from 'reactflow';
 import { ElizaBot } from './utils/eliza';
+import axios from 'axios';
 
 export default function TwitterAgentNode({ data }) {
   const [isConfigOpen, setIsConfigOpen] = useState(true);
@@ -29,9 +30,12 @@ export default function TwitterAgentNode({ data }) {
     elizaPrompt: '',
     customRules: '',
     targetAccounts: [],
-    newAccount: ''
+    newAccount: '',
+    tweet: '',
+    inReplyToTweetId: '',
   });
   const [elizaBot, setElizaBot] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Initialize Eliza with custom rules when they change
@@ -181,6 +185,52 @@ export default function TwitterAgentNode({ data }) {
     }
   };
 
+  const handlePullTweets = async () => {
+    if (!pullConfig.newAccount && pullConfig.targetAccounts.length === 0) {
+      alert('Please enter a Twitter username or add accounts to the target list');
+      return;
+    }
+
+    try {
+      console.log("handlePullTweets called. Data:", data);
+      setIsLoading(true);
+      const response = await axios.post('http://localhost:5002/execute-flow', {
+        nodes: [{
+          id: data.id,
+          type: data.type,
+          data: {
+            ...data,
+            activeSubAgent: 'pull',
+            pullConfig: {
+              ...data.pullConfig,
+              targetAccounts: pullConfig.newAccount ? 
+                [...data.pullConfig.targetAccounts, pullConfig.newAccount] : 
+                data.pullConfig.targetAccounts
+            }
+          }
+        }]
+      });
+
+      if (response.data.results[data.id].tweets.length === 0) {
+        alert('No tweets found for the specified account(s)');
+      }
+
+      data.onChange({
+        ...data,
+        pullConfig: {
+          ...data.pullConfig,
+          tweets: response.data.results[data.id].tweets,
+          content: response.data.results[data.id].content,
+        }
+      });
+    } catch (error) {
+      console.error('Error pulling tweets:', error);
+      alert('Error pulling tweets. Check console for details.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchTweets = async () => {
       if (pullConfig.targetAccounts.length === 0 || !apiConfig.bearerToken) return;
@@ -237,6 +287,14 @@ export default function TwitterAgentNode({ data }) {
 
     return () => clearInterval(interval);
   }, [pullConfig.targetAccounts, apiConfig.bearerToken, pullConfig.realTime, pullConfig.timeLength, pullConfig.prompt, pullConfig.checkCA, pullConfig.checkCoin]);
+
+  useEffect(() => {
+    setPullConfig(prevConfig => ({
+      ...prevConfig,
+      tweets: data.pullConfig.tweets || [] // Use an empty array as a default
+    }));
+    console.log("useEffect triggered. data.pullConfig.tweets:", data.pullConfig.tweets);
+  }, [data.pullConfig.tweets]);
 
   return (
     <div className={`custom-node ${isConfigOpen ? 'expanded' : ''}`}>
@@ -299,19 +357,21 @@ export default function TwitterAgentNode({ data }) {
                 <div className="config-field">
                   <label>Target Twitter Accounts</label>
                   <div className="account-input-container">
-                    <input
-                      type="text"
-                      value={pullConfig.newAccount}
-                      onChange={(e) => handlePullConfigChange('newAccount', e.target.value)}
-                      placeholder="Enter Twitter handle (without @)"
-                      className="node-input"
-                    />
-                    <button 
-                      onClick={handleAddAccount}
-                      className="add-account-btn"
-                    >
-                      Add
-                    </button>
+                    <div className="input-group">
+                      <input
+                        type="text"
+                        value={pullConfig.newAccount}
+                        onChange={(e) => handlePullConfigChange('newAccount', e.target.value)}
+                        placeholder="Enter Twitter username"
+                      />
+                      <button onClick={handleAddAccount}>Add to List</button>
+                      <button 
+                        onClick={handlePullTweets}
+                        disabled={!pullConfig.newAccount && pullConfig.targetAccounts.length === 0}
+                      >
+                        Pull Tweets
+                      </button>
+                    </div>
                   </div>
                   
                   <ul className="account-list">
@@ -513,6 +573,34 @@ export default function TwitterAgentNode({ data }) {
                     className="test-button"
                   >
                     Test Reply
+                  </button>
+                </div>
+                <div className="reply-config">
+                  <div className="input-group">
+                    <label>Tweet ID to Reply To:</label>
+                    <input
+                      type="text"
+                      value={replyConfig.inReplyToTweetId}
+                      onChange={(e) => setReplyConfig({ ...replyConfig, inReplyToTweetId: e.target.value })}
+                      placeholder="Enter Tweet ID"
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Reply Tweet:</label>
+                    <textarea
+                      value={replyConfig.tweet}
+                      onChange={(e) => setReplyConfig({ ...replyConfig, tweet: e.target.value })}
+                      placeholder="Enter your reply tweet here..."
+                      className="node-textarea"
+                    />
+                  </div>
+                  <button
+                    onClick={() => replyConfig.targetAccounts.forEach(account => 
+                      handleReplyTweet(account, replyConfig.tweet)
+                    )}
+                    className="test-button"
+                  >
+                    Send Reply
                   </button>
                 </div>
               </div>

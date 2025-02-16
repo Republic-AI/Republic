@@ -1238,27 +1238,18 @@ html, body {
 }
 
 .connect-wallet-button {
-  background-color: #1a73e8;
+  background-color: #682; /* Phantom purple */
   color: white;
+  padding: 10px 15px;
   border: none;
-  padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
-  width: 100%;
-  margin-bottom: 8px;
-}
-
-.connect-wallet-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
+  font-size: 14px;
+  margin-bottom: 10px; /* Add some spacing */
 }
 
 .connect-wallet-button:hover {
-  background-color: #1557b0;
-}
-
-.connect-wallet-button:disabled:hover {
-  background-color: #ccc;
+  background-color: #792; /* Slightly darker purple on hover */
 }
 
 .disconnect-wallet-button {

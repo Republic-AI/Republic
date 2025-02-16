@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Handle } from 'reactflow';
 import axios from 'axios';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey, Transaction } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 
 const GMGN_API_BASE = 'https://gmgn.ai/defi/router/v1/sol';
 
 export default function TradingAgentNode({ data }) {
-  const { publicKey, sendTransaction, connected } = useWallet();
+  const { publicKey, sendTransaction, connected, connect } = useWallet();
   const [isConfigOpen, setIsConfigOpen] = useState(true);
   const [parameters, setParameters] = useState(() => ({
     ...data.parameters,
@@ -153,6 +153,16 @@ export default function TradingAgentNode({ data }) {
           {!connected && (
             <div className="wallet-connect-section">
               <p>Connect your wallet to enable trading.</p>
+              <button
+                onClick={() => connect().catch(error => {
+                  // Handle connection errors, e.g., user rejection
+                  console.error("Wallet connection failed:", error);
+                  alert("Failed to connect wallet. Please try again.");
+                })}
+                className="connect-wallet-button"
+              >
+                Connect Phantom Wallet
+              </button>
             </div>
           )}
           {connected && (
