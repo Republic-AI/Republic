@@ -22,10 +22,14 @@ async function twitterFetcherHandler(node) {
         const targetAccounts = node.data.pullConfig.targetAccounts || [];
         const newAccount = node.data.pullConfig.newAccount;
         
+        console.log("Target accounts:", targetAccounts, "New account:", newAccount);
+        
         // Combine existing accounts with new account if it exists
         const accountsToFetch = newAccount ? 
           [...new Set([...targetAccounts, newAccount])] : 
           targetAccounts;
+        
+        console.log("Accounts to fetch:", accountsToFetch);
         
         const rapidApiKey = "17ce04b49amsh78d1d9d3603c65ep12fc75jsn4c9521e3459f";
         
@@ -45,118 +49,115 @@ async function twitterFetcherHandler(node) {
 
         const tweetsPromises = accountsToFetch.map(async (account) => {
             try {
-                console.log("Fetching tweets for account:", account, "URL:", `https://twttrapi.p.rapidapi.com/user-tweets?username=${account}`);
+                console.log("Fetching tweets for account:", account);
                 const response = await axios.get(
-                    `https://twttrapi.p.rapidapi.com/user-tweets?username=${account}`,
+                    `https://twttrapi.p.rapidapi.com/user-tweets`,
                     {
-                        headers: {
-                            'x-rapidapi-host': 'twttrapi.p.rapidapi.com',
-                            'x-rapidapi-key': rapidApiKey,
+                        params: {
+                            username: account
                         },
+                        headers: {
+                            'x-rapidapi-key': rapidApiKey,
+                            'x-rapidapi-host': 'twttrapi.p.rapidapi.com'
+                        }
                     }
                 );
-                console.log("RapidAPI Response Data Structure:", {
-                    type: typeof response.data,
-                    isArray: Array.isArray(response.data),
-                    keys: Object.keys(response.data),
-                    sample: JSON.stringify(response.data).slice(0, 200)
-                });
 
-                // Handle different possible response structures
-                let tweets = [];
-                if (Array.isArray(response.data)) {
-                    tweets = response.data;
-                } else if (response.data && Array.isArray(response.data.data)) {
-                    tweets = response.data.data;
-                } else if (response.data && typeof response.data === 'object') {
-                    tweets = [response.data]; // Single tweet object
-                } else {
-                    console.error("Unexpected response structure:", response.data);
-                    return [];
-                }
+                // Log detailed response information
+                console.log(`Response status for ${account}:`, response.status);
+                console.log(`Response headers for ${account}:`, response.headers);
+                console.log(`Raw API Response for ${account}:`, JSON.stringify(response.data, null, 2));
 
-                // Filter out any invalid tweets and map to our format
-                return tweets
-                    .filter(tweet => tweet && (tweet.text || tweet.full_text)) // Ensure tweet has text
-                    .map(tweet => {
-                        const tweetText = tweet.text || tweet.full_text || '';
-                        const author = tweet.user?.screen_name || tweet.username || 'unknown';
-                        return {
-                            id: tweet.id_str || tweet.id || String(Date.now()),
-                            text: tweetText,
-                            author,
-                            retweetedProfile: tweet.retweeted_status ? {
-                                username: tweet.retweeted_status.user?.screen_name || 'unknown',
-                                profile_image_url: tweet.retweeted_status.user?.profile_image_url_https || null
-                            } : null
-                        };
-                    });
+                // Filter tweets by time range if specified
+                const timeLength = parseInt(node.data.pullConfig.timeLength) || 24;
+                const cutoffTime = new Date(Date.now() - (timeLength * 60 * 60 * 1000));
+                
+                // Process the tweets array from the response
+                const tweets = response.data?.tweets || response.data || [];
+                
+                // Filter tweets by time if they have a created_at field
+                const filteredTweets = Array.isArray(tweets) ? tweets.filter(tweet => {
+                    if (!tweet.created_at) return true; // Include tweets without timestamp
+                    const tweetDate = new Date(tweet.created_at);
+                    return tweetDate >= cutoffTime;
+                }) : tweets;
+
+                return {
+                    account,
+                    rawData: filteredTweets,
+                    timestamp: new Date().toISOString()
+                };
 
             } catch (error) {
                 console.error(`Error fetching tweets for @${account}:`, error);
                 if (error.response) {
-                    console.error("RapidAPI Response Error Data:", {
+                    console.error(`Full error response for ${account}:`, {
                         status: error.response.status,
                         statusText: error.response.statusText,
-                        data: error.response.data
+                        headers: error.response.headers,
+                        data: error.response.data,
+                        config: {
+                            url: error.response.config.url,
+                            method: error.response.config.method,
+                            headers: error.response.config.headers,
+                            params: error.response.config.params
+                        }
                     });
-                    console.log("Full response:", JSON.stringify(error.response, null, 2));
                 }
-                return [];
+                return {
+                    account,
+                    error: error.message,
+                    errorDetails: error.response?.data || {},
+                    timestamp: new Date().toISOString()
+                };
             }
         });
 
-        const allTweets = (await Promise.all(tweetsPromises)).flat();
+        const results = await Promise.all(tweetsPromises);
 
-        // Filter tweets to include only those with base58 strings
-        const recentTweets = allTweets
-            .filter(tweet => tweet && typeof tweet.text === 'string')
-            .map(tweet => ({
-                ...tweet,
-                base58Strings: extractBase58Strings(tweet.text)
-            }))
-            // Remove the base58 filter to see all tweets
-
-        // Format the content for display
-        const formattedContent = recentTweets
-            .map(tweet => {
-                if (tweet.retweetedProfile) {
+        // Format the content to display raw results
+        const formattedContent = results
+            .map(result => {
+                if (result.error) {
                     return [
-                        `Retweeted by @${tweet.author}:`,
-                        tweet.text,
-                        'From Account:',
-                        `@${tweet.retweetedProfile.username}`,
-                        '---'
-                    ].join('\n');
-                } else {
-                    return [
-                        `📝 @${tweet.author} Tweeted:`,
-                        'Base58 Encoded Strings:',
-                        ...tweet.base58Strings.map(str => `- ${str}`),
+                        `Error fetching tweets for @${result.account}:`,
+                        `Message: ${result.error}`,
+                        'Error Details:',
+                        '```',
+                        JSON.stringify(result.errorDetails, null, 2),
+                        '```',
+                        `Timestamp: ${result.timestamp}`,
                         '---'
                     ].join('\n');
                 }
+                return [
+                    `Raw Twitter API Response for @${result.account}:`,
+                    '```',
+                    JSON.stringify(result.rawData, null, 2),
+                    '```',
+                    `Fetched at: ${result.timestamp}`,
+                    '---'
+                ].join('\n');
             })
-            .filter(content => content !== null)
             .join('\n\n');
 
-        // If no tweets were found, provide a meaningful message
-        if (recentTweets.length === 0) {
-            return {
-                content: `No relevant tweets found for account(s): ${accountsToFetch.join(', ')}`,
-                tweets: []
-            };
-        }
+        // Add summary information
+        const summary = `Fetched data for ${results.length} accounts. ` +
+            `Success: ${results.filter(r => !r.error).length}, ` +
+            `Failed: ${results.filter(r => r.error).length}`;
 
         return {
             content: formattedContent,
-            tweets: recentTweets
+            summary,
+            rawResults: results
         };
+
     } catch (error) {
         console.error('Error in Twitter Fetcher handler:', error);
+        const errorMessage = error.response?.data?.message || error.message;
         return {
-            content: `Error fetching tweets: ${error.message}`,
-            tweets: []
+            content: `Error fetching tweets: ${errorMessage}\n\nFull error: ${JSON.stringify(error.response?.data || {}, null, 2)}`,
+            rawResults: []
         };
     }
 }
