@@ -1,35 +1,21 @@
 version: "3.8"
 services:
   python-llm-service:
-    build:
-      context: ./python-llm-service
-      dockerfile: Dockerfile
+    build: ./python-llm-service
     container_name: python-llm-service
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - PINECONE_API_KEY=${PINECONE_API_KEY}
-      - PINECONE_ENVIRONMENT=${PINECONE_ENVIRONMENT}
     ports:
       - "5001:5001"
-    volumes:
-      - ./python-llm-service:/app
     image: mirror.gcr.io/library/python:3.9-slim
 
   node-llm-service:
-    build:
-      context: ./node-llm-service
-      dockerfile: Dockerfile
+    build: ./node-llm-service
     container_name: node-llm-service
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - TWITTER_BEARER_TOKEN=${TWITTER_BEARER_TOKEN}
-      - SOLANA_RPC_URL=${SOLANA_RPC_URL}
-      - JUPITER_API_URL=${JUPITER_API_URL}
-      - JUPITER_API_KEY=${JUPITER_API_KEY}
     ports:
       - "5002:5002"
-    volumes:
-      - ./node-llm-service:/app
     image: mirror.gcr.io/library/node:18-alpine
 
   orchestrator:
@@ -42,13 +28,9 @@ services:
       - "8080:8080"
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.test
+    build: ./frontend
     container_name: frontend
     depends_on:
       - orchestrator
     ports:
       - "3000:80"
-    # volumes:  # Comment this out temporarily
-    #   - ./frontend:/usr/share/nginx/html

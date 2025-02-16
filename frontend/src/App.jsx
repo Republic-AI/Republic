@@ -16,8 +16,8 @@ import {
 } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
-  getPhantomWallet,
-  getSolflareWallet,
+  PhantomWalletAdapter,
+  SolflareWalletAdapter
 } from '@solana/wallet-adapter-wallets';
 import {
   WalletModalProvider,
@@ -65,8 +65,8 @@ export default function App() {
 
   const wallets = useMemo(
     () => [
-      getPhantomWallet(),
-      getSolflareWallet(),
+      new PhantomWalletAdapter(),
+      new SolflareWalletAdapter()
     ],
     [network]
   );
