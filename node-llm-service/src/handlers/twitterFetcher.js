@@ -1,4 +1,21 @@
 const axios = require('axios');
+const { Configuration, OpenAIApi } = require('openai');
+
+// Initialize OpenAI
+let openai;
+
+function initializeOpenAI() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    console.warn("OpenAI API key is not set. AI analysis will be disabled.");
+    return false;
+  }
+  const configuration = new Configuration({
+      apiKey: apiKey,
+  });
+  openai = new OpenAIApi(configuration);
+  return true;
+}
 
 // Function to check if a string is base58 encoded
 function isBase58(str) {
@@ -15,8 +32,44 @@ function extractBase58Strings(text) {
     return words.filter(word => isBase58(word));
 }
 
+async function analyzeWithAI(tweets, prompt) {
+    if (!openai) {
+        return "AI analysis is disabled because the OpenAI API key is not set.";
+    }
+    try {
+        const analysis = await openai.createChatCompletion({
+            model: "gpt-3.5-turbo",
+            messages: [
+                {
+                    role: "system",
+                    content: "You are an AI analyst specializing in social media content analysis."
+                },
+                {
+                    role: "user",
+                    content: `${prompt}\n\nTweets to analyze:\n${JSON.stringify(tweets, null, 2)}`
+                }
+            ],
+            temperature: 0.7,
+            max_tokens: 1500
+        });
+
+        return analysis.data.choices[0].message.content;
+    } catch (error) {
+        console.error('Error in AI analysis:', error);
+        let errorMessage = 'Error in AI analysis: ';
+        if (error.response) {
+            errorMessage += `${error.response.status} - ${JSON.stringify(error.response.data)}`;
+        } else {
+            errorMessage += error.message;
+        }
+        return errorMessage;
+    }
+}
+
 async function twitterFetcherHandler(node) {
     console.log("twitterFetcherHandler called. Node data:", node);
+    const isOpenAIInitialized = initializeOpenAI();
+
     try {
         // Get the target accounts from the node data
         const targetAccounts = node.data.pullConfig.targetAccounts || [];
@@ -115,6 +168,17 @@ async function twitterFetcherHandler(node) {
 
         const results = await Promise.all(tweetsPromises);
 
+        // Perform AI analysis if prompt is provided
+        let aiAnalysis = null;
+        if (isOpenAIInitialized && node.data.pullConfig.aiPrompt && results.some(r => !r.error)) {
+            const validTweets = results
+                .filter(r => !r.error)
+                .map(r => r.rawData)
+                .flat();
+            
+            aiAnalysis = await analyzeWithAI(validTweets, node.data.pullConfig.aiPrompt);
+        }
+
         // Format the content to display raw results
         const formattedContent = results
             .map(result => {
@@ -141,15 +205,21 @@ async function twitterFetcherHandler(node) {
             })
             .join('\n\n');
 
+        // Add AI analysis to the content if available
+        const finalContent = aiAnalysis 
+            ? `${formattedContent}\n\nAI Analysis:\n${aiAnalysis}`
+            : formattedContent;
+
         // Add summary information
         const summary = `Fetched data for ${results.length} accounts. ` +
             `Success: ${results.filter(r => !r.error).length}, ` +
             `Failed: ${results.filter(r => r.error).length}`;
 
         return {
-            content: formattedContent,
+            content: finalContent,
             summary,
-            rawResults: results
+            rawResults: results,
+            aiAnalysis
         };
 
     } catch (error) {
@@ -157,7 +227,8 @@ async function twitterFetcherHandler(node) {
         const errorMessage = error.response?.data?.message || error.message;
         return {
             content: `Error fetching tweets: ${errorMessage}\n\nFull error: ${JSON.stringify(error.response?.data || {}, null, 2)}`,
-            rawResults: []
+            rawResults: [],
+            aiAnalysis: null
         };
     }
 }

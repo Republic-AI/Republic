@@ -16,10 +16,11 @@
         "@project-serum/serum": "^0.13.65",
         "@solana/spl-token-registry": "^0.2.4574",
         "@solana/web3.js": "^1.98.0",
-        "axios": "^1.7.9",
+        "axios": "^0.21.1",
         "cors": "^2.8.5",
         "dotenv": "^16.4.1",
-        "express": "^4.18.2"
+        "express": "^4.17.1",
+        "openai": "^3.2.1"
     },
     "devDependencies": {
         "nodemon": "^2.0.22"

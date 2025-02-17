@@ -19,6 +19,7 @@ export default function TwitterAgentNode({ data }) {
     checkCoin: false,
     tweets: [],
     lastFetchTime: null,
+    aiPrompt: '', // Add AI prompt field
   });
   const [postConfig, setPostConfig] = useState({
     elizaPrompt: '',
@@ -353,7 +354,19 @@ export default function TwitterAgentNode({ data }) {
             {/* Pull Tweet Configuration */}
             {activeSubAgent === 'pull' && (
               <div className="subagent-config">
-                <h4>Pull Tweet</h4>
+                <h4>Pull Tweets</h4>
+                
+                {/* Add AI Analysis Configuration */}
+                <div className="config-field">
+                  <label>AI Analysis Prompt</label>
+                  <textarea
+                    value={pullConfig.aiPrompt}
+                    onChange={(e) => handlePullConfigChange('aiPrompt', e.target.value)}
+                    placeholder="Enter prompt for AI analysis (e.g., 'Analyze these tweets for sentiment and key topics')"
+                    className="node-textarea"
+                  />
+                </div>
+
                 <div className="config-field">
                   <label>Target Twitter Accounts</label>
                   <div className="account-input-container">
