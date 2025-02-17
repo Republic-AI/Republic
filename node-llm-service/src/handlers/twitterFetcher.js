@@ -116,24 +116,30 @@ async function twitterFetcherHandler(node) {
                     }
                 );
 
-                // Log detailed response information
-                console.log(`Response status for ${account}:`, response.status);
-                console.log(`Response headers for ${account}:`, response.headers);
-                console.log(`Raw API Response for ${account}:`, JSON.stringify(response.data, null, 2));
+                // Extract tweets from the response
+                const tweets = response.data?.data?.tweets || [];
+                
+                // Format tweets for better readability and AI analysis
+                const formattedTweets = tweets.map(tweet => ({
+                    text: tweet.text,
+                    created_at: tweet.created_at,
+                    id: tweet.id,
+                    metrics: {
+                        retweets: tweet.public_metrics?.retweet_count || 0,
+                        likes: tweet.public_metrics?.like_count || 0,
+                        replies: tweet.public_metrics?.reply_count || 0
+                    }
+                }));
 
-                // Filter tweets by time range if specified
+                // Filter tweets by time if they have a created_at field
                 const timeLength = parseInt(node.data.pullConfig.timeLength) || 24;
                 const cutoffTime = new Date(Date.now() - (timeLength * 60 * 60 * 1000));
                 
-                // Process the tweets array from the response
-                const tweets = response.data?.tweets || response.data || [];
-                
-                // Filter tweets by time if they have a created_at field
-                const filteredTweets = Array.isArray(tweets) ? tweets.filter(tweet => {
+                const filteredTweets = formattedTweets.filter(tweet => {
                     if (!tweet.created_at) return true; // Include tweets without timestamp
                     const tweetDate = new Date(tweet.created_at);
                     return tweetDate >= cutoffTime;
-                }) : tweets;
+                });
 
                 return {
                     account,
@@ -176,7 +182,14 @@ async function twitterFetcherHandler(node) {
                 .map(r => r.rawData)
                 .flat();
             
-            aiAnalysis = await analyzeWithAI(validTweets, node.data.pullConfig.aiPrompt);
+            // Prepare tweets for AI analysis
+            const tweetsForAnalysis = validTweets.map(tweet => ({
+                text: tweet.text,
+                metrics: tweet.metrics,
+                timestamp: tweet.created_at
+            }));
+            
+            aiAnalysis = await analyzeWithAI(tweetsForAnalysis, node.data.pullConfig.aiPrompt);
         }
 
         // Format the content to display raw results
@@ -194,10 +207,17 @@ async function twitterFetcherHandler(node) {
                         '---'
                     ].join('\n');
                 }
+                // Format tweets for display
+                const tweetDisplay = result.rawData.map(tweet => 
+                    `Tweet: ${tweet.text}\n` +
+                    `Time: ${new Date(tweet.created_at).toLocaleString()}\n` +
+                    `Metrics: ${tweet.metrics.retweets} RTs, ${tweet.metrics.likes} Likes, ${tweet.metrics.replies} Replies\n`
+                ).join('\n');
+
                 return [
                     `Raw Twitter API Response for @${result.account}:`,
                     '```',
-                    JSON.stringify(result.rawData, null, 2),
+                    tweetDisplay,
                     '```',
                     `Fetched at: ${result.timestamp}`,
                     '---'

@@ -50,12 +50,12 @@ export default function WebViewNode({ data }) {
   };
 
   return (
-    <div className="custom-node webview-node">
+    <div className={`custom-node ${isConfigOpen ? 'expanded' : ''}`}>
       <Handle type="target" position="left" />
 
       <div className="node-header">
-        <select className="node-type-select" value="webview" disabled>
-          <option value="webview">Web View</option>
+        <select className="node-type-select" value="webView" disabled>
+          <option value="webView">Web View</option>
         </select>
         <button 
           className="config-toggle"
@@ -67,6 +67,31 @@ export default function WebViewNode({ data }) {
 
       {isConfigOpen && (
         <div className="node-config">
+          {data.inputs?.length > 0 && data.inputs[0]?.output && (
+            <div className="twitter-output">
+              <h4>Twitter Analysis Results</h4>
+              {data.inputs[0].output.summary && (
+                <div className="summary-section">
+                  <h5>Summary</h5>
+                  <p>{data.inputs[0].output.summary}</p>
+                </div>
+              )}
+              {data.inputs[0].output.aiAnalysis && (
+                <div className="ai-analysis-section">
+                  <h5>AI Analysis</h5>
+                  <p>{data.inputs[0].output.aiAnalysis}</p>
+                </div>
+              )}
+              {data.inputs[0].output.content && (
+                <div className="content-section">
+                  <h5>Raw Data</h5>
+                  <pre className="content-pre">
+                    {data.inputs[0].output.content}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
           <div className="url-input-section">
             <input
               type="text"

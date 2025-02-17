@@ -10,13 +10,10 @@ export default function TwitterAgentNode({ data }) {
     bearerToken: data.bearerToken || ''
   });
   const [pullConfig, setPullConfig] = useState({
-    prompt: '',
     realTime: false,
     timeLength: '24', // hours
     targetAccounts: [],
     newAccount: '',
-    checkCA: false,
-    checkCoin: false,
     tweets: [],
     lastFetchTime: null,
     aiPrompt: '', // Add AI prompt field
@@ -37,6 +34,9 @@ export default function TwitterAgentNode({ data }) {
   });
   const [elizaBot, setElizaBot] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [checkCA, setCheckCA] = useState(false);
+  const [checkCoin, setCheckCoin] = useState(false);
+  const [outputData, setOutputData] = useState(null);
 
   useEffect(() => {
     // Initialize Eliza with custom rules when they change
@@ -110,7 +110,7 @@ export default function TwitterAgentNode({ data }) {
   };
 
   const handleRemoveAccount = (account) => {
-    const updatedAccounts = pullConfig.targetAccounts.filter(a => a !== account);
+    const updatedAccounts = pullConfig.targetAccounts.filter((a) => a !== account);
     handlePullConfigChange('targetAccounts', updatedAccounts);
   };
 
@@ -187,107 +187,95 @@ export default function TwitterAgentNode({ data }) {
   };
 
   const handlePullTweets = async () => {
-    if (!pullConfig.newAccount && pullConfig.targetAccounts.length === 0) {
-      alert('Please enter a Twitter username or add accounts to the target list');
-      return;
-    }
-
+    setIsLoading(true);
     try {
-      console.log("handlePullTweets called. Data:", data);
-      setIsLoading(true);
-      const response = await axios.post('http://localhost:5002/execute-flow', {
-        nodes: [{
-          id: data.id,
-          type: data.type,
-          data: {
-            ...data,
-            activeSubAgent: 'pull',
-            pullConfig: {
-              ...data.pullConfig,
-              targetAccounts: pullConfig.newAccount ? 
-                [...data.pullConfig.targetAccounts, pullConfig.newAccount] : 
-                data.pullConfig.targetAccounts
-            }
-          }
-        }]
-      });
-
-      if (response.data.results[data.id].tweets.length === 0) {
-        alert('No tweets found for the specified account(s)');
+      // Construct the AI prompt based on checkboxes
+      let aiPrompt = pullConfig.aiPrompt || '';
+      if (checkCA) {
+        aiPrompt += " Focus on contract addresses.";
+      }
+      if (checkCoin) {
+        aiPrompt += " Focus on cryptocurrency coins.";
       }
 
-      data.onChange({
-        ...data,
-        pullConfig: {
-          ...data.pullConfig,
-          tweets: response.data.results[data.id].tweets,
-          content: response.data.results[data.id].content,
-        }
+      const response = await fetch('http://localhost:5002/execute-flow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nodes: [
+            {
+              id: data.id, // Add node ID
+              type: 'twitterFetcher',
+              data: {
+                type: 'twitterFetcher',
+                pullConfig: {
+                  ...pullConfig,
+                  bearerToken: apiConfig.bearerToken,
+                  aiPrompt: aiPrompt,
+                }
+              }
+            }
+          ]
+        })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("Pull Tweets Result:", result);
+
+      if (result && result.results && result.results[data.id]) {
+        const nodeResult = result.results[data.id];
+        if (nodeResult.error) {
+          alert(`Error pulling tweets. Check console for details.`);
+          console.error("Error pulling tweets:", nodeResult.error);
+        } else {
+          handlePullConfigChange('tweets', nodeResult.rawResults);
+          handlePullConfigChange('lastFetchTime', new Date().toISOString());
+          setOutputData({
+            content: nodeResult.content,
+            summary: nodeResult.summary,
+            rawResults: nodeResult.rawResults,
+            aiAnalysis: nodeResult.aiAnalysis
+          });
+          // Update the node data to pass results downstream
+          data.onChange({
+            ...data,
+            output: {
+              content: nodeResult.content,
+              summary: nodeResult.summary,
+              rawResults: nodeResult.rawResults,
+              aiAnalysis: nodeResult.aiAnalysis
+            }
+          });
+        }
+      } else {
+        alert('Unexpected response structure. Check console.');
+        console.log("Unexpected response:", result);
+        setOutputData(null);
+      }
     } catch (error) {
       console.error('Error pulling tweets:', error);
-      alert('Error pulling tweets. Check console for details.');
+      alert(`Error pulling tweets: ${error.message}`);
+      setOutputData(null);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const fetchTweets = async () => {
-      if (pullConfig.targetAccounts.length === 0 || !apiConfig.bearerToken) return;
-
-      try {
-        const response = await fetch('http://localhost:5002/fetch-tweets', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            accounts: pullConfig.targetAccounts,
-            bearerToken: apiConfig.bearerToken,
-            includeRetweets: true,
-            includeProfiles: true,
-            prompt: pullConfig.prompt,
-            checkCA: pullConfig.checkCA,
-            checkCoin: pullConfig.checkCoin
-          })
-        });
-
-        const result = await response.json();
-
-        let recentTweets = [];
-        if (Array.isArray(result.tweets)) {
-          recentTweets = result.tweets.filter(tweet => {
-            if (!tweet.createdAt) return false;
-            const tweetTime = new Date(tweet.createdAt).getTime();
-            const timeLimit = parseInt(pullConfig.timeLength) * 60 * 60 * 1000;
-            return (Date.now() - tweetTime) <= timeLimit;
-          }).map(tweet => ({
-            type: tweet.isRetweet ? 'retweet' : 'tweet',
-            text: tweet.text,
-            createdAt: tweet.createdAt,
-            author: tweet.author,
-            retweetedProfile: tweet.isRetweet ? tweet.retweetedProfile : null
-          }));
-        }
-
-        handlePullConfigChange('tweets', recentTweets);
-        handlePullConfigChange('lastFetchTime', new Date().toISOString());
-      } catch (error) {
-        console.error('Error fetching tweets:', error);
-        alert(`Error fetching tweets: ${error.message}`); // Display error to user
+    const interval = setInterval(() => {
+      if (pullConfig.realTime) {
+        handlePullTweets();
       }
-    };
-
-    let interval;
-    if (pullConfig.realTime) {
-      interval = setInterval(fetchTweets, 60000); // Fetch every minute if realTime is true
-    } else {
-      fetchTweets(); // Fetch once immediately if realTime is false
-    }
+    }, 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [pullConfig.targetAccounts, apiConfig.bearerToken, pullConfig.realTime, pullConfig.timeLength, pullConfig.prompt, pullConfig.checkCA, pullConfig.checkCoin]);
+  }, [pullConfig.targetAccounts, apiConfig.bearerToken, pullConfig.realTime, pullConfig.timeLength, pullConfig.aiPrompt, checkCA, checkCoin]);
 
   useEffect(() => {
     setPullConfig(prevConfig => ({
@@ -356,17 +344,6 @@ export default function TwitterAgentNode({ data }) {
               <div className="subagent-config">
                 <h4>Pull Tweets</h4>
                 
-                {/* Add AI Analysis Configuration */}
-                <div className="config-field">
-                  <label>AI Analysis Prompt</label>
-                  <textarea
-                    value={pullConfig.aiPrompt}
-                    onChange={(e) => handlePullConfigChange('aiPrompt', e.target.value)}
-                    placeholder="Enter prompt for AI analysis (e.g., 'Analyze these tweets for sentiment and key topics')"
-                    className="node-textarea"
-                  />
-                </div>
-
                 <div className="config-field">
                   <label>Target Twitter Accounts</label>
                   <div className="account-input-container">
@@ -401,35 +378,54 @@ export default function TwitterAgentNode({ data }) {
                     ))}
                   </ul>
                 </div>
+
+                {/* AI Analysis Configuration */}
                 <div className="config-field">
-                  <label>Prompt</label>
+                  <label>AI Analysis Prompt</label>
                   <textarea
-                    value={pullConfig.prompt}
-                    onChange={(e) => handlePullConfigChange('prompt', e.target.value)}
-                    placeholder="Enter search prompt..."
+                    value={pullConfig.aiPrompt}
+                    onChange={(e) => handlePullConfigChange('aiPrompt', e.target.value)}
+                    placeholder="Enter prompt for AI analysis (e.g., 'Analyze these tweets for sentiment and key topics')"
                     className="node-textarea"
                   />
+                  <div className="checkbox-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={checkCA}
+                        onChange={(e) => setCheckCA(e.target.checked)}
+                      />
+                      Check CA
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={checkCoin}
+                        onChange={(e) => setCheckCoin(e.target.checked)}
+                      />
+                      Check $Coin
+                    </label>
+                  </div>
                 </div>
-                <div className="config-field checkbox-group">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={pullConfig.checkCA}
-                      onChange={(e) => handlePullConfigChange('checkCA', e.target.checked)}
-                    />
-                    CA (Contract Address)
-                  </label>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={pullConfig.checkCoin}
-                      onChange={(e) => handlePullConfigChange('checkCoin', e.target.checked)}
-                    />
-                    $Coin
-                  </label>
+
+                <div className="config-field">
+                  <label>Time Length (hours)</label>
+                  <select
+                    value={pullConfig.timeLength}
+                    onChange={(e) => handlePullConfigChange('timeLength', e.target.value)}
+                    className="node-select"
+                  >
+                    <option value="1">1 Hour</option>
+                    <option value="3">3 Hours</option>
+                    <option value="6">6 Hours</option>
+                    <option value="12">12 Hours</option>
+                    <option value="24">24 Hours</option>
+                    <option value="48">48 Hours</option>
+                    <option value="72">72 Hours</option>
+                  </select>
                 </div>
                 <div className="config-field">
-                  <label className="checkbox-label">
+                  <label>
                     <input
                       type="checkbox"
                       checked={pullConfig.realTime}
@@ -438,19 +434,32 @@ export default function TwitterAgentNode({ data }) {
                     Real-time
                   </label>
                 </div>
-                <div className="config-field">
-                  <label>Time Length (hours)</label>
-                  <select
-                    value={pullConfig.timeLength}
-                    onChange={(e) => handlePullConfigChange('timeLength', e.target.value)}
-                    className="node-select"
-                  >
-                    <option value="1">1 hour</option>
-                    <option value="12">12 hours</option>
-                    <option value="24">24 hours</option>
-                    <option value="48">48 hours</option>
-                  </select>
-                </div>
+                {/* Output Display */}
+                {outputData && (
+                  <div className="twitter-output">
+                    <h4>Results</h4>
+                    {outputData.summary && (
+                      <div className="summary-section">
+                        <h5>Summary</h5>
+                        <p>{outputData.summary}</p>
+                      </div>
+                    )}
+                    {outputData.aiAnalysis && (
+                      <div className="ai-analysis-section">
+                        <h5>AI Analysis</h5>
+                        <p>{outputData.aiAnalysis}</p>
+                      </div>
+                    )}
+                    {outputData.content && (
+                      <div className="content-section">
+                        <h5>Raw Data</h5>
+                        <pre className="content-pre">
+                          {outputData.content}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {pullConfig.lastFetchTime && (
                   <div className="last-fetch-time">
                     Last fetch: {new Date(pullConfig.lastFetchTime).toLocaleTimeString()}
