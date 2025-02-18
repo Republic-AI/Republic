@@ -106,39 +106,59 @@ async function twitterFetcherHandler(node) {
                 const response = await axios.get(
                     `https://twttrapi.p.rapidapi.com/user-tweets`,
                     {
-                        params: {
-                            username: account
-                        },
+                        params: { username: account },
                         headers: {
                             'x-rapidapi-key': rapidApiKey,
                             'x-rapidapi-host': 'twttrapi.p.rapidapi.com'
                         }
                     }
                 );
-                
-                console.log("Fetching tweets for account:", response.data?.data?.user_result);
 
-                // Extract tweets from the response
-                const tweets = response.data?.data?.tweets || [];
+                // Extract instructions array from response
+                const instructions = response.data?.data?.user_result?.result?.timeline_response?.timeline?.instructions || [];
                 
-                // Format tweets for better readability and AI analysis
-                const formattedTweets = tweets.map(tweet => ({
-                    text: tweet.text,
-                    created_at: tweet.created_at,
-                    id: tweet.id,
-                    metrics: {
-                        retweets: tweet.public_metrics?.retweet_count || 0,
-                        likes: tweet.public_metrics?.like_count || 0,
-                        replies: tweet.public_metrics?.reply_count || 0
+                // Process timeline instructions to extract tweets
+                const formattedTweets = [];
+                
+                instructions.forEach(instruction => {
+                    // Handle both regular entries and pinned tweets
+                    if (instruction.__typename === 'TimelineAddEntries') {
+                        // Process multiple entries
+                        instruction.entries?.forEach(entry => processEntry(entry, formattedTweets));
+                    } else if (instruction.__typename === 'TimelinePinEntry') {
+                        // Process single pinned entry
+                        processEntry(instruction.entry, formattedTweets);
                     }
-                }));
+                });
 
-                // Filter tweets by time if they have a created_at field
+                // Helper function to process a single entry
+                function processEntry(entry, tweets) {
+                    if (entry?.content?.content?.__typename === 'TimelineTweet') {
+                        const tweetResult = entry.content.content.tweetResult?.result;
+                        if (tweetResult?.legacy) {
+                            tweets.push({
+                                text: tweetResult.legacy.full_text,
+                                created_at: tweetResult.legacy.created_at,
+                                metrics: {
+                                    retweets: tweetResult.legacy.retweet_count,
+                                    likes: tweetResult.legacy.favorite_count,
+                                    replies: tweetResult.legacy.reply_count,
+                                    views: tweetResult.view_count_info?.count
+                                },
+                                id: tweetResult.legacy.id_str,
+                                author: tweetResult.core?.user_result?.result?.legacy?.screen_name,
+                                isPinned: entry.content.content.socialContext?.contextType === "Pin"
+                            });
+                        }
+                    }
+                }
+
+                // Filter tweets by time
                 const timeLength = parseInt(node.data.pullConfig.timeLength) || 24;
                 const cutoffTime = new Date(Date.now() - (timeLength * 60 * 60 * 1000));
                 
                 const filteredTweets = formattedTweets.filter(tweet => {
-                    if (!tweet.created_at) return true; // Include tweets without timestamp
+                    if (!tweet.created_at) return false;
                     const tweetDate = new Date(tweet.created_at);
                     return tweetDate >= cutoffTime;
                 });
@@ -176,72 +196,92 @@ async function twitterFetcherHandler(node) {
         });
 
         const results = await Promise.all(tweetsPromises);
-
-        // Perform AI analysis if prompt is provided
+        
+        // Combine all filtered tweets for AI analysis
+        const allFilteredTweets = results.flatMap(result => result.rawData);
+        
+        // Only perform AI analysis if there are filtered tweets
         let aiAnalysis = null;
-        if (isOpenAIInitialized && node.data.pullConfig.aiPrompt /*&& results.some(r => !r.error)*/) {
-            // const validTweets = results
-            //     .filter(r => !r.error)
-            //     .map(r => r.rawData)
-            //     .flat();
-            
-            // // Prepare tweets for AI analysis
-            // const tweetsForAnalysis = validTweets.map(tweet => ({
-            //     text: tweet.text,
-            //     metrics: tweet.metrics,
-            //     timestamp: tweet.created_at
-            // }));
-            console.log("handle with ai");
-            aiAnalysis = await analyzeWithAI(results, node.data.pullConfig.aiPrompt);
+        if (allFilteredTweets.length > 0 && isOpenAIInitialized) {
+            try {
+                if (node.data.isOriginalCA) {
+                    // Prompt specifically for finding Base58 addresses
+                    const prompt = `Analyze these tweets and extract ONLY valid Base58-encoded strings that look like Solana addresses or contract addresses. Base58 strings are typically 32-44 characters long and contain only alphanumeric characters. Format the output as a simple list of addresses, one per line. Ignore any other content:
+
+                    ${allFilteredTweets.map(tweet => tweet.text).join('\n\n')}`;
+
+                    const completion = await openai.createChatCompletion({
+                        model: "gpt-3.5-turbo",
+                        messages: [{
+                            role: "user",
+                            content: prompt
+                        }],
+                        temperature: 0.1, // Lower temperature for more deterministic output
+                        max_tokens: 500
+                    });
+
+                    // Clean up the AI response to only include addresses
+                    aiAnalysis = completion.data.choices[0].message.content
+                        .split('\n')
+                        .filter(line => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(line.trim()))
+                        .join('\n');
+
+                } else {
+                    // Original analysis logic
+                    const userPrompt = node.data.pullConfig.customPrompt || 'Analyze these tweets:';
+                    const prompt = `${userPrompt}\n\n${allFilteredTweets.map(tweet => 
+                        `Tweet by ${tweet.author} (${tweet.created_at}):
+                         "${tweet.text}"
+                         Engagement: ${tweet.metrics.likes} likes, ${tweet.metrics.retweets} RTs, ${tweet.metrics.replies} replies${tweet.metrics.views ? `, ${tweet.metrics.views} views` : ''}`
+                    ).join('\n\n')}`;
+
+                    const completion = await openai.createChatCompletion({
+                        model: "gpt-3.5-turbo",
+                        messages: [{
+                            role: "user",
+                            content: prompt
+                        }],
+                        temperature: 0.7,
+                        max_tokens: 500
+                    });
+
+                    aiAnalysis = completion.data.choices[0].message.content;
+                }
+            } catch (error) {
+                console.error('Error in AI analysis:', error);
+                aiAnalysis = `Error in AI analysis: ${error.message}`;
+            }
         }
 
-        // Format the content to display raw results
-        const formattedContent = results
-            .map(result => {
-                if (result.error) {
-                    return [
-                        `Error fetching tweets for @${result.account}:`,
-                        `Message: ${result.error}`,
-                        'Error Details:',
-                        '```',
-                        JSON.stringify(result.errorDetails, null, 2),
-                        '```',
-                        `Timestamp: ${result.timestamp}`,
-                        '---'
-                    ].join('\n');
-                }
-                // Format tweets for display
-                const tweetDisplay = result.rawData.map(tweet => 
-                    `Tweet: ${tweet.text}\n` +
-                    `Time: ${new Date(tweet.created_at).toLocaleString()}\n` +
-                    `Metrics: ${tweet.metrics.retweets} RTs, ${tweet.metrics.likes} Likes, ${tweet.metrics.replies} Replies\n`
-                ).join('\n');
+        // Format the final content for display
+        const summary = results.map(result => {
+            const tweetCount = result.rawData.length;
+            return `@${result.account}: ${tweetCount} tweets in the last ${node.data.pullConfig.timeLength} hours`;
+        }).join('\n');
 
-                return [
-                    `Raw Twitter API Response for @${result.account}:`,
-                    '```',
-                    tweetDisplay,
-                    '```',
-                    `Fetched at: ${result.timestamp}`,
-                    '---'
-                ].join('\n');
-            })
-            .join('\n\n');
+        const finalContent = results.map(result => {
+            return `Account: @${result.account}\n` +
+                result.rawData.map(tweet => 
+                    `[${new Date(tweet.created_at).toLocaleString()}] ${tweet.isPinned ? '[PINNED] ' : ''}${tweet.text}\n` +
+                    `Engagement: ${tweet.metrics.likes} likes, ${tweet.metrics.retweets} RTs, ${tweet.metrics.replies} replies` +
+                    (tweet.metrics.views ? `, ${tweet.metrics.views} views` : '')
+                ).join('\n\n');
+        }).join('\n\n---\n\n');
 
-        // Add AI analysis to the content if available
-        const finalContent = aiAnalysis 
-            ? `${formattedContent}\n\nAI Analysis:\n${aiAnalysis}`
-            : formattedContent;
-
-        // Add summary information
-        const summary = `Fetched data for ${results.length} accounts. ` +
-            `Success: ${results.filter(r => !r.error).length}, ` +
-            `Failed: ${results.filter(r => r.error).length}`;
+        // Modify the return format based on CA mode
+        if (node.data.isOriginalCA) {
+            return {
+                content: aiAnalysis || 'No Base58 addresses found',
+                summary: 'Base58 Address Extraction Mode',
+                rawResults: allFilteredTweets,
+                aiAnalysis
+            };
+        }
 
         return {
             content: finalContent,
             summary,
-            rawResults: results,
+            rawResults: allFilteredTweets, // Only return filtered tweets
             aiAnalysis
         };
 

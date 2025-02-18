@@ -5,7 +5,9 @@ export default function TwitterFetcherNode({ data }) {
   const [accounts, setAccounts] = useState(data.targetAccounts || []);
   const [newAccount, setNewAccount] = useState('');
   const [bearerToken, setBearerToken] = useState(data.bearerToken || '');
+  const [customPrompt, setCustomPrompt] = useState(data.customPrompt || '');
   const [isConfigOpen, setIsConfigOpen] = useState(true);
+  const [isOriginalCA, setIsOriginalCA] = useState(data.isOriginalCA || false);
 
   const handleBearerTokenChange = (e) => {
     const newToken = e.target.value;
@@ -35,6 +37,24 @@ export default function TwitterFetcherNode({ data }) {
     data.onChange({
       ...data,
       targetAccounts: updatedAccounts
+    });
+  };
+
+  const handleCustomPromptChange = (e) => {
+    const newPrompt = e.target.value;
+    setCustomPrompt(newPrompt);
+    data.onChange({
+      ...data,
+      customPrompt: newPrompt
+    });
+  };
+
+  const handleOriginalCAChange = (e) => {
+    const checked = e.target.checked;
+    setIsOriginalCA(checked);
+    data.onChange({
+      ...data,
+      isOriginalCA: checked
     });
   };
 
@@ -147,6 +167,28 @@ export default function TwitterFetcherNode({ data }) {
                 </li>
               ))}
             </ul>
+
+            <div className="prompt-section">
+              <label>Analysis Prompt:</label>
+              <textarea
+                value={customPrompt}
+                onChange={handleCustomPromptChange}
+                placeholder="Enter your custom prompt for analyzing the tweets..."
+                rows={4}
+                className="custom-prompt-input"
+              />
+            </div>
+
+            <div className="config-section">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={isOriginalCA}
+                  onChange={handleOriginalCAChange}
+                />
+                Original CA Mode (Extract Base58 addresses)
+              </label>
+            </div>
 
             {data.lastFetchTime && (
               <div className="last-fetch-time">
