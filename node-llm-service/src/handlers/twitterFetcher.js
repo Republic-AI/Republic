@@ -115,6 +115,8 @@ async function twitterFetcherHandler(node) {
                         }
                     }
                 );
+                
+                console.log("Fetching tweets for account:", response.data?.data?.user_result);
 
                 // Extract tweets from the response
                 const tweets = response.data?.data?.tweets || [];
@@ -144,7 +146,8 @@ async function twitterFetcherHandler(node) {
                 return {
                     account,
                     rawData: filteredTweets,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    result: response.data?.data?.user_result
                 };
 
             } catch (error) {
@@ -176,20 +179,20 @@ async function twitterFetcherHandler(node) {
 
         // Perform AI analysis if prompt is provided
         let aiAnalysis = null;
-        if (isOpenAIInitialized && node.data.pullConfig.aiPrompt && results.some(r => !r.error)) {
-            const validTweets = results
-                .filter(r => !r.error)
-                .map(r => r.rawData)
-                .flat();
+        if (isOpenAIInitialized && node.data.pullConfig.aiPrompt /*&& results.some(r => !r.error)*/) {
+            // const validTweets = results
+            //     .filter(r => !r.error)
+            //     .map(r => r.rawData)
+            //     .flat();
             
-            // Prepare tweets for AI analysis
-            const tweetsForAnalysis = validTweets.map(tweet => ({
-                text: tweet.text,
-                metrics: tweet.metrics,
-                timestamp: tweet.created_at
-            }));
-            
-            aiAnalysis = await analyzeWithAI(tweetsForAnalysis, node.data.pullConfig.aiPrompt);
+            // // Prepare tweets for AI analysis
+            // const tweetsForAnalysis = validTweets.map(tweet => ({
+            //     text: tweet.text,
+            //     metrics: tweet.metrics,
+            //     timestamp: tweet.created_at
+            // }));
+            console.log("handle with ai");
+            aiAnalysis = await analyzeWithAI(results, node.data.pullConfig.aiPrompt);
         }
 
         // Format the content to display raw results

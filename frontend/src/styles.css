@@ -565,38 +565,6 @@ html, body {
   margin-top: 8px;
 }
 
-/* Slider Styles */
-.slider-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.node-slider {
-  flex: 1;
-  height: 4px;
-  -webkit-appearance: none;
-  background: #ddd;
-  border-radius: 2px;
-  outline: none;
-}
-
-.node-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  background: #007bff;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.slider-value {
-  min-width: 30px;
-  text-align: center;
-  font-size: 12px;
-  color: #666;
-}
-
 /* Toggle Switch Styles */
 .toggle-container {
   display: flex;
@@ -984,36 +952,6 @@ html, body {
   margin-bottom: 4px;
 }
 
-.slider-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.node-slider {
-  flex: 1;
-  height: 4px;
-  -webkit-appearance: none;
-  background: #ddd;
-  border-radius: 2px;
-  outline: none;
-}
-
-.node-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  background: #007bff;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.slider-value {
-  min-width: 60px;
-  text-align: right;
-  font-size: 12px;
-  color: #666;
-}
 
 /* Trading Settings Styles */
 .trading-settings {
@@ -1308,36 +1246,6 @@ html, body {
   color: #495057;
 }
 
-.slider-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.node-slider {
-  flex: 1;
-  height: 4px;
-  -webkit-appearance: none;
-  background: #dee2e6;
-  border-radius: 2px;
-  outline: none;
-}
-
-.node-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  background: #1a73e8;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.slider-value {
-  min-width: 60px;
-  font-size: 12px;
-  color: #495057;
-}
 
 /* Trading Agent Wallet Section */
 .wallet-section {
@@ -1447,63 +1355,6 @@ html, body {
   background-color: #5a6268;
 }
 
-.range-slider {
-  position: relative;
-  width: 100%;
-  height: 10px;
-  margin-top: 5px;
-}
-
-.slider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 10px;
-  border-radius: 5px;
-  background: #ddd;
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none; /* Important for overlapping sliders */
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #4CAF50;
-  cursor: pointer;
-  pointer-events: auto; /* Re-enable pointer events for the thumb */
-}
-
-.slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #4CAF50;
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-.range-between {
-  position: absolute;
-  height: 100%;
-  background-color: #4CAF50; /* Highlight color */
-  border-radius: 5px;
-  pointer-events: none; /* Make sure it doesn't interfere with slider events */
-}
-
-.slider-values {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 5px;
-  font-size: 12px;
-}
 
 .error-fallback {
   padding: 20px;
@@ -1603,4 +1454,21 @@ html, body {
 .twitter-agent .twitter-output h5 {
   font-size: 0.9em;
   margin: 5px 0;
+}
+
+.slider-container {
+  position: relative;
+}
+
+.range-slider {
+  position: relative;
+}
+
+.silder {
+  position: absolute;
+  top: 0; /* 确保滑块与容器顶部对齐 */
+}
+
+.slider::-webkit-slider-thumb {
+  position: relative;
 }

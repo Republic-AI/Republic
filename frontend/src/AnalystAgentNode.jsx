@@ -109,6 +109,7 @@ export default function AnalystAgentNode({ data }) {
                     value={parameters.mktCap[0]}
                     onChange={(e) => handleRangeChange('mktCap', [Number(e.target.value), parameters.mktCap[1]])}
                     className="slider"
+                    style={{zIndex:2}}
                   />
                   <input
                     type="range"
@@ -117,6 +118,7 @@ export default function AnalystAgentNode({ data }) {
                     value={parameters.mktCap[1]}
                     onChange={(e) => handleRangeChange('mktCap', [parameters.mktCap[0], Number(e.target.value)])}
                     className="slider"
+                    style={{zIndex:1}}
                   />
                   <div className="range-between" style={{
                     left: `${(parameters.mktCap[0] / 1000) * 100}%`,
