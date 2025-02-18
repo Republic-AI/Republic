@@ -16,7 +16,7 @@ export default function TwitterAgentNode({ data }) {
     newAccount: '',
     tweets: [],
     lastFetchTime: null,
-    aiPrompt: '', // Add AI prompt field
+    aiPrompt: data.pullConfig?.aiPrompt || '', // Initialize from data, use optional chaining
   });
   const [postConfig, setPostConfig] = useState({
     elizaPrompt: '',
@@ -182,66 +182,60 @@ export default function TwitterAgentNode({ data }) {
   const handlePullTweets = async () => {
     setIsLoading(true);
     try {
-      // Construct the AI prompt based on checkboxes
-      let aiPrompt = pullConfig.aiPrompt || '';
-      if (checkCA) {
-        aiPrompt += " Focus on contract addresses.";
-      }
-      if (checkCoin) {
-        aiPrompt += " Focus on cryptocurrency coins.";
-      }
-
       const response = await fetch('http://localhost:5002/execute-flow', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          nodes: [
-            {
-              id: data.id, // Add node ID
-              type: 'twitterFetcher',
-              data: {
-                type: 'twitterFetcher',
-                pullConfig: {
-                  ...pullConfig,
-                  bearerToken: apiConfig.bearerToken,
-                  aiPrompt: aiPrompt,
-                },
-                openAIApiKey: apiConfig.openAIApiKey, // Pass OpenAI API Key
-              }
+          nodes: [{
+            id: data.id,
+            type: 'twitterFetcher',
+            data: {
+              pullConfig: {
+                ...pullConfig,
+                timeLength: pullConfig.timeLength
+              },
+              openAIApiKey: apiConfig.openAIApiKey,
+              isOriginalCA: checkCA
             }
-          ]
+          }]
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       const result = await response.json();
-      console.log("Pull Tweets Result:", result);
+      const twitterResult = result.results[data.id];
 
-      // Assuming the result structure is { results: { [nodeId]: { ...data } } }
-      const nodeResult = result.results[data.id];
-      if (nodeResult) {
-        setOutputData({
-          summary: nodeResult.summary,
-          aiAnalysis: nodeResult.aiAnalysis,
-          content: nodeResult.content,
-        });
+      // Format the output data that will be passed to connected nodes
+      const outputToPass = {
+        content: twitterResult.content,
+        summary: twitterResult.summary,
+        aiAnalysis: twitterResult.aiAnalysis,
+        rawResults: twitterResult.rawResults
+      };
 
-        // Update lastFetchTime in pullConfig
-        handlePullConfigChange('lastFetchTime', new Date().toISOString());
-        handlePullConfigChange('tweets', nodeResult.rawResults || []);
-      } else {
-        console.warn("No results found for Twitter Fetcher node.");
-        setOutputData(null);
-      }
+      // Update local state for display
+      setOutputData(outputToPass);
+
+      // Update node data to pass output to connected nodes
+      data.onChange({
+        ...data,
+        output: outputToPass // This will be available to connected nodes
+      });
 
     } catch (error) {
-      console.error('Error pulling tweets:', error);
-      setOutputData({ error: error.message });
+      console.error('Error fetching tweets:', error);
+      const errorOutput = {
+        content: `Error: ${error.message}`,
+        summary: 'Error occurred',
+        aiAnalysis: null,
+        rawResults: []
+      };
+      setOutputData(errorOutput);
+      data.onChange({
+        ...data,
+        output: errorOutput
+      });
     } finally {
       setIsLoading(false);
     }
@@ -348,37 +342,35 @@ export default function TwitterAgentNode({ data }) {
               </div>
               <div className="config-field">
                 <label>Time Length (hours)</label>
-                <select
+                <input
+                  type="number"
                   value={pullConfig.timeLength}
                   onChange={(e) => handlePullConfigChange('timeLength', e.target.value)}
-                  className="node-select"
-                >
-                  <option value="1">1 hour</option>
-                  <option value="3">3 hours</option>
-                  <option value="6">6 hours</option>
-                  <option value="12">12 hours</option>
-                  <option value="24">24 hours</option>
-                </select>
+                  placeholder="Enter time length in hours"
+                  className="node-input"
+                />
               </div>
               <div className="config-field">
                 <label>AI Analysis Prompt</label>
                 <textarea
                   value={pullConfig.aiPrompt}
                   onChange={(e) => handlePullConfigChange('aiPrompt', e.target.value)}
-                  placeholder="Enter prompt for AI analysis..."
+                  placeholder="Enter a custom prompt for AI analysis..."
                   className="node-textarea"
                 />
               </div>
-              <div className="config-field checkbox-field">
-                <label>
+              <div className="config-field">
+                <label className="checkbox-label">
                   <input
                     type="checkbox"
                     checked={checkCA}
                     onChange={(e) => setCheckCA(e.target.checked)}
                   />
-                  Check Contract Addresses
+                  Check CA
                 </label>
-                <label>
+              </div>
+              <div className="config-field">
+                <label className="checkbox-label">
                   <input
                     type="checkbox"
                     checked={checkCoin}

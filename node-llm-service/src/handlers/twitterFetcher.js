@@ -195,7 +195,7 @@ async function twitterFetcherHandler(node) {
             try {
                 if (node.data.isOriginalCA) {
                     // Prompt specifically for finding Base58 addresses
-                    const prompt = `Analyze these tweets and extract ONLY valid Base58-encoded strings that look like Solana addresses or contract addresses. Base58 strings are typically 32-44 characters long and contain only alphanumeric characters. Format the output as a simple list of addresses, one per line. Ignore any other content:
+                    const prompt = `Analyze these tweets and extract ONLY valid Base58-encoded strings that look like Solana addresses or contract addresses.  Base58 strings are typically 32-44 characters long and contain only alphanumeric characters. Format the output as a simple list of addresses, one per line. Ignore any other content:
 
                     ${allFilteredTweets.map(tweet => tweet.text).join('\n\n')}`;
 
@@ -209,16 +209,17 @@ async function twitterFetcherHandler(node) {
                         max_tokens: 500
                     });
 
-                    // Clean up the AI response to only include addresses
+                    // Extract and filter Base58 strings.  This is the key change.
                     aiAnalysis = completion.data.choices[0].message.content
                         .split('\n')
-                        .filter(line => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(line.trim()))
-                        .join('\n');
+                        .map(line => line.trim()) // Trim whitespace
+                        .filter(line => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(line)) // Base58 regex
+                        .join('\n'); // Join back into a single string, one address per line
 
                 } else {
-                    // Original analysis logic
-                    const userPrompt = node.data.pullConfig.customPrompt || 'Analyze these tweets:';
-                    const prompt = `${userPrompt}\n\n${allFilteredTweets.map(tweet => 
+                    // Use custom prompt from pullConfig, or fallback to a default
+                    const userPrompt = node.data.pullConfig.aiPrompt || 'Analyze these tweets:';
+                    const prompt = `${userPrompt}\n\n${allFilteredTweets.map(tweet =>
                         `Tweet by ${tweet.author} (${tweet.created_at}):
                          "${tweet.text}"
                          Engagement: ${tweet.metrics.likes} likes, ${tweet.metrics.retweets} RTs, ${tweet.metrics.replies} replies${tweet.metrics.views ? `, ${tweet.metrics.views} views` : ''}`
