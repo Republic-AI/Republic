@@ -4,8 +4,7 @@ const { Configuration, OpenAIApi } = require('openai');
 // Initialize OpenAI
 let openai;
 
-function initializeOpenAI() {
-  const apiKey = process.env.OPENAI_API_KEY;
+function initializeOpenAI(apiKey) {
   if (!apiKey) {
     console.warn("OpenAI API key is not set. AI analysis will be disabled.");
     return false;
@@ -68,7 +67,7 @@ async function analyzeWithAI(tweets, prompt) {
 
 async function twitterFetcherHandler(node) {
     console.log("twitterFetcherHandler called. Node data:", node);
-    const isOpenAIInitialized = initializeOpenAI();
+    const isOpenAIInitialized = initializeOpenAI(node.data.openAIApiKey); // Pass OpenAI API Key
 
     try {
         // Get the target accounts from the node data
@@ -132,17 +131,17 @@ async function twitterFetcherHandler(node) {
                 });
 
                 // Helper function to process a single entry
-                function processEntry(entry, tweets) {
-                    if (entry?.content?.content?.__typename === 'TimelineTweet') {
-                        const tweetResult = entry.content.content.tweetResult?.result;
-                        if (tweetResult?.legacy) {
-                            tweets.push({
-                                text: tweetResult.legacy.full_text,
-                                created_at: tweetResult.legacy.created_at,
+                function processEntry(entry, tweetArray) {
+                    if (entry?.content?.__typename === 'TimelineTimelineItem') {
+                        const tweetResult = entry.content?.content?.tweetResult?.result;
+                        if (tweetResult) {
+                            tweetArray.push({
+                                text: tweetResult.legacy?.full_text,
+                                created_at: tweetResult.legacy?.created_at,
                                 metrics: {
-                                    retweets: tweetResult.legacy.retweet_count,
-                                    likes: tweetResult.legacy.favorite_count,
-                                    replies: tweetResult.legacy.reply_count,
+                                    likes: tweetResult.legacy?.favorite_count,
+                                    retweets: tweetResult.legacy?.retweet_count,
+                                    replies: tweetResult.legacy?.reply_count,
                                     views: tweetResult.view_count_info?.count
                                 },
                                 id: tweetResult.legacy.id_str,
@@ -171,26 +170,16 @@ async function twitterFetcherHandler(node) {
                 };
 
             } catch (error) {
-                console.error(`Error fetching tweets for @${account}:`, error);
-                if (error.response) {
-                    console.error(`Full error response for ${account}:`, {
-                        status: error.response.status,
-                        statusText: error.response.statusText,
-                        headers: error.response.headers,
-                        data: error.response.data,
-                        config: {
-                            url: error.response.config.url,
-                            method: error.response.config.method,
-                            headers: error.response.config.headers,
-                            params: error.response.config.params
-                        }
-                    });
-                }
+                console.error(`Error fetching tweets for ${account}:`, {
+                    message: error.message,
+                    code: error.code,
+                    response: error.response?.data
+                });
                 return {
                     account,
-                    error: error.message,
-                    errorDetails: error.response?.data || {},
-                    timestamp: new Date().toISOString()
+                    rawData: [],
+                    timestamp: new Date().toISOString(),
+                    error: `Failed to fetch tweets for ${account}`
                 };
             }
         });
