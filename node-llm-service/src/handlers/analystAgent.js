@@ -59,6 +59,7 @@ async function analystAgentHandler(node) {
     // Extract relevant data from the Solana Tracker response
     const tokenData = tokenInfo.token;
     const poolData = tokenInfo.pools[0]; // Assuming we use the first pool for simplicity
+    const riskData = tokenInfo.risk;
 
     const name = tokenData.name;
     const symbol = tokenData.symbol;
@@ -66,7 +67,10 @@ async function analystAgentHandler(node) {
     const price = poolData.price.usd;
     const marketCap = poolData.marketCap.usd;
     const liquidity = poolData.liquidity.usd;
-    const numHolders = tokenHolders.length; // Using top holders as an approximation
+    const numHolders = tokenHolders.length; // Using top holders as an approximation.  Consider fetching *all* holders if needed.
+    const riskScore = riskData.score;
+    const rugged = riskData.rugged;
+    const riskDetails = riskData.risks;
 
     // Top 10 holders calculation (using the top holders data)
     let top10Percentage = 0;
@@ -76,10 +80,12 @@ async function analystAgentHandler(node) {
 
     // Check if token meets criteria
     const meetsCriteria =
-      marketCap >= (parameters.mktCap * 1000000) &&  // Convert millions to USD
-      liquidity >= (parameters.liquidity * 1000000) && // Convert millions to USD
-      numHolders >= parameters.holders &&
-      top10Percentage <= parameters.top10;
+      marketCap >= (parameters.mktCap[0] * 1000000) &&  // Convert millions to USD
+      marketCap <= (parameters.mktCap[1] * 1000000) &&
+      liquidity >= (parameters.liquidity[0] * 1000000) && // Convert millions to USD
+      liquidity <= (parameters.liquidity[1] * 1000000) &&
+      top10Percentage >= parameters.top10[0] &&
+      top10Percentage <= parameters.top10[1];
 
     const analysisData = {
       contractAddress: contractAddress,
@@ -92,6 +98,11 @@ async function analystAgentHandler(node) {
       top10Percentage,
       meetsCriteria,
       totalSupply,
+      risk: {
+        score: riskScore,
+        rugged: rugged,
+        details: riskDetails
+      },
       holderMetrics: {
         top10Holders: tokenHolders.slice(0,10)
       }

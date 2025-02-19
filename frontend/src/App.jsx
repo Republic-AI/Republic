@@ -450,8 +450,8 @@ export default function App() {
                   >
                     <span className="button-icon">🌐</span>
                     Web View
-                  </button>
-                </div>
+            </button>
+          </div>
 
           {/* Run Flow Button */}
           <button 
