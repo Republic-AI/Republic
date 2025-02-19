@@ -1,38 +1,125 @@
 import React, { useState, useEffect } from 'react';
 import { Handle } from 'reactflow';
 import axios from 'axios';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 
 const GMGN_API_BASE = 'https://gmgn.ai/defi/router/v1/sol';
 
 export default function TradingAgentNode({ data }) {
-  const { publicKey, sendTransaction, connected, connect } = useWallet();
   const [isConfigOpen, setIsConfigOpen] = useState(true);
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [publicKey, setPublicKey] = useState(null);
   const [parameters, setParameters] = useState(() => ({
     ...data.parameters,
     fixedBuy: data.parameters?.fixedBuy || 0.1,
     maxBuy: data.parameters?.maxBuy || 1,
     sellAt: data.parameters?.sellAt || 200,
     stopLoss: data.parameters?.stopLoss || 50,
-    gas: data.parameters?.gas || 0.006,  // GMGN recommended gas
+    gas: data.parameters?.gas || 0.006,
     slippage: data.parameters?.slippage || 0.5,
     antiMEV: data.parameters?.antiMEV || false
   }));
 
-  useEffect(() => {
-    if (publicKey) {
-      data.onChange({
-        ...data,
-        walletAddress: publicKey.toBase58(),
-      });
-    } else {
-      data.onChange({
-        ...data,
-        walletAddress: null,
-      });
+  // Check if Phantom is installed and get provider
+  const getProvider = () => {
+    if ('phantom' in window) {
+      const provider = window.phantom?.solana;
+      if (provider?.isPhantom) {
+        return provider;
+      }
     }
-  }, [publicKey, data]);
+    return null;
+  };
+
+  // Check initial connection status
+  useEffect(() => {
+    const provider = getProvider();
+    if (provider) {
+      provider.on('connect', (publicKey) => {
+        console.log('Connected with public key:', publicKey.toString());
+        setPublicKey(publicKey);
+        setWalletConnected(true);
+        data.onChange({
+          ...data,
+          walletAddress: publicKey.toString()
+        });
+      });
+
+      provider.on('disconnect', () => {
+        console.log('Disconnected');
+        setPublicKey(null);
+        setWalletConnected(false);
+        data.onChange({
+          ...data,
+          walletAddress: null
+        });
+      });
+
+      // Check if already connected
+      if (provider.isConnected) {
+        setPublicKey(provider.publicKey);
+        setWalletConnected(true);
+        data.onChange({
+          ...data,
+          walletAddress: provider.publicKey.toString()
+        });
+      }
+    }
+  }, []);
+
+  const handleConnect = async () => {
+    try {
+      const provider = getProvider();
+      if (!provider) {
+        window.open('https://phantom.app/', '_blank');
+        return;
+      }
+
+      const resp = await provider.connect();
+      setPublicKey(resp.publicKey);
+      setWalletConnected(true);
+      data.onChange({
+        ...data,
+        walletAddress: resp.publicKey.toString()
+      });
+    } catch (err) {
+      console.error('Failed to connect:', err);
+      if (err.code === 4001) {
+        alert('Please accept the connection request in your wallet');
+      } else {
+        alert(`Error connecting to wallet: ${err.message}`);
+      }
+    }
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      const provider = getProvider();
+      if (provider) {
+        await provider.disconnect();
+        setPublicKey(null);
+        setWalletConnected(false);
+        data.onChange({
+          ...data,
+          walletAddress: null
+        });
+      }
+    } catch (err) {
+      console.error('Failed to disconnect:', err);
+      alert(`Error disconnecting wallet: ${err.message}`);
+    }
+  };
+
+  const handleParameterChange = (paramName, value) => {
+    const updatedParams = {
+      ...parameters,
+      [paramName]: value,
+    };
+    setParameters(updatedParams);
+    data.onChange({
+      ...data,
+      parameters: updatedParams
+    });
+  };
 
   // Function to get swap route from GMGN
   const getSwapRoute = async (inputToken, outputToken, amount, fromAddress) => {
@@ -89,20 +176,8 @@ export default function TradingAgentNode({ data }) {
     }
   };
 
-  const handleParameterChange = (paramName, value) => {
-    const updatedParams = {
-      ...parameters,
-      [paramName]: value
-    };
-    setParameters(updatedParams);
-    data.onChange({
-      ...data,
-      parameters: updatedParams
-    });
-  };
-
   const handleBuy = async () => {
-    if (!connected || !publicKey) {
+    if (!walletConnected || !publicKey) {
       alert('Please connect wallet first');
       return;
     }
@@ -143,33 +218,33 @@ export default function TradingAgentNode({ data }) {
         <select className="node-type-select" value="tradingAgent" disabled>
           <option value="tradingAgent">Trading Agent</option>
         </select>
-        <button className="config-toggle" onClick={() => setIsConfigOpen(!isConfigOpen)}>
+        <button
+          className="config-toggle"
+          onClick={() => setIsConfigOpen(!isConfigOpen)}
+        >
           {isConfigOpen ? '▼' : '▲'}
         </button>
       </div>
 
       {isConfigOpen && (
         <div className="node-config">
-          {!connected && (
-            <div className="wallet-connect-section">
-              <p>Connect your wallet to enable trading.</p>
-              <button
-                onClick={() => connect().catch(error => {
-                  // Handle connection errors, e.g., user rejection
-                  console.error("Wallet connection failed:", error);
-                  alert("Failed to connect wallet. Please try again.");
-                })}
-                className="connect-wallet-button"
-              >
+          <div className="wallet-section">
+            {!walletConnected ? (
+              <button onClick={handleConnect} className="connect-wallet-button">
                 Connect Phantom Wallet
               </button>
-            </div>
-          )}
-          {connected && (
-            <div className="wallet-info">
-              <p>Connected Wallet: {publicKey.toBase58().substring(0, 4)}...{publicKey.toBase58().substring(publicKey.toBase58().length - 4)}</p>
-            </div>
-          )}
+            ) : (
+              <div className="wallet-info">
+                <div className="wallet-address">
+                  Connected: {publicKey.toString().slice(0, 4)}...{publicKey.toString().slice(-4)}
+                </div>
+                <button onClick={handleDisconnect} className="disconnect-wallet-button">
+                  Disconnect
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="config-section">
             <h4>Buy Strategy</h4>
             <div className="input-group">
