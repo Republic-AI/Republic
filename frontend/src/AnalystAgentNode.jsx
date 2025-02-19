@@ -4,7 +4,7 @@ import './styles.css';
 
 export default function AnalystAgentNode({ data }) {
   const [isConfigOpen, setIsConfigOpen] = useState(true);
-  const [contractAddress, setContractAddress] = useState('');
+  const [contractAddress, setContractAddress] = useState(data.output?.contractAddress || '');
   const [parameters, setParameters] = useState(() => ({
     mktCap: data.parameters?.mktCap || [0, 1000],       // Market cap in millions
     liquidity: data.parameters?.liquidity || [0, 100],    // Liquidity in millions
@@ -13,6 +13,12 @@ export default function AnalystAgentNode({ data }) {
     blueChip: data.parameters?.blueChip || [0, 100],     // Blue chip holder percentage
     hasAudit: data.parameters?.hasAudit || false         // Has audit flag
   }));
+
+  useEffect(() => {
+    if (data.output?.contractAddress) {
+      setContractAddress(data.output.contractAddress);
+    }
+  }, [data.output]);
 
   const handleRangeChange = (paramName, value) => {
     const updatedParams = {
