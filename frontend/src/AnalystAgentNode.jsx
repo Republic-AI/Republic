@@ -9,6 +9,8 @@ export default function AnalystAgentNode({ data }) {
     mktCap: data.parameters?.mktCap || [0, 1000],       // Market cap in millions
     liquidity: data.parameters?.liquidity || [0, 100],    // Liquidity in millions
     top10: data.parameters?.top10 || [0, 100],        // Top 10 holders percentage
+    snipers: data.parameters?.snipers || [0, 70],       // Sniper score (0-70)
+    blueChip: data.parameters?.blueChip || [0, 100],     // Blue chip holder percentage
     hasAudit: data.parameters?.hasAudit || false         // Has audit flag
   }));
 
@@ -187,6 +189,66 @@ export default function AnalystAgentNode({ data }) {
                 </div>
               </div>
 
+              <div className="slider-container">
+                <label>Snipers (0-70)</label>
+                <div className="range-slider">
+                  <input
+                    type="range"
+                    min="0"
+                    max="70"
+                    value={parameters.snipers[0]}
+                    onChange={(e) => handleRangeChange('snipers', [Number(e.target.value), parameters.snipers[1]])}
+                    className="slider"
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max="70"
+                    value={parameters.snipers[1]}
+                    onChange={(e) => handleRangeChange('snipers', [parameters.snipers[0], Number(e.target.value)])}
+                    className="slider"
+                  />
+                  <div className="range-between" style={{
+                    left: `${(parameters.snipers[0] / 70) * 100}%`,
+                    width: `${((parameters.snipers[1] - parameters.snipers[0]) / 70) * 100}%`
+                  }}></div>
+                </div>
+                <div className="slider-values">
+                  <span>{parameters.snipers[0]}</span>
+                  <span>{parameters.snipers[1]}</span>
+                </div>
+              </div>
+
+              <div className="slider-container">
+                <label>Blue Chip Holders (%)</label>
+                <div className="range-slider">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={parameters.blueChip[0]}
+                    onChange={(e) => handleRangeChange('blueChip', [Number(e.target.value), parameters.blueChip[1]])}
+                    className="slider"
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={parameters.blueChip[1]}
+                    onChange={(e) => handleRangeChange('blueChip', [parameters.blueChip[0], Number(e.target.value)])}
+                    className="slider"
+                  />
+                  <div className="range-between" style={{
+                    left: `${parameters.blueChip[0]}%`,
+                    width: `${parameters.blueChip[1] - parameters.blueChip[0]}%`
+                  }}></div>
+                </div>
+                <div className="slider-values">
+                  <span>{parameters.blueChip[0]}</span>
+                  <span>{parameters.blueChip[1]}</span>
+                </div>
+              </div>
+
               <div className="toggle-container">
                 <label>Audit</label>
                 <input
@@ -218,6 +280,27 @@ export default function AnalystAgentNode({ data }) {
                   <div className="result-item">
                     <span>Contract Address:</span> {data.analysisData.contractAddress}
                   </div>
+                )}
+                {/* Display Risk Information */}
+                {data.analysisData.risk && (
+                    <>
+                        <div className="result-item">
+                            <span>Risk Score:</span> {data.analysisData.risk.score}
+                        </div>
+                        <div className="result-item">
+                            <span>Rugged:</span> {data.analysisData.risk.rugged ? 'Yes' : 'No'}
+                        </div>
+                        <div className="result-item risk-details">
+                            <span>Risk Details:</span>
+                            <ul>
+                                {data.analysisData.risk.details.map((detail, index) => (
+                                    <li key={index}>
+                                        <strong>{detail.name}:</strong> {detail.description} (Level: {detail.level}, Score: {detail.score})
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </>
                 )}
               </div>
             )}
