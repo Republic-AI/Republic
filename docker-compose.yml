@@ -13,11 +13,14 @@ services:
     build: ./node-llm-service
     container_name: node-llm-service
     environment:
-      - OPENAI_API_KEY=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
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - TWITTER_RAPIDAPI_KEY=${TWITTER_RAPIDAPI_KEY}
     ports:
       - "5002:5002"
     image: mirror.gcr.io/library/node:18-alpine
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   orchestrator:
     build: ./orchestrator

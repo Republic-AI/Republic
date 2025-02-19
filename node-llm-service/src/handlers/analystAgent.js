@@ -3,59 +3,41 @@ const axios = require('axios');
 
 require('dotenv').config();
 
-async function fetchPriceData(mintAddress) {
+const SOLANA_TRACKER_API_BASE_URL = 'https://data.solanatracker.io';
+const SOLANA_TRACKER_API_KEY = '54ca8aa7-77e2-444e-9625-07a9f5f0d006'; // Your API Key
+
+async function fetchTokenInfo(tokenAddress) {
   try {
-    console.log('Fetching price data for:', mintAddress);
-    const response = await axios.get(`https://api.jup.ag/price/v2`, {
-      params: {
-        ids: mintAddress,
-        showExtraInfo: true  // To get more detailed price info
-      },
+    const response = await axios.get(`${SOLANA_TRACKER_API_BASE_URL}/tokens/${tokenAddress}`, {
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
+        'x-api-key': SOLANA_TRACKER_API_KEY,
+      },
     });
-
-    console.log('Jupiter API Response:', JSON.stringify(response.data, null, 2));
-
-    if (!response.data?.data?.[mintAddress]) {
-      console.warn('No price data available for token:', mintAddress);
-      return {
-        price: 0,
-        liquidity: 0,
-        price24hChange: 0,
-        volume24h: 0,
-        confidenceLevel: 'low'
-      };
-    }
-
-    const tokenData = response.data.data[mintAddress];
-    const extraInfo = tokenData.extraInfo || {};
-    const quotedPrice = extraInfo.quotedPrice || {};
-    const depth = extraInfo.depth || {};
-
-    return {
-      price: tokenData.price || 0,
-      liquidity: depth.buyPriceImpactRatio?.depth?.[1000] || 0, // Using depth as liquidity indicator
-      price24hChange: ((quotedPrice.buyPrice - quotedPrice.sellPrice) / quotedPrice.sellPrice) * 100 || 0,
-      volume24h: 0, // Volume not directly provided in v2 API
-      confidenceLevel: extraInfo.confidenceLevel || 'low'
-    };
+    return response.data;
   } catch (error) {
-    console.error('Error fetching price data:', {
-      message: error.message,
-      code: error.code,
-      response: error.response?.data
-    });
-    return {
-      price: 0,
-      liquidity: 0,
-      price24hChange: 0,
-      volume24h: 0,
-      confidenceLevel: 'low'
-    };
+    console.error('Error fetching token info from Solana Tracker:', error);
+    if (error.response) {
+      console.error("Solana Tracker API Response:", error.response.data);
+    }
+    throw new Error(`Failed to fetch token info for ${tokenAddress} from Solana Tracker: ${error.message}`);
   }
+}
+
+async function fetchTokenHolders(tokenAddress) {
+    try {
+        const response = await axios.get(`${SOLANA_TRACKER_API_BASE_URL}/tokens/${tokenAddress}/holders/top`, {
+            headers: {
+                'x-api-key': SOLANA_TRACKER_API_KEY
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching token holders from Solana Tracker:', error);
+        if (error.response) {
+            console.error("Solana Tracker API Response:", error.response.data);
+        }
+        throw new Error(`Failed to fetch token holders for ${tokenAddress} from Solana Tracker: ${error.message}`);
+    }
 }
 
 async function analystAgentHandler(node) {
@@ -66,97 +48,52 @@ async function analystAgentHandler(node) {
       return { error: "No contract address provided" };
     }
 
-    // Connect to Solana using QuickNode
-    const connection = new Connection(
-      process.env.SOLANA_RPC_URL,
-      {
-        commitment: "confirmed",
-        httpHeaders: {
-          "Content-Type": "application/json",
-        }
-      }
-    );
+    // Fetch data from Solana Tracker
+    const tokenInfo = await fetchTokenInfo(contractAddress);
+    const tokenHolders = await fetchTokenHolders(contractAddress);
 
-    // Get the Token's Mint Address
-    let mint;
-    try {
-      mint = new PublicKey(contractAddress);
-    } catch (error) {
-      return { error: `Invalid contract address: ${contractAddress}` };
+    if (!tokenInfo || !tokenInfo.pools || tokenInfo.pools.length === 0) {
+      return { error: `Could not retrieve token info or pools for ${contractAddress}` };
     }
 
-    // Fetch token data in parallel
-    const [
-      tokenSupply,
-      tokenAccounts,
-      metadata,
-      priceData
-    ] = await Promise.all([
-      // Get total supply
-      connection.getTokenSupply(mint),
-      
-      // Get all token accounts
-      connection.getParsedProgramAccounts(mint, {
-        filters: [
-          {
-            dataSize: 165, // Size of token account
-          },
-        ],
-      }),
+    // Extract relevant data from the Solana Tracker response
+    const tokenData = tokenInfo.token;
+    const poolData = tokenInfo.pools[0]; // Assuming we use the first pool for simplicity
 
-      // Get token metadata
-      connection.getAccountInfo(mint),
+    const name = tokenData.name;
+    const symbol = tokenData.symbol;
+    const totalSupply = poolData.tokenSupply;
+    const price = poolData.price.usd;
+    const marketCap = poolData.marketCap.usd;
+    const liquidity = poolData.liquidity.usd;
+    const numHolders = tokenHolders.length; // Using top holders as an approximation
 
-      // Get price data from Jupiter
-      fetchPriceData(contractAddress)
-    ]);
-
-    // Calculate holder metrics
-    const numHolders = tokenAccounts.length;
-    const sortedHolders = tokenAccounts
-      .map(account => ({
-        address: account.pubkey.toString(),
-        balance: account.account.data.parsed.info.tokenAmount.uiAmount
-      }))
-      .sort((a, b) => b.balance - a.balance);
-
-    const top10Holders = sortedHolders.slice(0, 10);
-    const totalSupply = tokenSupply.value.uiAmount;
-    const top10Supply = top10Holders.reduce((sum, holder) => sum + holder.balance, 0);
-    const top10Percentage = (top10Supply / totalSupply) * 100;
-
-    // Calculate market metrics
-    const price = priceData.price;
-    const marketCap = totalSupply * price;
-    const liquidityValue = priceData.liquidity;
+    // Top 10 holders calculation (using the top holders data)
+    let top10Percentage = 0;
+    if (tokenHolders && Array.isArray(tokenHolders)) {
+        top10Percentage = tokenHolders.slice(0, 10).reduce((sum, holder) => sum + (holder.percentage || 0), 0);
+    }
 
     // Check if token meets criteria
-    const meetsCriteria = 
-      marketCap >= parameters.mktCap &&
-      liquidityValue >= parameters.liquidity &&
+    const meetsCriteria =
+      marketCap >= (parameters.mktCap * 1000000) &&  // Convert millions to USD
+      liquidity >= (parameters.liquidity * 1000000) && // Convert millions to USD
       numHolders >= parameters.holders &&
       top10Percentage <= parameters.top10;
 
     const analysisData = {
       contractAddress: contractAddress,
-      name: metadata?.data?.name || 'Unknown',
-      symbol: metadata?.data?.symbol || 'UNKNOWN',
+      name: name,
+      symbol: symbol,
       price,
       marketCap,
-      liquidity: liquidityValue,
+      liquidity,
       holders: numHolders,
       top10Percentage,
       meetsCriteria,
       totalSupply,
-      priceMetrics: {
-        price24hChange: priceData.price24hChange,
-        volume24h: priceData.volume24h,
-      },
       holderMetrics: {
-        top10Holders: top10Holders.map(holder => ({
-          address: holder.address,
-          percentage: (holder.balance / totalSupply) * 100
-        }))
+        top10Holders: tokenHolders.slice(0,10)
       }
     };
 

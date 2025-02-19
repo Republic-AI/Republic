@@ -89,9 +89,9 @@ export default function App() {
     const newNode = {
       id: `node-${nodes.length + 1}`,
       type: 'custom',
-      position: {
-        x: 100 + Math.random() * 100,
-        y: 100 + Math.random() * 100
+      position: { 
+        x: 100 + Math.random() * 100, 
+        y: 100 + Math.random() * 100 
       },
       data: {
         type: type || '',
@@ -214,7 +214,7 @@ export default function App() {
         x: 100 + Math.random() * 100,
         y: 100 + Math.random() * 100
       },
-      data: {
+              data: {
         type: 'telegramAgent',
         framework: 'telegramAgent',
         botToken: '',
@@ -247,7 +247,7 @@ export default function App() {
       id: `node-${nodes.length + 1}`,
       type: 'webview',
       position: { x: 250, y: 50 },
-      data: {
+            data: {
         url: '',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 1}`, newData)
       }
@@ -272,42 +272,42 @@ export default function App() {
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <div className="app-container">
-            {/* Sidebar */}
-            <div className="sidebar">
-              <div className="sidebar-content">
-                <h3>AI Agent Flow</h3>
-                
-                {/* Data Flow Nodes */}
-                <div className="node-buttons-group">
-                  <h4>Data Flow</h4>
-                  <button 
-                    onClick={() => handleAddNode('input')}
-                    className="add-node-button input-button"
-                  >
-                    <span className="button-icon">⇥</span>
-                    Add Input Node
-                  </button>
-                  <button 
-                    onClick={() => handleAddNode('output')}
-                    className="add-node-button output-button"
-                  >
-                    <span className="button-icon">⇤</span>
-                    Add Output Node
-                  </button>
-                </div>
+    <div className="app-container">
+      {/* Sidebar */}
+      <div className="sidebar">
+        <div className="sidebar-content">
+          <h3>AI Agent Flow</h3>
+          
+          {/* Data Flow Nodes */}
+          <div className="node-buttons-group">
+            <h4>Data Flow</h4>
+            <button 
+              onClick={() => handleAddNode('input')}
+              className="add-node-button input-button"
+            >
+              <span className="button-icon">⇥</span>
+              Add Input Node
+            </button>
+            <button 
+              onClick={() => handleAddNode('output')}
+              className="add-node-button output-button"
+            >
+              <span className="button-icon">⇤</span>
+              Add Output Node
+            </button>
+          </div>
 
-                {/* AI Agent Node */}
-                <div className="node-buttons-group">
+          {/* AI Agent Node */}
+          <div className="node-buttons-group">
                   <h4>Create Your AI Agent</h4>
-                  <button 
-                    onClick={() => handleAddNode()}
-                    className="add-node-button agent-button"
-                  >
-                    <span className="button-icon">+</span>
-                    Add AI Agent
-                  </button>
-                </div>
+            <button 
+              onClick={() => handleAddNode()}
+              className="add-node-button agent-button"
+            >
+              <span className="button-icon">+</span>
+              Add AI Agent
+            </button>
+          </div>
 
                 {/* AI Agent Marketplace */}
                 <div className="node-buttons-group">
@@ -453,41 +453,41 @@ export default function App() {
                   </button>
                 </div>
 
-                {/* Run Flow Button */}
-                <button 
-                  onClick={handleRunFlow}
-                  className="run-flow-button"
-                >
-                  Run Flow
-                </button>
-              </div>
-            </div>
+          {/* Run Flow Button */}
+          <button 
+            onClick={handleRunFlow}
+            className="run-flow-button"
+          >
+            Run Flow
+          </button>
+        </div>
+      </div>
 
-            {/* Flow Area */}
-            <div className="flow-container">
+      {/* Flow Area */}
+      <div className="flow-container">
               <ErrorBoundary>
-                <ReactFlow
-                  nodes={nodes.map(node => ({
-                    ...node,
-                    data: {
-                      ...node.data,
-                      onChange: (newData) => handleNodeDataChange(node.id, newData)
-                    }
-                  }))}
-                  edges={edges}
-                  onNodesChange={onNodesChange}
-                  onEdgesChange={onEdgesChange}
-                  onConnect={onConnect}
-                  nodeTypes={nodeTypes}
-                  fitView
-                >
-                  <Background />
-                  <Controls />
-                  <MiniMap />
-                </ReactFlow>
+        <ReactFlow
+          nodes={nodes.map(node => ({
+            ...node,
+            data: {
+              ...node.data,
+              onChange: (newData) => handleNodeDataChange(node.id, newData)
+            }
+          }))}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          fitView
+        >
+          <Background />
+          <Controls />
+          <MiniMap />
+        </ReactFlow>
               </ErrorBoundary>
-            </div>
-          </div>
+      </div>
+    </div>
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
