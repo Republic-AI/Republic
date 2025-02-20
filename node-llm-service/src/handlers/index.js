@@ -10,6 +10,10 @@ const handlers = {
   telegramAgent: telegramAgentHandler,
   analystAgent: analystAgentHandler,
   twitterFetcher: twitterFetcherHandler,
+  custom: async (node) => {
+    // Simply pass through any input data
+    return node.data.input || {};
+  },
   // Add output handler
   output: async (node) => {
     // Simply return the input data

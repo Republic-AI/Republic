@@ -547,6 +547,12 @@ export default function CustomNode({ data, isConnectable }) {
     }
   };
 
+  useEffect(() => {
+    if (data.type === 'output') {
+      console.log("Output Node Data:", data);
+    }
+  }, [data]);
+
   return (
     <div className={`custom-node ${data.type === 'input' ? 'input-node' : ''} ${data.type === 'output' ? 'output-node' : ''} ${isConfigOpen ? 'expanded' : ''}`}>
       <Handle
