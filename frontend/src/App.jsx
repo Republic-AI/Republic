@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ReactFlow, {
   addEdge,
   Background,
@@ -71,7 +71,34 @@ export default function App() {
     [network]
   );
 
+  useEffect(() => {
+    setNodes((prevNodes) => {
+      return prevNodes.map((node) => {
+        // 过滤出所有连接到当前节点的边
+        const incomingEdge = edges.find((edge) => edge.target === node.id);
+  
+        if (incomingEdge) {
+          const sourceNode = prevNodes.find((n) => n.id === incomingEdge.source);
+  
+          // 如果 sourceNode 有 output，则更新 target 节点
+          if (sourceNode?.data?.output) {
+            return { 
+              ...node, 
+              data: { 
+                ...node.data, 
+                output: sourceNode.data.output 
+              } 
+            };
+          }
+        }
+        return node;
+      });
+    });
+  }, [nodes, setNodes, onNodesChange]);
+  
+
   const onConnect = (params) => {
+    console.log('Edge connected:', params);
     setEdges((eds) => addEdge(params, eds));
   };
 

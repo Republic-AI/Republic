@@ -213,7 +213,7 @@ export default function TwitterAgentNode({ data }) {
         aiAnalysis: twitterResult.aiAnalysis,
         rawResults: twitterResult.rawResults
       };
-
+      console.log('TwitterAgentNode 11111111111111111111');
       // Update local state for display
       setOutputData(outputToPass);
 
@@ -222,6 +222,8 @@ export default function TwitterAgentNode({ data }) {
         ...data,
         output: outputToPass // This will be available to connected nodes
       });
+      console.log('Updated node data:', { ...data, output: outputToPass });
+      
 
     } catch (error) {
       console.error('Error fetching tweets:', error);

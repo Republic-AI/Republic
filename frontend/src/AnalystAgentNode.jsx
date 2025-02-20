@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Handle } from 'reactflow';
 import './styles.css';
 
 export default function AnalystAgentNode({ data }) {
   const [isConfigOpen, setIsConfigOpen] = useState(true);
-  const [contractAddress, setContractAddress] = useState(data.output?.contractAddress || '');
+  const [contractAddress, setContractAddress] = useState(data.output?.content || '');
   const [parameters, setParameters] = useState(() => ({
     mktCap: data.parameters?.mktCap || [0, 1000],       // Market cap in millions
     liquidity: data.parameters?.liquidity || [0, 100],    // Liquidity in millions
@@ -15,8 +15,8 @@ export default function AnalystAgentNode({ data }) {
   }));
 
   useEffect(() => {
-    if (data.output?.contractAddress) {
-      setContractAddress(data.output.contractAddress);
+    if (data.output?.content) {
+      setContractAddress(data.output.content);
     }
   }, [data.output]);
 
@@ -94,7 +94,7 @@ export default function AnalystAgentNode({ data }) {
             <h4>Contract Address</h4>
             <input
               type="text"
-              value={contractAddress}
+              value={data.output?.content}
               onChange={handleContractAddressChange}
               placeholder="Enter Solana token contract address"
               className="node-input"
