@@ -18,7 +18,7 @@ function initializeOpenAI(apiKey) {
 
 // Function to check if a string is base58 encoded
 function isBase58(str) {
-    const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{44}$/;
+    const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
     return base58Regex.test(str);
 }
 
@@ -258,6 +258,27 @@ async function twitterFetcherHandler(node) {
                 ).join('\n\n');
         }).join('\n\n---\n\n');
 
+        // If Check CA is enabled, extract CA from raw tweets
+        if (node.data.pullConfig.isOriginalCA) {
+            let foundCA = null;
+            
+            // Go through each tweet's text to find CA
+            for (const tweet of allFilteredTweets) {
+                const base58Addresses = extractBase58Strings(tweet.text);
+                if (base58Addresses.length > 0) {
+                    foundCA = base58Addresses[0]; // Take the first found CA
+                    break;
+                }
+            }
+
+            // Return only the CA or "notfound"
+            return {
+                content: foundCA || "notfound",
+                summary: foundCA ? "Found CA" : "No CA found",
+                rawResults: allFilteredTweets
+            };
+        }
+
         // Modify the return format based on CA mode
         if (node.data.isOriginalCA) {
             return {
@@ -279,9 +300,9 @@ async function twitterFetcherHandler(node) {
         console.error('Error in Twitter Fetcher handler:', error);
         const errorMessage = error.response?.data?.message || error.message;
         return {
-            content: `Error fetching tweets: ${errorMessage}\n\nFull error: ${JSON.stringify(error.response?.data || {}, null, 2)}`,
-            rawResults: [],
-            aiAnalysis: null
+            content: `Error: ${errorMessage}`,
+            summary: 'Error occurred',
+            rawResults: []
         };
     }
 }

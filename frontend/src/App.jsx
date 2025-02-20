@@ -288,8 +288,8 @@ export default function App() {
       const formattedNodes = nodes.map(node => ({
         id: node.id,
         type: node.data.type || node.type,
-        data: {
-          ...node.data,
+              data: {
+                ...node.data,
           // Include any specific data needed by the handlers
           contractAddress: node.data.contractAddress,
           parameters: node.data.parameters,
