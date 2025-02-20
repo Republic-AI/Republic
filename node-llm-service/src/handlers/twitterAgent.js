@@ -16,11 +16,12 @@ async function twitterAgentHandler(node) {
   // Handle different subagent operations based on the active one
   switch (node.data.activeSubAgent) {
     case 'post':
-      return handlePostTweet(rapidApiKey, postConfig);
+      return { output: await handlePostTweet(rapidApiKey, postConfig) };
     case 'reply':
-      return handleReplyTweet(rapidApiKey, replyConfig);
+      return { output: await handleReplyTweet(rapidApiKey, replyConfig) };
     case 'pull':
-      return twitterFetcherHandler(node);
+      const pullResult = await twitterFetcherHandler(node);
+      return { ...pullResult };
     default:
       return { error: "Invalid subagent type" };
   }

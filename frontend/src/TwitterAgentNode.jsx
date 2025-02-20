@@ -184,57 +184,47 @@ export default function TwitterAgentNode({ data }) {
     try {
       const response = await fetch('http://localhost:5002/execute-flow', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nodes: [{
-            id: data.id,
-            type: 'twitterFetcher',
+            id: data.id, //  Use the node's ID
+            type: 'twitterAgent',
             data: {
+              type: 'twitterAgent', // Include the type
+              activeSubAgent: 'pull',
+              bearerToken: apiConfig.bearerToken,
+              openAIApiKey: apiConfig.openAIApiKey,
               pullConfig: {
                 ...pullConfig,
-                timeLength: pullConfig.timeLength
+                targetAccounts: pullConfig.targetAccounts,
+                aiPrompt: pullConfig.aiPrompt,
+                isOriginalCA: checkCA,
               },
-              openAIApiKey: apiConfig.openAIApiKey,
-              isOriginalCA: checkCA
             }
-          }]
+          }],
+          edges: [] // No edges needed for a single-node test
         })
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const result = await response.json();
-      const twitterResult = result.results[data.id];
-
-      // Format the output data that will be passed to connected nodes
-      const outputToPass = {
-        content: twitterResult.content,
-        summary: twitterResult.summary,
-        aiAnalysis: twitterResult.aiAnalysis,
-        rawResults: twitterResult.rawResults
-      };
-
-      // Update local state for display
-      setOutputData(outputToPass);
-
-      // Update node data to pass output to connected nodes
+      // Update the node's output data
+      setOutputData(result.results[data.id]); // Store in component state
       data.onChange({
         ...data,
-        output: outputToPass // This will be available to connected nodes
+        output: result.results[data.id] //  Crucially update the node's data
       });
 
     } catch (error) {
-      console.error('Error fetching tweets:', error);
-      const errorOutput = {
-        content: `Error: ${error.message}`,
-        summary: 'Error occurred',
-        aiAnalysis: null,
-        rawResults: []
-      };
-      setOutputData(errorOutput);
+      console.error('Error pulling tweets:', error);
+      alert('Error pulling tweets: ' + error.message);
+      setOutputData(null); // Clear output on error
       data.onChange({
         ...data,
-        output: errorOutput
+        output: null, // Clear output in node data on error
       });
     } finally {
       setIsLoading(false);

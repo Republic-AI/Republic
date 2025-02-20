@@ -48,6 +48,16 @@ async function analystAgentHandler(node) {
       return { error: "No contract address provided" };
     }
 
+    // Ensure parameters has default values if undefined
+    const safeParameters = {
+      mktCap: parameters?.mktCap || [0, 1000],
+      liquidity: parameters?.liquidity || [0, 100],
+      top10: parameters?.top10 || [0, 100],
+      snipers: parameters?.snipers || [0, 70],
+      blueChip: parameters?.blueChip || [0, 100],
+      hasAudit: parameters?.hasAudit || false
+    };
+
     // Fetch data from Solana Tracker
     const tokenInfo = await fetchTokenInfo(contractAddress);
     const tokenHolders = await fetchTokenHolders(contractAddress);
@@ -80,12 +90,12 @@ async function analystAgentHandler(node) {
 
     // Check if token meets criteria
     const meetsCriteria =
-      marketCap >= (parameters.mktCap[0] * 1000000) &&  // Convert millions to USD
-      marketCap <= (parameters.mktCap[1] * 1000000) &&
-      liquidity >= (parameters.liquidity[0] * 1000000) && // Convert millions to USD
-      liquidity <= (parameters.liquidity[1] * 1000000) &&
-      top10Percentage >= parameters.top10[0] &&
-      top10Percentage <= parameters.top10[1];
+      marketCap >= (safeParameters.mktCap[0] * 1000000) &&  // Convert millions to USD
+      marketCap <= (safeParameters.mktCap[1] * 1000000) &&
+      liquidity >= (safeParameters.liquidity[0] * 1000000) && // Convert millions to USD
+      liquidity <= (safeParameters.liquidity[1] * 1000000) &&
+      top10Percentage >= safeParameters.top10[0] &&
+      top10Percentage <= safeParameters.top10[1];
 
     const analysisData = {
       contractAddress: contractAddress,

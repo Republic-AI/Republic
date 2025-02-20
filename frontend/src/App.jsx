@@ -257,14 +257,58 @@ export default function App() {
 
   const handleRunFlow = async () => {
     try {
-      const response = await axios.post('http://localhost:5002/execute-flow', {
-        nodes: nodes,
-        edges: edges
+      // Format nodes to include only necessary data
+      const formattedNodes = nodes.map(node => ({
+        id: node.id,
+        type: node.data.type || node.type,
+        data: {
+          ...node.data,
+          // Include any specific data needed by the handlers
+          contractAddress: node.data.contractAddress,
+          parameters: node.data.parameters,
+          pullConfig: node.data.pullConfig,
+          postConfig: node.data.postConfig,
+          replyConfig: node.data.replyConfig,
+          openAIApiKey: node.data.openAIApiKey,
+          bearerToken: node.data.bearerToken
+        }
+      }));
+
+      const response = await fetch('http://localhost:5002/execute-flow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nodes: formattedNodes,
+          edges
+        })
       });
 
-      console.log('Flow execution result:', response.data);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Update nodes with results
+      setNodes(nodes.map(node => {
+        const nodeResult = result.results[node.id];
+        if (nodeResult) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              output: nodeResult
+            }
+          };
+        }
+        return node;
+      }));
+
     } catch (error) {
-      console.error('Error running flow:', error);
+      console.error('Error executing flow:', error);
+      alert('Error executing flow: ' + error.message);
     }
   };
 

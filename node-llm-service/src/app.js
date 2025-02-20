@@ -56,12 +56,13 @@ app.post('/execute-flow', async (req, res) => {
 
     const results = {};
     for (const node of nodes) {
-      const handler = handlers[node.type];
+      const nodeType = node.type || node.data?.type;
+      const handler = handlers[nodeType];
       if (handler) {
-        console.log("Calling handler:", handler.name, "for node type:", node.type);
+        console.log("Calling handler:", handler.name, "for node type:", nodeType);
         results[node.id] = await handler(node);
       } else {
-        console.warn(`No handler found for node type: ${node.type}`);
+        console.warn(`No handler found for node type: ${nodeType}`);
       }
     }
 
