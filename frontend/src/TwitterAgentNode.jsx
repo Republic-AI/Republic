@@ -217,7 +217,7 @@ export default function TwitterAgentNode({ data }) {
   const handlePullTweets = async () => {
     setIsLoading(true);
     try {
-      console.log('Pulling tweets with config:', pullConfig, 'checkCA:', checkCA); // Debug log
+      console.log('Pulling tweets with config:', { ...pullConfig, checkCA });
       const response = await fetch('http://localhost:5002/execute-flow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -234,7 +234,7 @@ export default function TwitterAgentNode({ data }) {
                 ...pullConfig,
                 targetAccounts: pullConfig.targetAccounts,
                 aiPrompt: pullConfig.aiPrompt,
-                isOriginalCA: checkCA,
+                isOriginalCA: checkCA,  // Pass the CA check flag
               },
             }
           }],
@@ -249,12 +249,13 @@ export default function TwitterAgentNode({ data }) {
       const result = await response.json();
       const twitterResult = result.results[data.id];
 
-      // Format the output data that will be passed to connected nodes
+      // Format the output data based on whether we're checking for CAs
       const outputToPass = {
-        content: twitterResult.content, // Content will be CA if isOriginalCA is true
+        content: twitterResult.content,  // This will be CA if isOriginalCA is true
         summary: twitterResult.summary,
-        aiAnalysis: twitterResult.aiAnalysis,
-        rawResults: twitterResult.rawResults
+        aiAnalysis: checkCA ? null : twitterResult.aiAnalysis,  // No AI analysis in CA mode
+        rawResults: twitterResult.rawResults,
+        isCA: checkCA  // Add flag to indicate if this is CA data
       };
 
       // Update local state for display
@@ -265,7 +266,7 @@ export default function TwitterAgentNode({ data }) {
         ...data,
         output: outputToPass
       });
-      console.log('Updated node data:', { ...data, output: outputToPass });
+      console.log('Updated node data with CA check:', { ...data, output: outputToPass });
 
     } catch (error) {
       console.error('Error pulling tweets:', error);
@@ -273,7 +274,7 @@ export default function TwitterAgentNode({ data }) {
       setOutputData(null);
       data.onChange({
         ...data,
-        output: null,
+        output: null
       });
     } finally {
       setIsLoading(false);

@@ -67,23 +67,31 @@ async function analyzeWithAI(tweets, prompt) {
 
 async function twitterFetcherHandler(node) {
     console.log("twitterFetcherHandler called. Node data:", node);
-    const isOpenAIInitialized = initializeOpenAI(node.data.openAIApiKey);
+    const isOpenAIInitialized = initializeOpenAI(node.data.openAIApiKey); // Pass OpenAI API Key
 
     try {
+        // Get the target accounts from the node data
         const targetAccounts = node.data.pullConfig.targetAccounts || [];
         const newAccount = node.data.pullConfig.newAccount;
-        const accountsToFetch = newAccount ?
-          [...new Set([...targetAccounts, newAccount])] :
+        
+        console.log("Target accounts:", targetAccounts, "New account:", newAccount);
+        
+        // Combine existing accounts with new account if it exists
+        const accountsToFetch = newAccount ? 
+          [...new Set([...targetAccounts, newAccount])] : 
           targetAccounts;
+        
+        console.log("Accounts to fetch:", accountsToFetch);
+        
         const rapidApiKey = "17ce04b49amsh78d1d9d3603c65ep12fc75jsn4c9521e3459f";
-
+        
         if (!rapidApiKey) {
             return {
                 content: "No RapidAPI Key provided",
                 tweets: []
             };
         }
-
+        
         if (accountsToFetch.length === 0) {
             return {
                 content: "No target accounts specified",
@@ -177,18 +185,24 @@ async function twitterFetcherHandler(node) {
         });
 
         const results = await Promise.all(tweetsPromises);
+        
+        // Combine all filtered tweets for AI analysis
         const allFilteredTweets = results.flatMap(result => result.rawData);
-
-        // --- CA Extraction Logic (Modified) ---
-        if (node.data.pullConfig.isOriginalCA) {  // <-- USE THE FLAG HERE
+        
+        // If Check CA is enabled, extract CA from raw tweets
+        if (node.data.pullConfig.isOriginalCA) {
             let foundCA = null;
+            
+            // Go through each tweet's text to find CA
             for (const tweet of allFilteredTweets) {
                 const base58Addresses = extractBase58Strings(tweet.text);
                 if (base58Addresses.length > 0) {
-                    foundCA = base58Addresses[0];
+                    foundCA = base58Addresses[0]; // Take the first found CA
                     break;
                 }
             }
+
+            // Return only the CA or "notfound"
             return {
                 content: foundCA || "notfound",
                 summary: foundCA ? "Found CA" : "No CA found",
@@ -196,61 +210,7 @@ async function twitterFetcherHandler(node) {
             };
         }
 
-        // --- AI Analysis (if not in CA mode) ---
-        let aiAnalysis = null;
-        if (allFilteredTweets.length > 0 && isOpenAIInitialized) {
-            try {
-                if (node.data.isOriginalCA) {
-                    // Prompt specifically for finding Base58 addresses
-                    const prompt = `Analyze these tweets and extract ONLY valid Base58-encoded strings that look like Solana addresses or contract addresses.  Base58 strings are typically 32-44 characters long and contain only alphanumeric characters. Format the output as a simple list of addresses, one per line. Ignore any other content:
-
-                    ${allFilteredTweets.map(tweet => tweet.text).join('\n\n')}`;
-
-                    const completion = await openai.createChatCompletion({
-                        model: "gpt-3.5-turbo",
-                        messages: [{
-                            role: "user",
-                            content: prompt
-                        }],
-                        temperature: 0.1, // Lower temperature for more deterministic output
-                        max_tokens: 500
-                    });
-
-                    // Extract and filter Base58 strings.  This is the key change.
-                    aiAnalysis = completion.data.choices[0].message.content
-                        .split('\n')
-                        .map(line => line.trim()) // Trim whitespace
-                        .filter(line => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(line)) // Base58 regex
-                        .join('\n'); // Join back into a single string, one address per line
-
-                } else {
-                    // Use custom prompt from pullConfig, or fallback to a default
-                    const userPrompt = node.data.pullConfig.aiPrompt || 'Analyze these tweets:';
-                    const prompt = `${userPrompt}\n\n${allFilteredTweets.map(tweet =>
-                        `Tweet by ${tweet.author} (${tweet.created_at}):
-                         "${tweet.text}"
-                         Engagement: ${tweet.metrics.likes} likes, ${tweet.metrics.retweets} RTs, ${tweet.metrics.replies} replies${tweet.metrics.views ? `, ${tweet.metrics.views} views` : ''}`
-                    ).join('\n\n')}`;
-
-                    const completion = await openai.createChatCompletion({
-                        model: "gpt-3.5-turbo",
-                        messages: [{
-                            role: "user",
-                            content: prompt
-                        }],
-                        temperature: 0.7,
-                        max_tokens: 500
-                    });
-
-                    aiAnalysis = completion.data.choices[0].message.content;
-                }
-            } catch (error) {
-                console.error('Error in AI analysis:', error);
-                aiAnalysis = `Error in AI analysis: ${error.message}`;
-            }
-        }
-
-        // --- Formatting (if not in CA mode) ---
+        // Regular tweet processing (non-CA mode)
         const summary = results.map(result => {
             const tweetCount = result.rawData.length;
             return `@${result.account}: ${tweetCount} tweets in the last ${node.data.pullConfig.timeLength} hours`;
@@ -264,6 +224,12 @@ async function twitterFetcherHandler(node) {
                     (tweet.metrics.views ? `, ${tweet.metrics.views} views` : '')
                 ).join('\n\n');
         }).join('\n\n---\n\n');
+
+        // Perform AI analysis only if not in CA mode
+        let aiAnalysis = null;
+        if (!node.data.pullConfig.isOriginalCA && isOpenAIInitialized) {
+            aiAnalysis = await analyzeWithAI(allFilteredTweets, node.data.pullConfig.aiPrompt);
+        }
 
         return {
             content: finalContent,
