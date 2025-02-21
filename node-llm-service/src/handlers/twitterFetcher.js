@@ -67,31 +67,23 @@ async function analyzeWithAI(tweets, prompt) {
 
 async function twitterFetcherHandler(node) {
     console.log("twitterFetcherHandler called. Node data:", node);
-    const isOpenAIInitialized = initializeOpenAI(node.data.openAIApiKey); // Pass OpenAI API Key
+    const isOpenAIInitialized = initializeOpenAI(node.data.openAIApiKey);
 
     try {
-        // Get the target accounts from the node data
         const targetAccounts = node.data.pullConfig.targetAccounts || [];
         const newAccount = node.data.pullConfig.newAccount;
-        
-        console.log("Target accounts:", targetAccounts, "New account:", newAccount);
-        
-        // Combine existing accounts with new account if it exists
-        const accountsToFetch = newAccount ? 
-          [...new Set([...targetAccounts, newAccount])] : 
+        const accountsToFetch = newAccount ?
+          [...new Set([...targetAccounts, newAccount])] :
           targetAccounts;
-        
-        console.log("Accounts to fetch:", accountsToFetch);
-        
         const rapidApiKey = "17ce04b49amsh78d1d9d3603c65ep12fc75jsn4c9521e3459f";
-        
+
         if (!rapidApiKey) {
             return {
                 content: "No RapidAPI Key provided",
                 tweets: []
             };
         }
-        
+
         if (accountsToFetch.length === 0) {
             return {
                 content: "No target accounts specified",
@@ -185,11 +177,26 @@ async function twitterFetcherHandler(node) {
         });
 
         const results = await Promise.all(tweetsPromises);
-        
-        // Combine all filtered tweets for AI analysis
         const allFilteredTweets = results.flatMap(result => result.rawData);
-        
-        // Only perform AI analysis if there are filtered tweets
+
+        // --- CA Extraction Logic (Modified) ---
+        if (node.data.pullConfig.isOriginalCA) {  // <-- USE THE FLAG HERE
+            let foundCA = null;
+            for (const tweet of allFilteredTweets) {
+                const base58Addresses = extractBase58Strings(tweet.text);
+                if (base58Addresses.length > 0) {
+                    foundCA = base58Addresses[0];
+                    break;
+                }
+            }
+            return {
+                content: foundCA || "notfound",
+                summary: foundCA ? "Found CA" : "No CA found",
+                rawResults: allFilteredTweets
+            };
+        }
+
+        // --- AI Analysis (if not in CA mode) ---
         let aiAnalysis = null;
         if (allFilteredTweets.length > 0 && isOpenAIInitialized) {
             try {
@@ -243,7 +250,7 @@ async function twitterFetcherHandler(node) {
             }
         }
 
-        // Format the final content for display
+        // --- Formatting (if not in CA mode) ---
         const summary = results.map(result => {
             const tweetCount = result.rawData.length;
             return `@${result.account}: ${tweetCount} tweets in the last ${node.data.pullConfig.timeLength} hours`;
@@ -258,41 +265,10 @@ async function twitterFetcherHandler(node) {
                 ).join('\n\n');
         }).join('\n\n---\n\n');
 
-        // If Check CA is enabled, extract CA from raw tweets
-        if (node.data.pullConfig.isOriginalCA) {
-            let foundCA = null;
-            
-            // Go through each tweet's text to find CA
-            for (const tweet of allFilteredTweets) {
-                const base58Addresses = extractBase58Strings(tweet.text);
-                if (base58Addresses.length > 0) {
-                    foundCA = base58Addresses[0]; // Take the first found CA
-                    break;
-                }
-            }
-
-            // Return only the CA or "notfound"
-            return {
-                content: foundCA || "notfound",
-                summary: foundCA ? "Found CA" : "No CA found",
-                rawResults: allFilteredTweets
-            };
-        }
-
-        // Modify the return format based on CA mode
-        if (node.data.isOriginalCA) {
-            return {
-                content: aiAnalysis || 'No Base58 addresses found',
-                summary: 'Base58 Address Extraction Mode',
-                rawResults: allFilteredTweets,
-                aiAnalysis
-            };
-        }
-
         return {
             content: finalContent,
             summary,
-            rawResults: allFilteredTweets, // Only return filtered tweets
+            rawResults: allFilteredTweets,
             aiAnalysis
         };
 

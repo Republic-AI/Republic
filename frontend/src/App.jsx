@@ -291,13 +291,22 @@ export default function App() {
 
   const handleRunFlow = async () => {
     try {
-      // Format nodes to include only necessary data
+      // First, trigger all Twitter Agent pulls
+      const twitterAgentNodes = nodes.filter(node => node.type === 'twitterAgent');
+      
+      // Execute all Twitter Agent pulls sequentially
+      for (const node of twitterAgentNodes) {
+        if (node.data.triggerPull) {
+          await node.data.triggerPull();
+        }
+      }
+
+      // Then execute the rest of the flow
       const formattedNodes = nodes.map(node => ({
         id: node.id,
-        type: node.data.type || node.type, // Prioritize data.type
+        type: node.data.type || node.type,
               data: {
                 ...node.data,
-          // Include any specific data needed by the handlers
           contractAddress: node.data.contractAddress,
           parameters: node.data.parameters,
           pullConfig: node.data.pullConfig,

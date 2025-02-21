@@ -38,29 +38,26 @@ export default function TwitterAgentNode({ data }) {
   const [checkCoin, setCheckCoin] = useState(false);
   const [outputData, setOutputData] = useState(null);
 
-  // Add useEffect to handle input from connected nodes
+  // Update useEffect to properly handle KOL list input
   useEffect(() => {
     if (data.inputs && data.inputs.length > 0) {
       // Find input from Twitter KOL List node
-      const kolListInput = data.inputs.find(input => input.source.startsWith('node-') && Array.isArray(input.output?.kolList));
+      const kolListInput = data.inputs.find(input => 
+        input.output?.type === 'twitterKOL' && 
+        Array.isArray(input.output?.kolList)
+      );
 
       if (kolListInput) {
-        // Update targetAccounts with KOL list
+        const newTargetAccounts = kolListInput.output.kolList;
+        console.log('Received KOL list:', newTargetAccounts);
+        
         setPullConfig(prevConfig => ({
           ...prevConfig,
-          targetAccounts: kolListInput.output.kolList
+          targetAccounts: newTargetAccounts
         }));
-        // Update the node's data
-        data.onChange({
-          ...data,
-          pullConfig: {
-            ...data.pullConfig, // Keep existing pullConfig
-            targetAccounts: kolListInput.output.kolList // Update targetAccounts
-          }
-        });
       }
     }
-  }, [data.inputs, data, data.onChange]);
+  }, [data.inputs]);
 
   useEffect(() => {
     // Initialize Eliza with custom rules when they change
@@ -203,30 +200,45 @@ export default function TwitterAgentNode({ data }) {
     }
   };
 
+  // Add this useEffect to handle external triggers
+  useEffect(() => {
+    // Attach the handlePullTweets function to the node's data
+    data.onChange({
+      ...data,
+      triggerPull: handlePullTweets,
+      // Also include current pullConfig to ensure it's available when triggered
+      pullConfig: {
+        ...data.pullConfig,
+        targetAccounts: pullConfig.targetAccounts
+      }
+    });
+  }, [pullConfig.targetAccounts]); // Add dependency to update when targetAccounts changes
+
   const handlePullTweets = async () => {
     setIsLoading(true);
     try {
+      console.log('Pulling tweets with config:', pullConfig, 'checkCA:', checkCA); // Debug log
       const response = await fetch('http://localhost:5002/execute-flow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nodes: [{
-            id: data.id, //  Use the node's ID
+            id: data.id,
             type: 'twitterAgent',
             data: {
-              type: 'twitterAgent', // Include the type
+              type: 'twitterAgent',
               activeSubAgent: 'pull',
               bearerToken: apiConfig.bearerToken,
               openAIApiKey: apiConfig.openAIApiKey,
               pullConfig: {
                 ...pullConfig,
-                targetAccounts: pullConfig.targetAccounts, // Use updated targetAccounts
+                targetAccounts: pullConfig.targetAccounts,
                 aiPrompt: pullConfig.aiPrompt,
                 isOriginalCA: checkCA,
               },
             }
           }],
-          edges: [] // No edges needed for a single-node test
+          edges: []
         })
       });
 
@@ -239,7 +251,7 @@ export default function TwitterAgentNode({ data }) {
 
       // Format the output data that will be passed to connected nodes
       const outputToPass = {
-        content: twitterResult.content,
+        content: twitterResult.content, // Content will be CA if isOriginalCA is true
         summary: twitterResult.summary,
         aiAnalysis: twitterResult.aiAnalysis,
         rawResults: twitterResult.rawResults
@@ -251,18 +263,17 @@ export default function TwitterAgentNode({ data }) {
       // Update node data to pass output to connected nodes
       data.onChange({
         ...data,
-        output: outputToPass //  Crucially update the node's data
+        output: outputToPass
       });
       console.log('Updated node data:', { ...data, output: outputToPass });
-      
 
     } catch (error) {
       console.error('Error pulling tweets:', error);
       alert('Error pulling tweets: ' + error.message);
-      setOutputData(null); // Clear output on error
+      setOutputData(null);
       data.onChange({
         ...data,
-        output: null, // Clear output in node data on error
+        output: null,
       });
     } finally {
       setIsLoading(false);
@@ -420,7 +431,7 @@ export default function TwitterAgentNode({ data }) {
                         <p>{outputData.summary}</p>
                       </div>
                     )}
-                    {outputData.aiAnalysis && (
+                    {outputData.aiAnalysis && !checkCA && (
                       <div className="ai-analysis-section">
                         <h5>AI Analysis</h5>
                         <p>{outputData.aiAnalysis}</p>
@@ -428,7 +439,7 @@ export default function TwitterAgentNode({ data }) {
                     )}
                     {outputData.content && (
                       <div className="content-section">
-                        <h5>Raw Data</h5>
+                        <h5>{checkCA ? 'Contract Address' : 'Raw Data'}</h5>
                         <pre className="content-pre">
                           {outputData.content}
                         </pre>
