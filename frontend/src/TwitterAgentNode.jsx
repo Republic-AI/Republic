@@ -200,20 +200,19 @@ export default function TwitterAgentNode({ data }) {
     }
   };
 
-  // Add this useEffect to handle external triggers
+  // Update the useEffect that exposes triggerPull
   useEffect(() => {
-    // Attach the handlePullTweets function to the node's data
     data.onChange({
       ...data,
       triggerPull: handlePullTweets,
-      // Also include current pullConfig to ensure it's available when triggered
       pullConfig: {
-        ...data.pullConfig,
-        targetAccounts: pullConfig.targetAccounts
+        ...pullConfig,
+        isOriginalCA: checkCA  // Add this line to include the CA check flag
       }
     });
-  }, [pullConfig.targetAccounts]); // Add dependency to update when targetAccounts changes
+  }, [pullConfig, checkCA]); // Add checkCA to dependencies
 
+  // Update handlePullTweets to include checkCA in the request
   const handlePullTweets = async () => {
     setIsLoading(true);
     try {
@@ -226,48 +225,29 @@ export default function TwitterAgentNode({ data }) {
             id: data.id,
             type: 'twitterAgent',
             data: {
-              type: 'twitterAgent',
+              ...data,
               activeSubAgent: 'pull',
-              bearerToken: apiConfig.bearerToken,
-              openAIApiKey: apiConfig.openAIApiKey,
               pullConfig: {
                 ...pullConfig,
-                targetAccounts: pullConfig.targetAccounts,
-                aiPrompt: pullConfig.aiPrompt,
-                isOriginalCA: checkCA,  // Pass the CA check flag
-              },
+                isOriginalCA: checkCA  // Add this line
+              }
             }
-          }],
-          edges: []
+          }]
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       const result = await response.json();
-      const twitterResult = result.results[data.id];
-
-      // Format the output data based on whether we're checking for CAs
-      const outputToPass = {
-        content: twitterResult.content,  // This will be CA if isOriginalCA is true
-        summary: twitterResult.summary,
-        aiAnalysis: checkCA ? null : twitterResult.aiAnalysis,  // No AI analysis in CA mode
-        rawResults: twitterResult.rawResults,
-        isCA: checkCA  // Add flag to indicate if this is CA data
-      };
-
-      // Update local state for display
-      setOutputData(outputToPass);
-
-      // Update node data to pass output to connected nodes
+      const output = result.results[data.id];
+      setOutputData(output);
+      
+      // Update node data with output
       data.onChange({
         ...data,
-        output: outputToPass
+        output: {
+          ...output,
+          isCA: checkCA  // Add this line to properly flag CA output
+        }
       });
-      console.log('Updated node data with CA check:', { ...data, output: outputToPass });
-
     } catch (error) {
       console.error('Error pulling tweets:', error);
       alert('Error pulling tweets: ' + error.message);

@@ -21,7 +21,10 @@ async function twitterAgentHandler(node) {
       return { output: await handleReplyTweet(rapidApiKey, replyConfig) };
     case 'pull':
       const pullResult = await twitterFetcherHandler(node);
-      return { ...pullResult };
+      return { 
+        ...pullResult,
+        isCA: node.data.pullConfig.isOriginalCA
+      };
     default:
       return { error: "Invalid subagent type" };
   }
