@@ -294,20 +294,26 @@ export default function App() {
     try {
       // First, trigger all Twitter Agent pulls
       const twitterAgentNodes = nodes.filter(node => node.type === 'twitterAgent');
-      
-      // Execute all Twitter Agent pulls sequentially
       for (const node of twitterAgentNodes) {
         if (node.data.triggerPull) {
           await node.data.triggerPull();
         }
       }
 
-      // Then execute the rest of the flow
+      // Trigger analysis for Analyst Agent nodes
+      const analystAgentNodes = nodes.filter(node => node.type === 'analystAgent');
+      for (const node of analystAgentNodes) {
+        if (node.data.triggerAnalysis) {
+          await node.data.triggerAnalysis(node.data.parameters, node.data.contractAddress);
+        }
+      }
+
+      // Then execute the rest of the flow (for other node types)
       const formattedNodes = nodes.map(node => ({
         id: node.id,
         type: node.data.type || node.type,
-              data: {
-                ...node.data,
+        data: {
+          ...node.data,
           contractAddress: node.data.contractAddress,
           parameters: node.data.parameters,
           pullConfig: node.data.pullConfig,
@@ -334,21 +340,26 @@ export default function App() {
       }
 
       const result = await response.json();
-      
-      // Update nodes with results
-      setNodes(nodes.map(node => {
-        const nodeResult = result.results[node.id];
-        if (nodeResult) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              output: nodeResult
-            }
-          };
-        }
-        return node;
-      }));
+
+      // Update nodes with results, MERGING the new output
+      setNodes(prevNodes =>
+        prevNodes.map(node => {
+          const nodeResult = result.results[node.id];
+          if (nodeResult) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                output: {
+                  ...(node.data.output || {}),
+                  ...nodeResult,
+                },
+              },
+            };
+          }
+          return node;
+        })
+      );
 
     } catch (error) {
       console.error('Error executing flow:', error);
@@ -545,7 +556,7 @@ export default function App() {
                 <div className="node-buttons-group">
                   <h4>Tools</h4>
                   {/* Web View button removed from here */}
-                </div>
+          </div>
 
           {/* Run Flow Button */}
           <button 

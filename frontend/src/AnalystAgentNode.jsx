@@ -27,6 +27,15 @@ export default function AnalystAgentNode({ data }) {
     }
   }, [data.inputs]);
 
+  // Expose triggerAnalysis function
+  useEffect(() => {
+    data.onChange({
+      ...data,
+      triggerAnalysis: handleRunAnalysis, // Expose the analysis function
+      contractAddress: contractAddress // Keep contractAddress updated in data
+    });
+  }, [contractAddress]); // Depend on contractAddress
+
   const handleRangeChange = (paramName, value) => {
     const updatedParams = {
       ...parameters,
@@ -42,11 +51,20 @@ export default function AnalystAgentNode({ data }) {
   const handleContractAddressChange = (event) => {
     const address = event.target.value;
     setContractAddress(address);
+    // Update the node's data with the new contract address
+    data.onChange({
+      ...data,
+      contractAddress: address
+    });
   };
 
-  const handleRunAnalysis = async () => {
-    if (!contractAddress) {
-      alert('Please enter a Solana token contract address');
+  const handleRunAnalysis = async (currentParameters, currentContractAddress) => {
+    // Use provided parameters and contract address, or fallback to local state if not provided
+    const paramsToUse = currentParameters || parameters;
+    const addressToUse = currentContractAddress || contractAddress;
+
+    if (!addressToUse) {
+      alert('Please enter or connect a Solana token contract address');
       return;
     }
 
@@ -54,7 +72,7 @@ export default function AnalystAgentNode({ data }) {
       const response = await fetch('http://localhost:5002/fetch-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contractAddress, parameters })
+        body: JSON.stringify({ contractAddress: addressToUse, parameters: paramsToUse }) // Use addressToUse
       });
 
       if (!response.ok) {
@@ -278,7 +296,7 @@ export default function AnalystAgentNode({ data }) {
               </div>
             </div>
 
-            <button onClick={handleRunAnalysis} className="run-analysis-button">
+            <button onClick={() => handleRunAnalysis()} className="run-analysis-button">
               Run Analysis
             </button>
 
