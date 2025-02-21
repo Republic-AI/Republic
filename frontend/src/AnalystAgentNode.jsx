@@ -61,16 +61,25 @@ export default function AnalystAgentNode({ data }) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const result = await response.json();
+      
+      // Store the full analysis data for display
       data.onChange({
         ...data,
-        analysisData: result.analysisData
+        analysisData: result.analysisData,
+        // Add output property that will be passed to connected nodes
+        output: {
+          // Only pass the contract address if it meets criteria
+          content: result.analysisData.meetsCriteria ? result.analysisData.contractAddress : null,
+          summary: `Analysis ${result.analysisData.meetsCriteria ? 'passed' : 'failed'} criteria`
+        }
       });
     } catch (error) {
       console.error('Error fetching analysis:', error);
       alert('Error fetching analysis: ' + error.message);
       data.onChange({
         ...data,
-        analysisData: null
+        analysisData: null,
+        output: null
       });
     }
   };
