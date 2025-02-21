@@ -12,7 +12,8 @@ export default function TwitterKOLNode({ data }) {
       setKols(updatedKOLs);
       data.onChange({
         ...data,
-        kolList: updatedKOLs
+        kolList: updatedKOLs,
+        output: { kolList: updatedKOLs }
       });
       setNewKOL('');
     }
@@ -23,7 +24,8 @@ export default function TwitterKOLNode({ data }) {
     setKols(updatedKOLs);
     data.onChange({
       ...data,
-      kolList: updatedKOLs
+      kolList: updatedKOLs,
+      output: { kolList: updatedKOLs }
     });
   };
 

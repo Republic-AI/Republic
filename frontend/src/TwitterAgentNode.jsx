@@ -38,6 +38,30 @@ export default function TwitterAgentNode({ data }) {
   const [checkCoin, setCheckCoin] = useState(false);
   const [outputData, setOutputData] = useState(null);
 
+  // Add useEffect to handle input from connected nodes
+  useEffect(() => {
+    if (data.inputs && data.inputs.length > 0) {
+      // Find input from Twitter KOL List node
+      const kolListInput = data.inputs.find(input => input.source.startsWith('node-') && Array.isArray(input.output?.kolList));
+
+      if (kolListInput) {
+        // Update targetAccounts with KOL list
+        setPullConfig(prevConfig => ({
+          ...prevConfig,
+          targetAccounts: kolListInput.output.kolList
+        }));
+        // Update the node's data
+        data.onChange({
+          ...data,
+          pullConfig: {
+            ...data.pullConfig, // Keep existing pullConfig
+            targetAccounts: kolListInput.output.kolList // Update targetAccounts
+          }
+        });
+      }
+    }
+  }, [data.inputs, data, data.onChange]);
+
   useEffect(() => {
     // Initialize Eliza with custom rules when they change
     const postRules = parseRules(postConfig.customRules);
@@ -196,7 +220,7 @@ export default function TwitterAgentNode({ data }) {
               openAIApiKey: apiConfig.openAIApiKey,
               pullConfig: {
                 ...pullConfig,
-                targetAccounts: pullConfig.targetAccounts,
+                targetAccounts: pullConfig.targetAccounts, // Use updated targetAccounts
                 aiPrompt: pullConfig.aiPrompt,
                 isOriginalCA: checkCA,
               },
@@ -263,10 +287,9 @@ export default function TwitterAgentNode({ data }) {
 
       {isConfigOpen && (
         <div className="node-config">
-          {/* API Configuration */}
-          <div className="api-config-section">
-            <h4>API Configuration</h4>
-            <div className="config-field">
+          <div className="config-section">
+            <h4>Twitter API Configuration</h4>
+            <div className="api-config-container">
               <input
                 type="password"
                 value={apiConfig.bearerToken}
@@ -275,7 +298,8 @@ export default function TwitterAgentNode({ data }) {
                 className="node-input"
               />
             </div>
-            <div className="config-field">
+            {/* Add OpenAI API Key Input */}
+            <div className="api-config-container">
               <input
                 type="password"
                 value={apiConfig.openAIApiKey}
@@ -286,7 +310,7 @@ export default function TwitterAgentNode({ data }) {
             </div>
           </div>
 
-          {/* Subagent Selection */}
+          {/* Sub-Agent Selection */}
           <div className="subagent-selection">
             <button
               onClick={() => setActiveSubAgent('pull')}
