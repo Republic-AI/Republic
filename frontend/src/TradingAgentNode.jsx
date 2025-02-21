@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Handle } from 'reactflow';
 import axios from 'axios';
+import { Connection, Transaction } from '@solana/web3.js'; // Import from Solana
 
 const GMGN_API_BASE = 'https://gmgn.ai/defi/router/v1/sol';
 const SOL_ADDRESS = 'So11111111111111111111111111111111111111112';
@@ -34,7 +35,7 @@ export default function TradingAgentNode({ data }) {
         });
       }
     }
-  }, [data.inputs]);
+  }, [data.inputs, data.onChange]);
 
   // Handle manual input of target token address
   const handleTargetTokenChange = (event) => {
@@ -57,11 +58,12 @@ export default function TradingAgentNode({ data }) {
     return null;
   };
 
-  // Check initial connection status
+  // UseEffect for Auto-Connect and Event Listeners
   useEffect(() => {
     const provider = getProvider();
     if (provider) {
-      provider.on('connect', (publicKey) => {
+      // Event listener for connection
+      provider.on("connect", (publicKey) => {
         console.log('Connected with public key:', publicKey.toString());
         setPublicKey(publicKey);
         setWalletConnected(true);
@@ -71,14 +73,27 @@ export default function TradingAgentNode({ data }) {
         });
       });
 
-      provider.on('disconnect', () => {
-        console.log('Disconnected');
-        setPublicKey(null);
-        setWalletConnected(false);
-        data.onChange({
-          ...data,
-          walletAddress: null
-        });
+      // Event listener for account changes
+      provider.on("accountChanged", (publicKey) => {
+        if (publicKey) {
+          // Update with new account
+          console.log('Account changed to:', publicKey.toString());
+          setPublicKey(publicKey);
+          setWalletConnected(true);
+          data.onChange({
+            ...data,
+            walletAddress: publicKey.toString()
+          });
+        } else {
+          // Handle disconnection
+          console.log('Account disconnected');
+          setPublicKey(null);
+          setWalletConnected(false);
+          data.onChange({
+            ...data,
+            walletAddress: null
+          });
+        }
       });
 
       // Check if already connected
@@ -90,8 +105,14 @@ export default function TradingAgentNode({ data }) {
           walletAddress: provider.publicKey.toString()
         });
       }
+
+      // Cleanup listeners
+      return () => {
+        provider.removeAllListeners("connect");
+        provider.removeAllListeners("accountChanged");
+      };
     }
-  }, []);
+  }, [data]);
 
   const handleConnect = async () => {
     try {
@@ -122,7 +143,7 @@ export default function TradingAgentNode({ data }) {
     try {
       const provider = getProvider();
       if (provider) {
-        await provider.disconnect();
+        // Instead of calling disconnect, just clear our local state
         setPublicKey(null);
         setWalletConnected(false);
         data.onChange({
@@ -212,24 +233,25 @@ export default function TradingAgentNode({ data }) {
     try {
       // Get swap route from GMGN API
       const routeResponse = await fetch(
-        `${GMGN_API_BASE}/tx/get_swap_route?` + 
+        `${GMGN_API_BASE}/tx/get_swap_route?` +
         `token_in_address=${SOL_ADDRESS}&` +
         `token_out_address=${targetTokenAddress}&` +
         `in_amount=${parameters.fixedBuy * 1e9}&` + // Convert SOL to lamports
-        `from_address=${publicKey}&` +
+        `from_address=${publicKey.toBase58()}&` +  // Use toBase58()
         `slippage=${parameters.slippage}&` +
         `fee=${parameters.gas}&` +
         `is_anti_mev=${parameters.antiMEV}`
       );
 
       const route = await routeResponse.json();
-      
+
       if (!route.data || !route.data.raw_tx) {
         throw new Error('Invalid route response');
       }
 
       // Get the transaction from route response
-      const transaction = route.data.raw_tx.swapTransaction;
+      const transactionBuffer = Buffer.from(route.data.raw_tx.swapTransaction, 'base64');
+      const transaction = Transaction.from(transactionBuffer);
 
       // Sign and submit transaction
       const provider = window.phantom?.solana;
@@ -237,21 +259,11 @@ export default function TradingAgentNode({ data }) {
         throw new Error('Phantom wallet not found');
       }
 
-      // Decode and sign the transaction
+      // Sign the transaction
       const signedTx = await provider.signTransaction(transaction);
-      
-      // Submit signed transaction
-      const submitResponse = await fetch(`${GMGN_API_BASE}/tx/submit_signed_transaction`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ signed_tx: signedTx })
-      });
-
-      const submitResult = await submitResponse.json();
-      
-      if (submitResult.error) {
-        throw new Error(submitResult.error);
-      }
+      const serializedTx = signedTx.serialize(); // Serialize
+      const signature = await new Connection('https://attentive-lingering-general.solana-mainnet.quiknode.pro/b510e1a738a9447f3a963bc61b7f002287b72eb1/').sendRawTransaction(serializedTx); // Use Connection
+      console.log('Transaction signature:', signature);
 
       alert('Transaction submitted successfully!');
 
@@ -393,8 +405,8 @@ export default function TradingAgentNode({ data }) {
             </div>
           </div>
 
-          <button 
-            onClick={handleBuy} 
+          <button
+            onClick={handleBuy}
             className="execute-button"
             disabled={!walletConnected || !targetTokenAddress}
           >
