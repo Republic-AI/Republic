@@ -71,31 +71,38 @@ export default function App() {
     [network]
   );
 
+  // Correctly propagate node outputs to connected nodes
   useEffect(() => {
     setNodes((prevNodes) => {
       return prevNodes.map((node) => {
-        // 过滤出所有连接到当前节点的边
-        const incomingEdge = edges.find((edge) => edge.target === node.id);
-  
-        if (incomingEdge) {
-          const sourceNode = prevNodes.find((n) => n.id === incomingEdge.source);
-  
-          // 如果 sourceNode 有 output，则更新 target 节点
-          if (sourceNode?.data?.output) {
-            return { 
-              ...node, 
-              data: { 
-                ...node.data, 
-                output: sourceNode.data.output 
-              } 
-            };
-          }
+        // Find incoming edges (edges where this node is the target)
+        const incomingEdges = edges.filter((edge) => edge.target === node.id);
+
+        // If there are no incoming edges, return the node as is
+        if (incomingEdges.length === 0) {
+          return node;
         }
-        return node;
+
+        // Create an 'inputs' array to store data from connected nodes
+        const inputs = incomingEdges.map((edge) => {
+          const sourceNode = prevNodes.find((n) => n.id === edge.source);
+          return {
+            source: edge.source,
+            output: sourceNode?.data?.output, // Get the output from the source node
+          };
+        });
+
+        // Return the updated node with the 'inputs' array
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            inputs: inputs, // Update ONLY the 'inputs' property
+          },
+        };
       });
     });
-  }, [nodes, setNodes, onNodesChange]);
-  
+  }, [edges, nodes, setNodes]); // Depend on edges and nodes
 
   const onConnect = (params) => {
     console.log('Edge connected:', params);
@@ -287,7 +294,7 @@ export default function App() {
       // Format nodes to include only necessary data
       const formattedNodes = nodes.map(node => ({
         id: node.id,
-        type: node.data.type || node.type,
+        type: node.data.type || node.type, // Prioritize data.type
               data: {
                 ...node.data,
           // Include any specific data needed by the handlers

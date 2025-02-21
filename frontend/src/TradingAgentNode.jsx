@@ -3,11 +3,13 @@ import { Handle } from 'reactflow';
 import axios from 'axios';
 
 const GMGN_API_BASE = 'https://gmgn.ai/defi/router/v1/sol';
+const SOL_ADDRESS = 'So11111111111111111111111111111111111111112';
 
 export default function TradingAgentNode({ data }) {
   const [isConfigOpen, setIsConfigOpen] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
   const [publicKey, setPublicKey] = useState(null);
+  const [targetTokenAddress, setTargetTokenAddress] = useState('');
   const [parameters, setParameters] = useState(() => ({
     ...data.parameters,
     fixedBuy: data.parameters?.fixedBuy || 0.1,
@@ -18,6 +20,31 @@ export default function TradingAgentNode({ data }) {
     slippage: data.parameters?.slippage || 0.5,
     antiMEV: data.parameters?.antiMEV || false
   }));
+
+  // Update target token address when receiving input from other nodes
+  useEffect(() => {
+    if (data.inputs && data.inputs[0]?.output?.content) {
+      const content = data.inputs[0].output.content;
+      // Check if content matches Solana address format
+      if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(content)) {
+        setTargetTokenAddress(content);
+        data.onChange({
+          ...data,
+          targetTokenAddress: content
+        });
+      }
+    }
+  }, [data.inputs]);
+
+  // Handle manual input of target token address
+  const handleTargetTokenChange = (event) => {
+    const address = event.target.value;
+    setTargetTokenAddress(address);
+    data.onChange({
+      ...data,
+      targetTokenAddress: address
+    });
+  };
 
   // Check if Phantom is installed and get provider
   const getProvider = () => {
@@ -177,36 +204,60 @@ export default function TradingAgentNode({ data }) {
   };
 
   const handleBuy = async () => {
-    if (!walletConnected || !publicKey) {
-      alert('Please connect wallet first');
+    if (!walletConnected || !targetTokenAddress) {
+      alert('Please connect wallet and provide target token address');
       return;
     }
 
     try {
-      // Get swap route
-      const route = await getSwapRoute(
-        'So11111111111111111111111111111111111111112', // SOL
-        data.tokenAddress,
-        parameters.fixedBuy * 1e9, // Convert to lamports
-        publicKey.toBase58()
+      // Get swap route from GMGN API
+      const routeResponse = await fetch(
+        `${GMGN_API_BASE}/tx/get_swap_route?` + 
+        `token_in_address=${SOL_ADDRESS}&` +
+        `token_out_address=${targetTokenAddress}&` +
+        `in_amount=${parameters.fixedBuy * 1e9}&` + // Convert SOL to lamports
+        `from_address=${publicKey}&` +
+        `slippage=${parameters.slippage}&` +
+        `fee=${parameters.gas}&` +
+        `is_anti_mev=${parameters.antiMEV}`
       );
 
-      // Sign and send the transaction
-      const transaction = Transaction.from(Buffer.from(route.data.raw_tx.swapTransaction, 'base64'));
-      const signature = await sendTransaction(transaction, new Connection('https://attentive-lingering-general.solana-mainnet.quiknode.pro/b510e1a738a9447f3a963bc61b7f002287b72eb1/')); // Replace with your connection
-      console.log('Transaction signature:', signature);
+      const route = await routeResponse.json();
+      
+      if (!route.data || !route.data.raw_tx) {
+        throw new Error('Invalid route response');
+      }
 
-      // Submit transaction (using GMGN)
-      const result = await submitTransaction(route.data.raw_tx.swapTransaction, parameters.antiMEV);
-      console.log('GMGN Submit Result:', result);
+      // Get the transaction from route response
+      const transaction = route.data.raw_tx.swapTransaction;
 
-      // Check status (using GMGN)
-      const status = await checkTransactionStatus(result.data.hash, route.data.raw_tx.lastValidBlockHeight);
-      console.log('Transaction Status:', status);
+      // Sign and submit transaction
+      const provider = window.phantom?.solana;
+      if (!provider) {
+        throw new Error('Phantom wallet not found');
+      }
+
+      // Decode and sign the transaction
+      const signedTx = await provider.signTransaction(transaction);
+      
+      // Submit signed transaction
+      const submitResponse = await fetch(`${GMGN_API_BASE}/tx/submit_signed_transaction`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signed_tx: signedTx })
+      });
+
+      const submitResult = await submitResponse.json();
+      
+      if (submitResult.error) {
+        throw new Error(submitResult.error);
+      }
+
+      alert('Transaction submitted successfully!');
 
     } catch (error) {
-      console.error('Error executing buy:', error);
-      alert('Error executing buy: ' + error.message);
+      console.error('Error executing trade:', error);
+      alert(`Error executing trade: ${error.message}`);
     }
   };
 
@@ -228,6 +279,23 @@ export default function TradingAgentNode({ data }) {
 
       {isConfigOpen && (
         <div className="node-config">
+          {/* Target Token Input */}
+          <div className="config-section">
+            <h4>Target Token</h4>
+            <input
+              type="text"
+              value={targetTokenAddress}
+              onChange={handleTargetTokenChange}
+              placeholder="Enter target token address"
+              className="node-input"
+            />
+            {data.inputs && data.inputs[0]?.output?.content && (
+              <div className="input-preview">
+                Connected Input: {data.inputs[0].output.content}
+              </div>
+            )}
+          </div>
+
           <div className="wallet-section">
             {!walletConnected ? (
               <button onClick={handleConnect} className="connect-wallet-button">
@@ -325,7 +393,11 @@ export default function TradingAgentNode({ data }) {
             </div>
           </div>
 
-          <button onClick={handleBuy} className="execute-button">
+          <button 
+            onClick={handleBuy} 
+            className="execute-button"
+            disabled={!walletConnected || !targetTokenAddress}
+          >
             Execute Trade
           </button>
         </div>

@@ -5,7 +5,7 @@ import './styles.css';
 
 export default function AnalystAgentNode({ data }) {
   const [isConfigOpen, setIsConfigOpen] = useState(true);
-  const [contractAddress, setContractAddress] = useState(data.output?.content || '');
+  const [contractAddress, setContractAddress] = useState('');
   const [parameters, setParameters] = useState(() => ({
     mktCap: data.parameters?.mktCap || [0, 1000],       // Market cap in millions
     liquidity: data.parameters?.liquidity || [0, 100],    // Liquidity in millions
@@ -16,10 +16,16 @@ export default function AnalystAgentNode({ data }) {
   }));
 
   useEffect(() => {
-    if (data.output?.content) {
-      setContractAddress(data.output.content);
+    if (data.inputs && data.inputs.length > 0) {
+      const inputFromTwitter = data.inputs.find(input => input.source.startsWith('node-') && input.output?.content);
+
+      if (inputFromTwitter) {
+        setContractAddress(inputFromTwitter.output.content);
+      }
+    } else {
+        setContractAddress('');
     }
-  }, [data.output]);
+  }, [data.inputs]);
 
   const handleRangeChange = (paramName, value) => {
     const updatedParams = {
@@ -36,10 +42,6 @@ export default function AnalystAgentNode({ data }) {
   const handleContractAddressChange = (event) => {
     const address = event.target.value;
     setContractAddress(address);
-    data.onChange({
-      ...data,
-      contractAddress: address
-    });
   };
 
   const handleRunAnalysis = async () => {
@@ -95,7 +97,7 @@ export default function AnalystAgentNode({ data }) {
             <h4>Contract Address</h4>
             <input
               type="text"
-              value={data.output?.content}
+              value={contractAddress}
               onChange={handleContractAddressChange}
               placeholder="Enter Solana token contract address"
               className="node-input"
