@@ -276,12 +276,13 @@ export default function App() {
     setNodes((nds) => [...nds, newNode]);
   };
 
-  const handleAddWebViewNode = () => {
+  const handleAddKChartNode = () => {
     const newNode = {
       id: `node-${nodes.length + 1}`,
       type: 'webview',
       position: { x: 250, y: 50 },
-            data: {
+      data: {
+        type: 'kchart',
         url: '',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 1}`, newData)
       }
@@ -484,6 +485,18 @@ export default function App() {
                               Analyzes on-chain data and provides insights.
                             </p>
                           </li>
+                          <li>
+                            <button
+                              className="import-agent-button kchart-button"
+                              onClick={handleAddKChartNode}
+                            >
+                              <span className="button-icon">📊</span>
+                              K Chart
+                            </button>
+                            <p className="agent-description">
+                              Interactive price chart and technical analysis view.
+                            </p>
+                          </li>
                         </ul>
                       )}
                     </div>
@@ -531,14 +544,8 @@ export default function App() {
                 {/* Add Web View Button */}
                 <div className="node-buttons-group">
                   <h4>Tools</h4>
-                  <button
-                    onClick={handleAddWebViewNode}
-                    className="add-node-button webview-button"
-                  >
-                    <span className="button-icon">🌐</span>
-                    Web View
-            </button>
-          </div>
+                  {/* Web View button removed from here */}
+                </div>
 
           {/* Run Flow Button */}
           <button 
