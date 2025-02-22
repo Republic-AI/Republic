@@ -180,12 +180,12 @@ cd republic
 
     Open your web browser and go to `http://localhost:3000`.
 
-## Multi-Agent Example: Copy Transaction
+## Multi-Agent Example: Monitor & Copy Transactions
 
 This example demonstrates a pre-built multi-agent system for monitoring and copying transactions.
 
 1.  **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Marketplace" section.
-2.  **Create the Flow:** Click the "Copy Transaction" button. This will automatically create and connect the following nodes:
+2.  **Create the Flow:** Click the "**Monitor & Copy Transactions**" button. This will automatically create and connect the following nodes:
     *   **Instruction Sticker:** Provides instructions on how to use the flow.
     *   **Twitter KOL List:** Add Twitter accounts of Key Opinion Leaders (KOLs) to monitor.
     *   **Twitter Agent:**  Fetches tweets from the specified KOLs.  **Make sure to check the "CA Mode" checkbox in the Twitter Agent's configuration.** This enables contract address extraction.
@@ -197,6 +197,6 @@ This example demonstrates a pre-built multi-agent system for monitoring and copy
     *   **Twitter Agent:** Ensure "CA Mode" is checked.
     *   **Analyst Agent:** Set the desired analysis parameters (market cap, liquidity, etc.).  Connect a contract address to the input of this node, or type one into the input box.
     *   **Trading Agent:** Configure the trading parameters (buy/sell amounts, stop-loss, etc.).
-4.  **Run the Flow:** Click the "Run Flow" button at the bottom of the sidebar.  The agents will execute in sequence, and the results will be displayed in the connected nodes.
+4.  **Run the Flow:** The flow will run automatically and continuously. The Twitter Agent will poll for new tweets, the Analyst Agent will analyze any contract addresses found, and the Trading Agent will (potentially) execute trades based on the analysis.
 
-This "Copy Transaction" flow demonstrates how multiple agents can be combined to create a powerful and automated workflow. You can customize this flow or build your own multi-agent systems by connecting different agent types.
+This "Monitor & Copy Transactions" flow demonstrates how multiple agents can be combined to create a powerful and automated workflow. You can customize this flow or build your own multi-agent systems by connecting different agent types.

@@ -8,23 +8,20 @@ export default function WebViewNode({ data }) {
   const [error, setError] = useState(null);
   const [tokenCA, setTokenCA] = useState('');
 
-  // Handle input from connected nodes (like Analyst Agent)
+  // This useEffect is now correctly triggered because App.jsx updates tokenCA and url
   useEffect(() => {
     if (data.inputs && data.inputs.length > 0) {
-      // Find input that contains a contract address
-      const contractInput = data.inputs.find(input => 
-        input.output?.content && 
+      const contractInput = data.inputs.find(input =>
+        input.output?.content &&
         /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(input.output.content)
       );
 
       if (contractInput) {
         const newCA = contractInput.output.content;
         setTokenCA(newCA);
-        // Construct GMGN K-line URL
         const newUrl = `https://www.gmgn.cc/kline/sol/${newCA}`;
         setUrl(newUrl);
-        
-        // Update node data
+
         data.onChange({
           ...data,
           url: newUrl,
@@ -32,7 +29,7 @@ export default function WebViewNode({ data }) {
         });
       }
     }
-  }, [data.inputs]);
+  }, [data.inputs, data.onChange]); // Correctly depends on data.inputs
 
   const openInNewTab = () => {
     if (url) {

@@ -200,19 +200,6 @@ export default function TwitterAgentNode({ data }) {
     }
   };
 
-  // Update the useEffect that exposes triggerPull
-  useEffect(() => {
-    data.onChange({
-      ...data,
-      triggerPull: handlePullTweets,
-      pullConfig: {
-        ...pullConfig,
-        isOriginalCA: checkCA  // Add this line to include the CA check flag
-      }
-    });
-  }, [pullConfig, checkCA]); // Add checkCA to dependencies
-
-  // Update handlePullTweets to include checkCA in the request
   const handlePullTweets = async () => {
     setIsLoading(true);
     try {
@@ -229,25 +216,34 @@ export default function TwitterAgentNode({ data }) {
               activeSubAgent: 'pull',
               pullConfig: {
                 ...pullConfig,
-                isOriginalCA: checkCA  // Add this line
+                isOriginalCA: checkCA
               }
             }
           }]
         })
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const result = await response.json();
       const output = result.results[data.id];
       setOutputData(output);
-      
-      // Update node data with output
+
+      // Update node data with output, including isCA flag
       data.onChange({
         ...data,
         output: {
           ...output,
-          isCA: checkCA  // Add this line to properly flag CA output
+          isCA: checkCA
+        },
+        pullConfig: { // Keep pullConfig up-to-date
+          ...pullConfig,
+          targetAccounts: pullConfig.targetAccounts, // Ensure targetAccounts are updated
         }
       });
+
     } catch (error) {
       console.error('Error pulling tweets:', error);
       alert('Error pulling tweets: ' + error.message);
@@ -260,6 +256,20 @@ export default function TwitterAgentNode({ data }) {
       setIsLoading(false);
     }
   };
+
+  // Add a useEffect to handle polling
+  useEffect(() => {
+    // Initial fetch
+    handlePullTweets();
+
+    // Set up polling interval (e.g., every 60 seconds)
+    const intervalId = setInterval(() => {
+      handlePullTweets();
+    }, 60000); // 60000 milliseconds = 60 seconds
+
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(intervalId);
+  }, [pullConfig.targetAccounts, checkCA, apiConfig.bearerToken, pullConfig.aiPrompt, pullConfig.timeLength]); // Add dependencies
 
   return (
     <div className={`custom-node twitter-agent ${isConfigOpen ? 'expanded' : ''}`}>
@@ -400,9 +410,6 @@ export default function TwitterAgentNode({ data }) {
                 </label>
               </div>
               <div className="config-field">
-                <button onClick={handlePullTweets} className="test-button">
-                  Test Pull
-                </button>
                 {isLoading && <p>Loading...</p>}
                 {outputData && (
                   <div className="twitter-output">

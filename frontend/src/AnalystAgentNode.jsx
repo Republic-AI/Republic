@@ -102,6 +102,11 @@ export default function AnalystAgentNode({ data }) {
     }
   };
 
+  // This useEffect is now correctly triggered because App.jsx updates contractAddress
+  useEffect(() => {
+    handleRunAnalysis(parameters, contractAddress);
+  }, [contractAddress, parameters]);
+
   return (
     <div className={`custom-node analyst-agent ${isConfigOpen ? 'expanded' : ''}`}>
       <Handle type="target" position="left" />

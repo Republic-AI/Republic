@@ -81,34 +81,48 @@ export default function App() {
   useEffect(() => {
     setNodes((prevNodes) => {
       return prevNodes.map((node) => {
-        // Find incoming edges (edges where this node is the target)
         const incomingEdges = edges.filter((edge) => edge.target === node.id);
 
-        // If there are no incoming edges, return the node as is
         if (incomingEdges.length === 0) {
           return node;
         }
 
-        // Create an 'inputs' array to store data from connected nodes
         const inputs = incomingEdges.map((edge) => {
           const sourceNode = prevNodes.find((n) => n.id === edge.source);
           return {
             source: edge.source,
-            output: sourceNode?.data?.output, // Get the output from the source node
+            output: sourceNode?.data?.output,
           };
         });
 
-        // Return the updated node with the 'inputs' array
+        let newData = {
+          ...node.data,
+          inputs: inputs,
+        };
+
+        if (node.type === 'analystAgent') {
+          const contractInput = inputs.find(input => input.output?.content && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(input.output.content));
+          if (contractInput) {
+            newData.contractAddress = contractInput.output.content;
+          }
+        }
+
+        if (node.type === 'webview') {
+          const contractInput = inputs.find(input => input.output?.content && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(input.output.content));
+          if (contractInput) {
+            const newCA = contractInput.output.content;
+            newData.tokenCA = newCA;
+            newData.url = `https://www.gmgn.cc/kline/sol/${newCA}`;
+          }
+        }
+
         return {
           ...node,
-          data: {
-            ...node.data,
-            inputs: inputs, // Update ONLY the 'inputs' property
-          },
+          data: newData,
         };
       });
     });
-  }, [edges, nodes, setNodes]); // Depend on edges and nodes
+  }, [edges, nodes, setNodes]);
 
   const onConnect = (params) => {
     console.log('Edge connected:', params);
@@ -356,7 +370,7 @@ export default function App() {
       id: `node-${nodes.length + 5}`,
       type: 'webview',
       position: { x: 1300, y: 50 },
-      data: {
+            data: {
         type: 'webview',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 5}`, newData)
       }
@@ -399,83 +413,6 @@ export default function App() {
     // Add all new nodes and edges
     setNodes([...nodes, instructionSticker, kolNode, twitterNode, analystNode, webviewNode, tradingNode]);
     setEdges([...edges, ...newEdges]);
-  };
-
-  const handleRunFlow = async () => {
-    try {
-      // First, trigger all Twitter Agent pulls
-      const twitterAgentNodes = nodes.filter(node => node.type === 'twitterAgent');
-      for (const node of twitterAgentNodes) {
-        if (node.data.triggerPull) {
-          await node.data.triggerPull();
-        }
-      }
-
-      // Trigger analysis for Analyst Agent nodes
-      const analystAgentNodes = nodes.filter(node => node.type === 'analystAgent');
-      for (const node of analystAgentNodes) {
-        if (node.data.triggerAnalysis) {
-          await node.data.triggerAnalysis(node.data.parameters, node.data.contractAddress);
-        }
-      }
-
-      // Then execute the rest of the flow (for other node types)
-      const formattedNodes = nodes.map(node => ({
-        id: node.id,
-        type: node.data.type || node.type,
-        data: {
-          ...node.data,
-          contractAddress: node.data.contractAddress,
-          parameters: node.data.parameters,
-          pullConfig: node.data.pullConfig,
-          postConfig: node.data.postConfig,
-          replyConfig: node.data.replyConfig,
-          openAIApiKey: node.data.openAIApiKey,
-          bearerToken: node.data.bearerToken
-        }
-      }));
-
-      const response = await fetch('http://localhost:5002/execute-flow', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nodes: formattedNodes,
-          edges
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      // Update nodes with results, MERGING the new output
-      setNodes(prevNodes =>
-        prevNodes.map(node => {
-          const nodeResult = result.results[node.id];
-          if (nodeResult) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                output: {
-                  ...(node.data.output || {}),
-                  ...nodeResult,
-                },
-              },
-            };
-          }
-          return node;
-        })
-      );
-
-    } catch (error) {
-      console.error('Error executing flow:', error);
-      alert('Error executing flow: ' + error.message);
-    }
   };
 
   return (
@@ -671,7 +608,7 @@ export default function App() {
                     onClick={handleAddCopyTransactionFlow}
                   >
                     <span className="button-icon">🔄</span>
-                    Copy Transaction
+                    Monitor &amp; Copy Transactions
                   </button>
                   <p className="agent-description">
                     Creates a complete flow for monitoring and copying transactions.
@@ -685,11 +622,8 @@ export default function App() {
           </div>
 
           {/* Run Flow Button */}
-          <button 
-            onClick={handleRunFlow}
-            className="run-flow-button"
-          >
-            Run Flow
+          <button className="run-flow-button" disabled>
+            Flow is Running
           </button>
         </div>
       </div>

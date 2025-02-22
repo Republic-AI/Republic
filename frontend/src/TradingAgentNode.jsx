@@ -261,6 +261,34 @@ export default function TradingAgentNode({ data }) {
     }
   };
 
+  // Add a useEffect to trigger a trade when analysis criteria are met
+  useEffect(() => {
+    if (data.inputs && data.inputs.length > 0) {
+      const analystInput = data.inputs.find(input => input.source.startsWith('node-') && input.output?.summary?.includes('passed'));
+
+      if (analystInput && analystInput.output.content) {
+        // 1.  Get the contract address from the Analyst Agent's output.
+        const caToTrade = analystInput.output.content;
+
+        // 2.  Set the target token address in the Trading Agent's state.
+        setTargetTokenAddress(caToTrade);
+
+        // 3.  Update the node's data (so it persists).
+        data.onChange({
+          ...data,
+          targetTokenAddress: caToTrade,
+        });
+
+        // 4.  (Optional)  Add a small delay before executing the trade,
+        //     to give the UI time to update.
+        setTimeout(() => {
+          // 5.  Call your trading function (handleBuy, in this example).
+          handleBuy(); //  <--  This assumes you have a handleBuy function.
+        }, 1000); // 1-second delay
+      }
+    }
+  }, [data.inputs, data.onChange]); // Trigger when inputs change
+
   return (
     <div className={`custom-node trading-agent ${isConfigOpen ? 'expanded' : ''}`}>
       <Handle type="target" position="left" />
