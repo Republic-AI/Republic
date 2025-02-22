@@ -422,3 +422,128 @@ MIT License - see [LICENSE](LICENSE) for details
   - [ ] Audit logging
   - [ ] Custom deployment options
   - [ ] SLA guarantees
+
+# Solana Agent Framework
+
+This project provides a framework for building and deploying AI agents on the Solana blockchain. It leverages ReactFlow for a visual, node-based interface, allowing users to create complex workflows involving various agents.
+
+## Features
+
+*   **Visual Workflow Builder:** Design agent interactions using a drag-and-drop interface powered by ReactFlow.
+*   **Modular Agent System:** Create and integrate custom agents for various tasks (e.g., data fetching, analysis, trading).
+*   **Multi-Agent Systems:** Combine multiple agents to create complex, coordinated workflows.
+*   **Solana Integration:** Connect to the Solana blockchain for on-chain data and interactions.
+*   **Extensible Architecture:** Easily add new agents and functionalities.
+*   **AI-Powered Agents:** Utilize AI models (like OpenAI's GPT) for intelligent decision-making.
+*   **Real-time Data:** Fetch and process real-time data from various sources (Twitter, Discord, Telegram, on-chain data).
+*   **Trading Capabilities:** Integrate with decentralized exchanges (DEXs) for automated trading.
+*   **Web View Integration:** Display external web content (like charts) within the workflow.
+*   **Wallet Integration:** Connect with Solana wallets (Phantom, Solflare) for secure transactions.
+*   **Error Handling:** Robust error handling and reporting.
+*   **Dockerized Deployment:** Easy deployment using Docker and Docker Compose.
+*   **Customizable UI:** Highly customizable and configurable user interface.
+
+## Architecture
+
+The project consists of three main components:
+
+1.  **Frontend (React):** Provides the user interface for building and interacting with agent workflows.
+2.  **Node.js LLM Service:** Handles the execution of agent logic, including interactions with AI models and external APIs.
+3.  **Orchestrator (FastAPI):**  Manages the overall workflow execution and communication between the frontend and backend services.  (Currently, the Node.js service handles orchestration as well, but this is a planned separation of concerns.)
+
+## Getting Started
+
+### Prerequisites
+
+*   Node.js (v18 or later)
+*   npm (v9 or later)
+*   Docker
+*   Docker Compose
+*   A Solana wallet (Phantom or Solflare recommended)
+*   API keys for:
+    *   OpenAI
+    *   Twitter (RapidAPI)
+
+### Installation
+
+1.  **Clone the repository:**
+
+    ```bash
+    git clone https://github.com/solana-labs/dapp-scaffold.git
+    cd dapp-scaffold
+    ```
+    
+2.  **Rename the folder:**
+    ```bash
+    mv dapp-scaffold solana-agent-framework
+    cd solana-agent-framework
+    ```
+
+3.  **Install dependencies:**
+
+    ```bash
+    cd frontend && npm install
+    cd ../node-llm-service && npm install
+    ```
+
+4.  **Set up environment variables:**
+
+    Create `.env` files in both the `frontend` and `node-llm-service` directories.  Add the following variables, replacing the placeholders with your actual API keys:
+
+    **`frontend/.env`:**
+
+    ```
+    REACT_APP_OPENAI_API_KEY=your_openai_api_key
+    ```
+
+    **`node-llm-service/.env`:**
+
+    ```
+    OPENAI_API_KEY=your_openai_api_key
+    TWITTER_RAPIDAPI_KEY=your_twitter_rapidapi_key
+    SOLANA_RPC_URL=your_solana_rpc_url  # (e.g., from QuickNode)
+    ```
+
+5.  **Build and run the application:**
+
+    ```bash
+    docker-compose up --build
+    ```
+
+    This will build and start the frontend, Node.js LLM service, and orchestrator services.
+
+6.  **Access the application:**
+
+    Open your browser and go to `http://localhost:3000`.
+
+## Multi-Agent System Example: Copy Transaction
+
+The "Copy Transaction" feature provides a pre-built multi-agent system that demonstrates the power of combining different agents. This flow allows you to monitor Twitter for potential token mentions, analyze the mentioned tokens, and execute trades based on the analysis.
+
+**Workflow:**
+
+1.  **Twitter KOL List:**  You provide a list of Twitter accounts (KOLs - Key Opinion Leaders) to monitor.
+2.  **Twitter Agent:**  This agent fetches tweets from the specified KOLs, using the "CA Mode" (Contract Address Mode) to extract potential Solana token contract addresses.
+3.  **Analyst Agent:**  This agent analyzes the extracted contract addresses, checking metrics like market cap, liquidity, and top holders.
+4.  **Webview Node:** Displays a chart (e.g., a K-line chart) for the analyzed token.
+5.  **Trading Agent:**  Allows you to execute trades (buy/sell) based on the analysis and your configured parameters.
+
+**How to use:**
+
+1.  Click the "Copy Transaction" button in the "Multi-agent Marketplace" section of the sidebar. This will automatically create and connect the necessary nodes on the canvas.
+2.  An instruction sticker will appear in the top-left corner, guiding you through the process.
+3.  Add Twitter accounts to the "Twitter KOL List" node.
+4.  Ensure "CA Mode" is checked in the "Twitter Agent" node.
+5.  Set your desired parameters in the "Analyst Agent" node.
+6.  Configure your trading settings in the "Trading Agent" node.
+7.  Click the "Run Flow" button to start the multi-agent system.
+
+This example showcases how different agents can be combined to create a powerful and automated workflow.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests.
+
+## License
+
+This project is licensed under the MIT License.
