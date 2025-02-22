@@ -307,7 +307,7 @@ export default function App() {
       type: 'sticker',
       position: { 
         x: kolNodeX,  // Same x as KOL node
-        y: kolNodeY - 100  // 100px above KOL node
+        y: kolNodeY - 300  // 100px above KOL node
       },
       data: {
         type: 'sticker',
