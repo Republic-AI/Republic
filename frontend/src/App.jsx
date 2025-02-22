@@ -48,6 +48,11 @@ const nodeTypes = {
   smartMoneyFollower: SmartMoneyAddressNode,
   twitterKOL: TwitterKOLNode,
   webview: WebViewNode,
+  sticker: ({ data }) => (
+    <div className={data.className}>
+      {data.label}
+    </div>
+  ),
 };
 
 export default function App() {
@@ -56,6 +61,7 @@ export default function App() {
   const [isSocialMediaHubOpen, setIsSocialMediaHubOpen] = useState(false);
   const [isDefiHubOpen, setIsDefiHubOpen] = useState(false);
   const [isDataHubOpen, setIsDataHubOpen] = useState(false);
+  const [isMultiAgentMarketOpen, setIsMultiAgentMarketOpen] = useState(false);
   const [network, setNetwork] = useState(WalletAdapterNetwork.Mainnet);
   const endpoint = useMemo(() => {
       if (network === WalletAdapterNetwork.Mainnet) {
@@ -288,6 +294,111 @@ export default function App() {
       }
     };
     setNodes([...nodes, newNode]);
+  };
+
+  const handleAddCopyTransactionFlow = () => {
+    // Set base position for KOL node
+    const kolNodeX = 100;
+    const kolNodeY = 200;
+    
+    // Create instruction sticker node - position it above the KOL node
+    const instructionSticker = {
+      id: `node-${nodes.length + 1}`,
+      type: 'sticker',
+      position: { 
+        x: kolNodeX,  // Same x as KOL node
+        y: kolNodeY - 100  // 100px above KOL node
+      },
+      data: {
+        type: 'sticker',
+        label: `How to use Copy Transaction Flow:
+1. Add KOL accounts in Twitter KOL List
+2. Check "CA Mode" in Twitter Agent
+3. Set parameters in Analyst Agent
+4. Configure Trading Agent settings
+5. Click "Run Flow" to start`,
+        className: 'instruction-label'
+      }
+    };
+
+    // Create nodes with specific positions - more spacing between nodes
+    const kolNode = {
+      id: `node-${nodes.length + 2}`,
+      type: 'twitterKOL',
+      position: { x: kolNodeX, y: kolNodeY },
+      data: {
+        type: 'twitterKOL',
+        onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 2}`, newData)
+      }
+    };
+
+    const twitterNode = {
+      id: `node-${nodes.length + 3}`,
+      type: 'twitterAgent',
+      position: { x: 500, y: 200 },
+      data: {
+        type: 'twitterAgent',
+        onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 3}`, newData)
+      }
+    };
+
+    const analystNode = {
+      id: `node-${nodes.length + 4}`,
+      type: 'analystAgent',
+      position: { x: 900, y: 200 },
+      data: {
+        type: 'analystAgent',
+        onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 4}`, newData)
+      }
+    };
+
+    const webviewNode = {
+      id: `node-${nodes.length + 5}`,
+      type: 'webview',
+      position: { x: 1300, y: 50 },
+      data: {
+        type: 'webview',
+        onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 5}`, newData)
+      }
+    };
+
+    const tradingNode = {
+      id: `node-${nodes.length + 6}`,
+      type: 'tradingAgent',
+      position: { x: 1300, y: 350 },
+      data: {
+        type: 'tradingAgent',
+        onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 6}`, newData)
+      }
+    };
+
+    // Create edges to connect the nodes
+    const newEdges = [
+      {
+        id: `edge-${edges.length + 1}`,
+        source: kolNode.id,
+        target: twitterNode.id,
+      },
+      {
+        id: `edge-${edges.length + 2}`,
+        source: twitterNode.id,
+        target: analystNode.id,
+      },
+      {
+        id: `edge-${edges.length + 3}`,
+        source: analystNode.id,
+        target: webviewNode.id,
+      },
+      {
+        id: `edge-${edges.length + 4}`,
+        source: analystNode.id,
+        target: tradingNode.id,
+      },
+    ];
+
+    // Add all new nodes and edges
+    setNodes([...nodes, instructionSticker, kolNode, twitterNode, analystNode, webviewNode, tradingNode]);
+    setEdges([...edges, ...newEdges]);
   };
 
   const handleRunFlow = async () => {
@@ -550,6 +661,21 @@ export default function App() {
                       )}
                     </div>
                   </div>
+                </div>
+
+                {/* Add Multi-agent Marketplace section */}
+                <div className="node-buttons-group">
+                  <h4>Multi-agent Marketplace</h4>
+                  <button
+                    className="import-agent-button copy-transaction-button"
+                    onClick={handleAddCopyTransactionFlow}
+                  >
+                    <span className="button-icon">🔄</span>
+                    Copy Transaction
+                  </button>
+                  <p className="agent-description">
+                    Creates a complete flow for monitoring and copying transactions.
+                  </p>
                 </div>
 
                 {/* Add Web View Button */}

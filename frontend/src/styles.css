@@ -1614,3 +1614,76 @@ html, body {
 .open-chart-btn:hover {
   background-color: #1976d2;
 }
+
+/* Multi-agent Marketplace styles */
+.copy-transaction-button {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  background-color: #9c27b0;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copy-transaction-button:hover {
+  background-color: #7b1fa2;
+}
+
+.copy-transaction-button .button-icon {
+  font-size: 18px;
+}
+
+/* Label node styles */
+.label-node {
+  padding: 10px 20px;
+  background-color: #f0f0f0;
+  border: 2px dashed #666;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  text-transform: uppercase;
+}
+
+/* Description label node styles */
+.description-label {
+  max-width: 400px;
+  padding: 15px 25px;
+  background-color: #fff3e0;
+  border: 2px dashed #ff9800;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: normal;
+  color: #e65100;
+  text-transform: none;
+  line-height: 1.4;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Instruction label styles */
+.instruction-label {
+  max-width: 300px;
+  padding: 20px;
+  background-color: #e3f2fd;
+  border: 2px dashed #2196f3;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: normal;
+  color: #0d47a1;
+  text-transform: none;
+  line-height: 1.6;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  white-space: pre-line;
+}
+
+.instruction-label::before {
+  content: "📝";
+  display: block;
+  font-size: 24px;
+  margin-bottom: 10px;
+}
