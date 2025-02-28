@@ -1687,3 +1687,135 @@ html, body {
   font-size: 24px;
   margin-bottom: 10px;
 }
+
+.process-prompt-button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.process-prompt-button:hover {
+  background-color: #45a049;
+}
+
+.process-prompt-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.trading-agent .node-textarea {
+  min-height: 80px;
+  margin-bottom: 10px;
+}
+
+.api-key-input {
+  font-family: monospace;
+  letter-spacing: 1px;
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+  padding: 8px 12px;
+}
+
+.api-key-info {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* Social Sentiment Monitor button styles */
+.social-sentiment-button {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.social-sentiment-button:hover {
+  background-color: #1976d2;
+}
+
+.social-sentiment-button .button-icon {
+  font-size: 18px;
+}
+
+/* Signal Monitoring button styles */
+.signal-monitoring-button {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.signal-monitoring-button:hover {
+  background-color: #f57c00;
+}
+
+.signal-monitoring-button .button-icon {
+  font-size: 18px;
+}
+
+/* Algorithmic Trading Strategies button styles */
+.algo-trading-button {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.algo-trading-button:hover {
+  background-color: #388e3c;
+}
+
+.algo-trading-button .button-icon {
+  font-size: 18px;
+}
+
+/* Risk Management button styles */
+.risk-management-button {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.risk-management-button:hover {
+  background-color: #d32f2f;
+}
+
+.risk-management-button .button-icon {
+  font-size: 18px;
+}

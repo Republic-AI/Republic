@@ -6,6 +6,9 @@ import './styles.css';
 export default function AnalystAgentNode({ data }) {
   const [isConfigOpen, setIsConfigOpen] = useState(true);
   const [contractAddress, setContractAddress] = useState('');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [openAIApiKey, setOpenAIApiKey] = useState(data.openAIApiKey || '');
+  const [isProcessingPrompt, setIsProcessingPrompt] = useState(false);
   const [parameters, setParameters] = useState(() => ({
     mktCap: data.parameters?.mktCap || [0, 1000],       // Market cap in millions
     liquidity: data.parameters?.liquidity || [0, 100],    // Liquidity in millions
@@ -58,6 +61,19 @@ export default function AnalystAgentNode({ data }) {
     });
   };
 
+  const handleOpenAIApiKeyChange = (event) => {
+    const newKey = event.target.value;
+    setOpenAIApiKey(newKey);
+    data.onChange({
+      ...data,
+      openAIApiKey: newKey
+    });
+  };
+
+  const handleAiPromptChange = (event) => {
+    setAiPrompt(event.target.value);
+  };
+
   const handleRunAnalysis = async (currentParameters, currentContractAddress) => {
     // Use provided parameters and contract address, or fallback to local state if not provided
     const paramsToUse = currentParameters || parameters;
@@ -102,6 +118,64 @@ export default function AnalystAgentNode({ data }) {
     }
   };
 
+  const handleRunAnalysisFromPrompt = async () => {
+    if (!aiPrompt) {
+      alert('Please enter an AI prompt');
+      return;
+    }
+    if (!contractAddress) {
+      alert('Please enter or connect a Solana token contract address');
+      return;
+    }
+    if (!openAIApiKey) {
+      alert('Please enter your OpenAI API key');
+      return;
+    }
+
+    setIsProcessingPrompt(true);
+    try {
+      const response = await fetch('http://localhost:5002/analyze-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          contractAddress, 
+          aiPrompt,
+          openAIApiKey // Send the API key with the request
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+
+      // Update parameters based on AI's interpretation
+      if (result.parameters) {
+        setParameters(prevParams => ({
+          ...prevParams,
+          ...result.parameters
+        }));
+        // Also update the node's data
+        data.onChange({
+          ...data,
+          parameters: {
+            ...parameters,
+            ...result.parameters
+          }
+        });
+      }
+
+      // Now, run the actual analysis with the updated parameters
+      handleRunAnalysis(result.parameters, contractAddress);
+
+    } catch (error) {
+      console.error('Error analyzing prompt:', error);
+      alert('Error analyzing prompt: ' + error.message);
+    } finally {
+      setIsProcessingPrompt(false);
+    }
+  };
+
   // This useEffect is now correctly triggered because App.jsx updates contractAddress
   useEffect(() => {
     handleRunAnalysis(parameters, contractAddress);
@@ -125,6 +199,37 @@ export default function AnalystAgentNode({ data }) {
 
       {isConfigOpen && (
         <div className="node-config">
+          <div className="config-section">
+            <h4>OpenAI API Key</h4>
+            <input
+              type="password"
+              value={openAIApiKey}
+              onChange={handleOpenAIApiKeyChange}
+              placeholder="Enter your OpenAI API key"
+              className="node-input api-key-input"
+            />
+            <div className="api-key-info">
+              Required for AI prompt functionality
+            </div>
+          </div>
+
+          <div className="config-section">
+            <h4>AI Prompt</h4>
+            <textarea
+              value={aiPrompt}
+              onChange={handleAiPromptChange}
+              placeholder="Enter a prompt to control analysis parameters (e.g., 'Find tokens with a market cap between $1M and $10M and high liquidity')"
+              className="node-textarea"
+            />
+            <button 
+              onClick={handleRunAnalysisFromPrompt} 
+              className="run-analysis-button"
+              disabled={isProcessingPrompt}
+            >
+              {isProcessingPrompt ? 'Processing...' : 'Run Analysis from Prompt'}
+            </button>
+          </div>
+
           <div className="config-section">
             <h4>Contract Address</h4>
             <input
@@ -301,8 +406,8 @@ export default function AnalystAgentNode({ data }) {
               </div>
             </div>
 
-            <button onClick={() => handleRunAnalysis()} className="run-analysis-button">
-              Run Analysis
+            <button className="run-analysis-button" disabled>
+              Analyzing...
             </button>
 
             {data.analysisData && (

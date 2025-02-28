@@ -1,10 +1,17 @@
 const { Connection, PublicKey } = require('@solana/web3.js');
 const axios = require('axios');
+const { Configuration, OpenAIApi } = require('openai');
 
 require('dotenv').config();
 
 const SOLANA_TRACKER_API_BASE_URL = 'https://data.solanatracker.io';
 const SOLANA_TRACKER_API_KEY = '54ca8aa7-77e2-444e-9625-07a9f5f0d006'; // Your API Key
+
+// Initialize OpenAI API
+const configuration = new Configuration({
+    apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
 
 async function fetchTokenInfo(tokenAddress) {
   try {
@@ -37,6 +44,61 @@ async function fetchTokenHolders(tokenAddress) {
             console.error("Solana Tracker API Response:", error.response.data);
         }
         throw new Error(`Failed to fetch token holders for ${tokenAddress} from Solana Tracker: ${error.message}`);
+    }
+}
+
+async function fetchRiskData(tokenAddress) {
+  // ... (same as before) ...
+}
+
+async function analyzePromptWithAI(prompt, contractAddress) {
+    try {
+        const response = await openai.createChatCompletion({
+            model: "gpt-3.5-turbo",
+            messages: [
+                {
+                    role: "system",
+                    content: `You are an AI that analyzes user prompts to extract parameters for a token analysis.
+                    The user will provide a prompt describing desired token characteristics.
+                    Your task is to extract the following parameters and return them in JSON format:
+                    
+                    - mktCap (array of two numbers): Market cap range in millions [min, max].
+                    - liquidity (array of two numbers): Liquidity range in millions [min, max].
+                    - top10 (array of two numbers): Top 10 holders percentage range [min, max].
+                    - snipers (array of two numbers): Sniper score range [min, max].
+                    - blueChip (array of two numbers): Blue chip holder percentage range [min, max].
+                    - hasAudit (boolean): Whether the token has an audit.
+
+                    If a parameter is not specified in the prompt, do NOT include it in the JSON output.
+                    Only include parameters that can be confidently extracted from the prompt.
+                    
+                    Example prompt: "Find tokens with a market cap between $1M and $10M, high liquidity, and low sniper risk."
+                    
+                    Expected JSON output:
+                    {
+                      "mktCap": [1, 10],
+                      "liquidity": [50, 100], // Assuming "high liquidity" maps to 50-100
+                      "snipers": [0, 20]     // Assuming "low sniper risk" maps to 0-20
+                    }
+                    
+                    Do NOT include any additional text or explanation.  Output ONLY the JSON.
+                    `
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            temperature: 0.2, // Lower temperature for more deterministic output
+            max_tokens: 200,  // Limit output length
+        });
+
+        const extractedParameters = JSON.parse(response.data.choices[0].message.content);
+        return extractedParameters;
+
+    } catch (error) {
+        console.error('Error in AI prompt analysis:', error);
+        return {}; // Return empty object on error
     }
 }
 

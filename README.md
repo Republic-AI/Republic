@@ -170,7 +170,7 @@ cd republic
 
 3.  **Build and run the application:**
 
-    ```bash
+```bash
     docker-compose up --build
     ```
 
@@ -180,7 +180,9 @@ cd republic
 
     Open your web browser and go to `http://localhost:3000`.
 
-## Multi-Agent Example: Monitor & Copy Transactions
+## Multi-Agent Examples
+
+### Monitor & Copy Transactions
 
 This example demonstrates a pre-built multi-agent system for monitoring and copying transactions.
 
@@ -195,8 +197,120 @@ This example demonstrates a pre-built multi-agent system for monitoring and copy
 3.  **Configure the Nodes:**
     *   **Twitter KOL List:** Add the Twitter usernames of the KOLs you want to follow (e.g., `satoshi_back`, `elonmusk`).
     *   **Twitter Agent:** Ensure "CA Mode" is checked.
-    *   **Analyst Agent:** Set the desired analysis parameters (market cap, liquidity, etc.).  Connect a contract address to the input of this node, or type one into the input box.
+    *   **Analyst Agent:** Set the desired analysis parameters (market cap, liquidity, etc.).
     *   **Trading Agent:** Configure the trading parameters (buy/sell amounts, stop-loss, etc.).
 4.  **Run the Flow:** The flow will run automatically and continuously. The Twitter Agent will poll for new tweets, the Analyst Agent will analyze any contract addresses found, and the Trading Agent will (potentially) execute trades based on the analysis.
 
-This "Monitor & Copy Transactions" flow demonstrates how multiple agents can be combined to create a powerful and automated workflow. You can customize this flow or build your own multi-agent systems by connecting different agent types.
+### Social Sentiment Monitor
+
+This example demonstrates a multi-agent system for monitoring social sentiment across multiple platforms to inform trading decisions.
+
+1. **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Marketplace" section.
+2. **Create the Flow:** Click the "**Social Sentiment Monitor**" button. This will automatically create and connect the following nodes:
+   * **Instruction Sticker:** Provides instructions on how to use the flow.
+   * **Twitter KOL List:** Add Twitter accounts of Key Opinion Leaders (KOLs) to monitor.
+   * **Twitter Agent:** Fetches and analyzes tweets from the specified KOLs.
+   * **Discord Agent:** Monitors specified Discord channels for sentiment.
+   * **Telegram Agent:** Monitors specified Telegram groups for sentiment.
+   * **Analyst Agent:** Aggregates and analyzes sentiment data from all social platforms.
+   * **Trading Agent:** Makes trading decisions based on the aggregated sentiment analysis.
+3. **Configure the Nodes:**
+   * **Twitter KOL List:** Add the Twitter usernames of the KOLs you want to follow.
+   * **Twitter Agent:** Configure the API key and set up the prompt for sentiment analysis.
+   * **Discord Agent:** Add your Discord bot token and the channels you want to monitor.
+   * **Telegram Agent:** Add your Telegram bot token and the groups you want to monitor.
+   * **Analyst Agent:** Configure the parameters for sentiment aggregation and analysis.
+   * **Trading Agent:** Set up trading parameters based on sentiment signals.
+4. **Run the Flow:** The system will continuously monitor all configured social channels, analyze the sentiment, and inform trading decisions based on the aggregated data.
+
+This "Social Sentiment Monitor" flow demonstrates how multiple social media agents can be combined with analytical capabilities to create a comprehensive market sentiment analysis system.
+
+### Real-Time Signal Monitoring
+
+This example demonstrates a multi-agent system for monitoring social feeds and providing real-time alerts when influential figures post about tokens or blockchain projects.
+
+1. **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Marketplace" section.
+2. **Create the Flow:** Click the "**Real-Time Signal Monitoring**" button. This will automatically create and connect the following nodes:
+   * **Instruction Sticker:** Provides instructions on how to use the flow.
+   * **Twitter KOL List:** Add Twitter accounts of Key Opinion Leaders (KOLs) to monitor.
+   * **Twitter Agent:** Fetches tweets from the specified KOLs with CA Mode enabled by default.
+   * **Analyst Agent:** Analyzes the extracted contract addresses and determines if they meet your criteria.
+   * **K Chart Node:** Displays a K-line chart for tokens that meet your criteria.
+   * **Signal Alerts Node:** Provides real-time notifications when signals are detected.
+3. **Configure the Nodes:**
+   * **Twitter KOL List:** Add the Twitter usernames of the KOLs you want to follow.
+   * **Twitter Agent:** Ensure CA Mode is checked (enabled by default).
+   * **Analyst Agent:** Set the parameters for token analysis and alert thresholds.
+   * **Signal Alerts Node:** Configure notification preferences (e.g., desktop, email, etc.).
+4. **Run the Flow:** The system will continuously monitor the specified KOL accounts, extract contract addresses from their tweets, analyze them in real-time, and alert you when significant signals are detected.
+
+This "Real-Time Signal Monitoring" flow serves as an automated alert mechanism, allowing you to quickly respond to market opportunities identified by influential figures in the space.
+
+### Algorithmic Trading Strategies
+
+This example demonstrates a sophisticated multi-agent system for algorithmic trading that incorporates multiple data sources, backtesting, and adaptive strategy optimization.
+
+1. **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Marketplace" section.
+2. **Create the Flow:** Click the "**Algorithmic Trading Strategies**" button. This will automatically create and connect the following nodes:
+   * **Instruction Sticker:** Provides instructions on how to use the flow.
+   * **Data Sources:**
+     * **Twitter KOL List & Twitter Agent:** Monitor influential accounts for token mentions.
+     * **Smart Money Follower:** Track transactions from whale wallets.
+   * **Analysis Layer:**
+     * **Analyst Agent:** Analyzes tokens based on on-chain metrics and social data.
+     * **Backtest Engine:** Tests strategies against historical data.
+   * **Strategy Layer:**
+     * **Strategy Optimizer:** Refines trading parameters based on backtesting results.
+     * **Trading Agent:** Executes trades based on the optimized strategy.
+   * **Output Layer:**
+     * **K Chart:** Visualizes price action and executed trades.
+     * **Performance Dashboard:** Tracks strategy performance metrics.
+3. **Configure the Nodes:**
+   * **Data Sources:** Set up your Twitter KOL list and Smart Money addresses to follow.
+   * **Analyst Agent:** Configure analysis parameters and AI prompt for custom analysis.
+   * **Backtest Engine:** Set historical timeframes and performance metrics.
+   * **Strategy Optimizer:** Define optimization goals (e.g., max profit, min drawdown).
+   * **Trading Agent:** Configure execution parameters and risk management settings.
+4. **Run the Flow:** The system will continuously:
+   * Gather data from multiple sources
+   * Analyze potential trading opportunities
+   * Backtest and optimize strategies
+   * Execute trades based on the optimized strategy
+   * Monitor and report performance
+
+This "Algorithmic Trading Strategies" flow demonstrates how multiple agents can work together to create a sophisticated trading system that adapts to changing market conditions through continuous data analysis, backtesting, and strategy optimization.
+
+### Risk Management & Automated Alerts
+
+This example demonstrates a multi-agent system focused on portfolio protection through continuous risk monitoring and automated responses.
+
+1. **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Marketplace" section.
+2. **Create the Flow:** Click the "**Risk Management & Alerts**" button. This will automatically create and connect the following nodes:
+   * **Instruction Sticker:** Provides instructions on how to use the flow.
+   * **Portfolio Monitoring Layer:**
+     * **Smart Money Follower:** Configure your portfolio tokens and wallets to monitor.
+     * **Twitter Agent:** Monitor social sentiment that might affect your holdings.
+   * **Risk Analysis Layer:**
+     * **Analyst Agent:** Analyzes on-chain metrics and market conditions.
+     * **Risk Manager:** Sets thresholds for various risk factors and determines action levels.
+   * **Action Layer:**
+     * **Alert System:** Sends notifications when risk thresholds are crossed.
+     * **Trading Agent:** Executes protective trades (stop-loss, take-profit).
+     * **Emergency Actions:** Performs predefined emergency protocols for extreme conditions.
+   * **Monitoring Layer:**
+     * **K Chart:** Visualizes price action and executed protective trades.
+     * **Risk Dashboard:** Displays real-time risk metrics and system status.
+3. **Configure the Nodes:**
+   * **Smart Money Follower:** Add your wallet addresses and token holdings.
+   * **Risk Manager:** Set risk thresholds (e.g., maximum drawdown, volatility limits).
+   * **Alert System:** Configure notification channels (email, SMS, app notifications).
+   * **Trading Agent:** Set up protective order parameters (stop-loss levels, trailing stops).
+   * **Emergency Actions:** Define protocols for extreme market conditions.
+4. **Run the Flow:** The system will continuously:
+   * Monitor your portfolio and relevant market conditions
+   * Analyze risk factors in real-time
+   * Send alerts when risk thresholds are approached
+   * Execute protective trades automatically when thresholds are crossed
+   * Provide a real-time dashboard of your portfolio's risk status
+
+This "Risk Management & Automated Alerts" flow provides peace of mind by continuously monitoring your investments and taking protective actions when needed, even when you're not actively watching the market.

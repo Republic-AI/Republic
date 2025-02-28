@@ -10,6 +10,9 @@ export default function TradingAgentNode({ data }) {
   const [walletConnected, setWalletConnected] = useState(false);
   const [publicKey, setPublicKey] = useState(null);
   const [targetTokenAddress, setTargetTokenAddress] = useState('');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [openAIApiKey, setOpenAIApiKey] = useState(data.openAIApiKey || '');
+  const [isProcessingPrompt, setIsProcessingPrompt] = useState(false);
   const [parameters, setParameters] = useState(() => ({
     ...data.parameters,
     fixedBuy: data.parameters?.fixedBuy || 0.1,
@@ -44,6 +47,74 @@ export default function TradingAgentNode({ data }) {
       ...data,
       targetTokenAddress: address
     });
+  };
+
+  const handleOpenAIApiKeyChange = (event) => {
+    const newKey = event.target.value;
+    setOpenAIApiKey(newKey);
+    data.onChange({
+      ...data,
+      openAIApiKey: newKey
+    });
+  };
+
+  // Handle AI prompt change
+  const handleAiPromptChange = (event) => {
+    setAiPrompt(event.target.value);
+  };
+
+  // Process AI prompt to update trading parameters
+  const handleProcessAiPrompt = async () => {
+    if (!aiPrompt) {
+      alert('Please enter an AI prompt');
+      return;
+    }
+    if (!openAIApiKey) {
+      alert('Please enter your OpenAI API key');
+      return;
+    }
+
+    setIsProcessingPrompt(true);
+    try {
+      const response = await fetch('http://localhost:5002/analyze-trading-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          prompt: aiPrompt,
+          currentParameters: parameters,
+          openAIApiKey // Send the API key with the request
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.parameters) {
+        // Update parameters with AI-extracted values
+        setParameters(prevParams => ({
+          ...prevParams,
+          ...result.parameters
+        }));
+        
+        // Update node data
+        data.onChange({
+          ...data,
+          parameters: {
+            ...parameters,
+            ...result.parameters
+          }
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error processing AI prompt:', error);
+      alert('Error processing AI prompt: ' + error.message);
+    } finally {
+      setIsProcessingPrompt(false);
+    }
   };
 
   // Check if Phantom is installed and get provider
@@ -307,6 +378,38 @@ export default function TradingAgentNode({ data }) {
 
       {isConfigOpen && (
         <div className="node-config">
+          <div className="config-section">
+            <h4>OpenAI API Key</h4>
+            <input
+              type="password"
+              value={openAIApiKey}
+              onChange={handleOpenAIApiKeyChange}
+              placeholder="Enter your OpenAI API key"
+              className="node-input api-key-input"
+            />
+            <div className="api-key-info">
+              Required for AI prompt functionality
+            </div>
+          </div>
+
+          {/* AI Prompt Section */}
+          <div className="config-section">
+            <h4>AI Trading Strategy</h4>
+            <textarea
+              value={aiPrompt}
+              onChange={handleAiPromptChange}
+              placeholder="Describe your trading strategy in natural language (e.g., 'Buy 0.5 SOL with 1% slippage, sell at 150% profit, and set stop loss at 30%')"
+              className="node-textarea"
+            />
+            <button 
+              onClick={handleProcessAiPrompt} 
+              className="process-prompt-button"
+              disabled={isProcessingPrompt}
+            >
+              {isProcessingPrompt ? 'Processing...' : 'Apply Strategy'}
+            </button>
+          </div>
+
           {/* Target Token Input */}
           <div className="config-section">
             <h4>Target Token</h4>
