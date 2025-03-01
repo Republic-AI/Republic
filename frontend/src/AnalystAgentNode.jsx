@@ -17,6 +17,8 @@ export default function AnalystAgentNode({ data }) {
     blueChip: data.parameters?.blueChip || [0, 100],     // Blue chip holder percentage
     hasAudit: data.parameters?.hasAudit || false         // Has audit flag
   }));
+  const [isLoading, setIsLoading] = useState(false);
+  const [analysisData, setAnalysisData] = useState(null);
 
   useEffect(() => {
     if (data.inputs && data.inputs.length > 0) {
@@ -75,46 +77,86 @@ export default function AnalystAgentNode({ data }) {
   };
 
   const handleRunAnalysis = async (currentParameters, currentContractAddress) => {
-    // Use provided parameters and contract address, or fallback to local state if not provided
     const paramsToUse = currentParameters || parameters;
     const addressToUse = currentContractAddress || contractAddress;
 
     if (!addressToUse) {
-      alert('Please enter or connect a Solana token contract address');
+      // Don't show an alert here, just return.
       return;
     }
 
     try {
+      setIsLoading(true);
       const response = await fetch('http://localhost:5002/fetch-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contractAddress: addressToUse, parameters: paramsToUse }) // Use addressToUse
+        body: JSON.stringify({ contractAddress: addressToUse, parameters: paramsToUse })
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
       const result = await response.json();
       
-      // Store the full analysis data for display
+      // Ensure result has a properly structured analysisData property
+      if (!result.analysisData) {
+        result.analysisData = {
+          meetsCriteria: false,
+          name: "Unknown",
+          symbol: "Unknown",
+          contractAddress: addressToUse,
+          risk: {
+            score: 0,
+            rugged: false,
+            details: []
+          }
+        };
+      }
+      
+      console.log('Analysis result:', result);
+
+      // Update component state
+      setAnalysisData(result.analysisData);
+      
+      // Update node data
       data.onChange({
         ...data,
         analysisData: result.analysisData,
-        // Add output property that will be passed to connected nodes
         output: {
-          // Only pass the contract address if it meets criteria
-          content: result.analysisData.meetsCriteria ? result.analysisData.contractAddress : null,
-          summary: `Analysis ${result.analysisData.meetsCriteria ? 'passed' : 'failed'} criteria`
+          content: addressToUse,
+          summary: result.analysisData.meetsCriteria ? 'Criteria passed' : 'Criteria not met'
         }
       });
     } catch (error) {
       console.error('Error fetching analysis:', error);
-      alert('Error fetching analysis: ' + error.message);
+      
+      // Create a default analysis data object on error
+      const defaultAnalysisData = {
+        meetsCriteria: false,
+        name: "Error",
+        symbol: "ERR",
+        contractAddress: addressToUse,
+        error: error.message,
+        risk: {
+          score: 0,
+          rugged: false,
+          details: []
+        }
+      };
+      
+      // Update with error state
+      setAnalysisData(defaultAnalysisData);
       data.onChange({
         ...data,
-        analysisData: null,
-        output: null
+        analysisData: defaultAnalysisData,
+        output: {
+          content: addressToUse,
+          summary: 'Error: ' + error.message
+        }
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -410,36 +452,36 @@ export default function AnalystAgentNode({ data }) {
               Analyzing...
             </button>
 
-            {data.analysisData && (
+            {analysisData && (
               <div className="analysis-results">
                 <h4>Analysis Results</h4>
                 <div className="result-item">
-                  <span>Token Name:</span> {data.analysisData.name}
+                  <span>Token Name:</span> {analysisData.name}
                 </div>
                 <div className="result-item">
-                  <span>Symbol:</span> {data.analysisData.symbol}
+                  <span>Symbol:</span> {analysisData.symbol}
                 </div>
                 <div className="result-item">
-                  <span>Meets Criteria:</span> {data.analysisData.meetsCriteria ? 'Yes' : 'No'}
+                  <span>Meets Criteria:</span> {analysisData.meetsCriteria ? 'Yes' : 'No'}
                 </div>
-                {data.analysisData.meetsCriteria && (
+                {analysisData.meetsCriteria && (
                   <div className="result-item">
-                    <span>Contract Address:</span> {data.analysisData.contractAddress}
+                    <span>Contract Address:</span> {analysisData.contractAddress}
                   </div>
                 )}
                 {/* Display Risk Information */}
-                {data.analysisData.risk && (
+                {analysisData.risk && (
                     <>
                         <div className="result-item">
-                            <span>Risk Score:</span> {data.analysisData.risk.score}
+                            <span>Risk Score:</span> {analysisData.risk.score}
                         </div>
                         <div className="result-item">
-                            <span>Rugged:</span> {data.analysisData.risk.rugged ? 'Yes' : 'No'}
+                            <span>Rugged:</span> {analysisData.risk.rugged ? 'Yes' : 'No'}
                         </div>
                         <div className="result-item risk-details">
                             <span>Risk Details:</span>
                             <ul>
-                                {data.analysisData.risk.details.map((detail, index) => (
+                                {analysisData.risk.details.map((detail, index) => (
                                     <li key={index}>
                                         <strong>{detail.name}:</strong> {detail.description} (Level: {detail.level}, Score: {detail.score})
                                     </li>

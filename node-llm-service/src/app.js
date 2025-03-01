@@ -18,16 +18,42 @@ app.post('/fetch-analysis', async (req, res) => {
         const { contractAddress, parameters } = req.body;
 
         if (!contractAddress) {
-            return res.status(400).json({ error: "Missing required parameter: contractAddress" });
+            return res.json({
+                error: "Missing required parameter: contractAddress",
+                analysisData: {
+                    meetsCriteria: false,
+                    name: "Unknown",
+                    symbol: "Unknown",
+                    contractAddress: "",
+                    risk: {
+                        score: 0,
+                        rugged: false,
+                        details: []
+                    }
+                }
+            });
         }
 
-        // Call the handler directly (assuming it's properly registered)
+        // Call the handler directly
         const handler = handlers['analystAgent'];
         if (!handler) {
-            return res.status(500).json({ error: "Analyst agent handler not found" });
+            return res.json({
+                error: "Analyst agent handler not found",
+                analysisData: {
+                    meetsCriteria: false,
+                    name: "Unknown",
+                    symbol: "Unknown",
+                    contractAddress: contractAddress,
+                    risk: {
+                        score: 0,
+                        rugged: false,
+                        details: []
+                    }
+                }
+            });
         }
 
-        // Create a mock node object – in a real flow, this would come from the /execute-flow endpoint
+        // Create a mock node object
         const mockNode = {
             data: {
                 type: 'analystAgent',
@@ -37,11 +63,40 @@ app.post('/fetch-analysis', async (req, res) => {
         };
 
         const result = await handler(mockNode);
-        res.json(result); // Send the entire result object
+        
+        // Ensure result always has analysisData with meetsCriteria property
+        if (!result.analysisData) {
+            result.analysisData = {
+                meetsCriteria: false,
+                name: "Unknown",
+                symbol: "Unknown",
+                contractAddress: contractAddress,
+                risk: {
+                    score: 0,
+                    rugged: false,
+                    details: []
+                }
+            };
+        }
+        
+        res.json(result);
 
     } catch (error) {
         console.error('Error in /fetch-analysis:', error);
-        res.status(500).json({ error: error.message });
+        res.json({
+            error: error.message || "An unknown error occurred",
+            analysisData: {
+                meetsCriteria: false,
+                name: "Error",
+                symbol: "ERR",
+                contractAddress: req.body?.contractAddress || "",
+                risk: {
+                    score: 0,
+                    rugged: false,
+                    details: []
+                }
+            }
+        });
     }
 });
 
@@ -257,6 +312,44 @@ async function analyzeTradingPromptWithAI(prompt, currentParameters, apiKey) {
         return {}; // Return empty object on error
     }
 }
+
+// Add the generate-multi-agent endpoint to your app.js
+app.post('/generate-multi-agent', async (req, res) => {
+  try {
+    const { prompt, apiKey, model } = req.body;
+    
+    if (!prompt) {
+      return res.status(400).json({ error: "Missing required parameter: prompt" });
+    }
+    
+    if (!apiKey) {
+      return res.status(400).json({ error: "Missing required parameter: apiKey" });
+    }
+    
+    // Create a node object for the handler
+    const node = {
+      data: {
+        type: 'promptToAgent',
+        prompt,
+        apiKey,
+        model: model || 'gpt-4'
+      }
+    };
+    
+    // Call the handler
+    const handler = handlers['promptToAgent'];
+    if (!handler) {
+      return res.status(500).json({ error: "Prompt to Agent handler not found" });
+    }
+    
+    const result = await handler(node);
+    res.json(result);
+    
+  } catch (error) {
+    console.error('Error in /generate-multi-agent:', error);
+    res.status(500).json({ error: error.message || "An unknown error occurred" });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);

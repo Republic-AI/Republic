@@ -1819,3 +1819,78 @@ html, body {
 .risk-management-button .button-icon {
   font-size: 18px;
 }
+
+/* Styles for Prompt to Multi-Agent node */
+.prompt-to-agent {
+  background: linear-gradient(to bottom, #f0f8ff, #ffffff);
+  border-color: #4a6fa5;
+  border-width: 2px;
+}
+
+.prompt-textarea {
+  min-height: 120px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.model-select {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.generate-button {
+  width: 100%;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #6d5ace;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.generate-button:hover {
+  background-color: #5a49a8;
+}
+
+.generate-button:disabled {
+  background-color: #9d92d6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #d32f2f;
+  background-color: #ffebee;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+/* From Prompt to Multi-Agent button in marketplace */
+.prompt-to-agent-button {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  background-color: #6d5ace;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prompt-to-agent-button:hover {
+  background-color: #5a49a8;
+}
+
+.prompt-to-agent-button .button-icon {
+  font-size: 18px;
+}

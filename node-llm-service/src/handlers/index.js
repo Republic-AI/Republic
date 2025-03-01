@@ -3,6 +3,7 @@ const discordAgentHandler = require('./discordAgent');
 const telegramAgentHandler = require('./telegramAgent');
 const analystAgentHandler = require('./analystAgent');
 const twitterFetcherHandler = require('./twitterFetcher');
+const promptToAgentHandler = require('./promptToAgentHandler');
 
 const handlers = {
   twitterAgent: twitterAgentHandler,
@@ -10,6 +11,7 @@ const handlers = {
   telegramAgent: telegramAgentHandler,
   analystAgent: analystAgentHandler,
   twitterFetcher: twitterFetcherHandler,
+  promptToAgent: promptToAgentHandler,
   custom: async (node) => {
     // Simply pass through any input data
     return node.data.input || {};

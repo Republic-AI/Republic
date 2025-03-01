@@ -36,6 +36,7 @@ import DiscordAgentNode from './DiscordAgentNode';
 import TelegramAgentNode from './TelegramAgentNode';
 import TwitterKOLNode from './TwitterKOLNode';
 import WebViewNode from './WebViewNode';
+import PromptToAgentNode from './PromptToAgentNode';
 
 // Define node types
 const nodeTypes = {
@@ -53,6 +54,7 @@ const nodeTypes = {
       {data.label}
     </div>
   ),
+  promptToAgent: PromptToAgentNode
 };
 
 export default function App() {
@@ -311,9 +313,9 @@ export default function App() {
   };
 
   const handleAddCopyTransactionFlow = () => {
-    // Set base position for KOL node
+    // Set base position for KOL node with much more spacing
     const kolNodeX = 100;
-    const kolNodeY = 200;
+    const kolNodeY = 300; // Significantly increased vertical spacing
     
     // Create instruction sticker node - position it above the KOL node
     const instructionSticker = {
@@ -321,7 +323,7 @@ export default function App() {
       type: 'sticker',
       position: { 
         x: kolNodeX,  // Same x as KOL node
-        y: kolNodeY - 300  // 100px above KOL node
+        y: 50  // Fixed position at top
       },
       data: {
         type: 'sticker',
@@ -335,7 +337,7 @@ export default function App() {
       }
     };
 
-    // Create nodes with specific positions - more spacing between nodes
+    // Create nodes with specific positions - much more spacing between nodes
     const kolNode = {
       id: `node-${nodes.length + 2}`,
       type: 'twitterKOL',
@@ -349,9 +351,12 @@ export default function App() {
     const twitterNode = {
       id: `node-${nodes.length + 3}`,
       type: 'twitterAgent',
-      position: { x: 500, y: 200 },
+      position: { x: 500, y: 300 }, // Increased horizontal spacing
       data: {
         type: 'twitterAgent',
+        pullConfig: {
+          isOriginalCA: true // Enable CA Mode by default
+        },
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 3}`, newData)
       }
     };
@@ -359,7 +364,7 @@ export default function App() {
     const analystNode = {
       id: `node-${nodes.length + 4}`,
       type: 'analystAgent',
-      position: { x: 900, y: 200 },
+      position: { x: 900, y: 300 }, // Increased horizontal spacing
       data: {
         type: 'analystAgent',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 4}`, newData)
@@ -369,7 +374,7 @@ export default function App() {
     const webviewNode = {
       id: `node-${nodes.length + 5}`,
       type: 'webview',
-      position: { x: 1300, y: 50 },
+      position: { x: 1300, y: 100 }, // Positioned higher for better visibility
             data: {
         type: 'webview',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 5}`, newData)
@@ -379,7 +384,7 @@ export default function App() {
     const tradingNode = {
       id: `node-${nodes.length + 6}`,
       type: 'tradingAgent',
-      position: { x: 1300, y: 350 },
+      position: { x: 1300, y: 500 }, // Much more vertical separation
       data: {
         type: 'tradingAgent',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 6}`, newData)
@@ -415,51 +420,52 @@ export default function App() {
     setEdges([...edges, ...newEdges]);
   };
 
-  // Update Social Sentiment Monitor flow layout
+  // Update Social Sentiment Monitor flow layout with Twitter posting capability
   const handleAddSocialSentimentFlow = () => {
     // Create instruction sticker node
     const instructionSticker = {
       id: `node-${nodes.length + 1}`,
       type: 'sticker',
-      position: { x: 100, y: 50 },
+      position: { x: -500, y: 0 },
       data: {
         type: 'sticker',
         label: `How to use Social Sentiment Monitor:
 1. Add KOL accounts in Twitter KOL List
-2. Configure Twitter, Discord, and Telegram agents
-3. Set parameters in Analyst Agent
-4. Configure Trading Agent settings
-5. The system will monitor sentiment across platforms`,
+2. Configure Twitter, Discord, and Telegram agents for monitoring
+3. Set parameters in Analyst Agent for sentiment analysis
+4. Configure Twitter Posting Agent to share results
+5. The system will monitor sentiment and post updates to Twitter`,
         className: 'instruction-label'
       }
     };
 
-    // Create Twitter KOL List node - Row 1
+    // Row 1: KOL List and Twitter Agent side by side
     const kolNode = {
       id: `node-${nodes.length + 2}`,
       type: 'twitterKOL',
-      position: { x: 100, y: 200 },
+      position: { x: -500, y: 300 },
       data: {
         type: 'twitterKOL',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 2}`, newData)
       }
     };
 
-    // Create Social Media Agents - Row 2
-    const twitterNode = {
+    const twitterMonitorNode = {
       id: `node-${nodes.length + 3}`,
       type: 'twitterAgent',
-      position: { x: 100, y: 400 },
+      position: { x: 100, y: 100 },
       data: {
         type: 'twitterAgent',
+        activeSubAgent: 'pull', // Set to pull mode for monitoring
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 3}`, newData)
       }
     };
 
+    // Column of social agents with large vertical spacing
     const discordNode = {
       id: `node-${nodes.length + 4}`,
       type: 'discordAgent',
-      position: { x: 450, y: 400 },
+      position: { x: 100, y: 1000 },
       data: {
         type: 'discordAgent',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 4}`, newData)
@@ -469,46 +475,51 @@ export default function App() {
     const telegramNode = {
       id: `node-${nodes.length + 5}`,
       type: 'telegramAgent',
-      position: { x: 800, y: 400 },
+      position: { x: 100, y: 1800 },
       data: {
         type: 'telegramAgent',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 5}`, newData)
       }
     };
 
-    // Create Analysis and Trading - Row 3
+    // Row 2: Discord Agent, Analyst Agent, and Twitter Posting Agent side by side
     const analystNode = {
       id: `node-${nodes.length + 6}`,
       type: 'analystAgent',
-      position: { x: 450, y: 600 },
+      position: { x: 500, y: 600 },
       data: {
         type: 'analystAgent',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 6}`, newData)
       }
     };
 
-    const tradingNode = {
+    // Replace Trading Agent with Twitter Posting Agent
+    const twitterPostNode = {
       id: `node-${nodes.length + 7}`,
-      type: 'tradingAgent',
-      position: { x: 800, y: 600 },
+      type: 'twitterAgent',
+      position: { x: 900, y: 600 },
       data: {
-        type: 'tradingAgent',
+        type: 'twitterAgent',
+        activeSubAgent: 'post', // Set to post mode for tweeting results
+        postConfig: {
+          tweet: 'Market Sentiment Update: {sentiment}. Top mentioned tokens: {tokens}. Overall market mood: {mood}.'
+        },
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 7}`, newData)
       }
     };
 
-    // Create edges with improved layout
+    // Create edges with the new layout
     const newEdges = [
-      // Connect KOL List to Twitter Agent
+      // Connect KOL List to Twitter Monitor Agent
       {
         id: `edge-${edges.length + 1}`,
         source: kolNode.id,
-        target: twitterNode.id,
+        target: twitterMonitorNode.id,
       },
-      // Connect Twitter Agent to Analyst Agent
+      // Connect Twitter Monitor Agent to Analyst Agent
       {
         id: `edge-${edges.length + 2}`,
-        source: twitterNode.id,
+        source: twitterMonitorNode.id,
         target: analystNode.id,
       },
       // Connect Discord Agent to Analyst Agent
@@ -523,131 +534,20 @@ export default function App() {
         source: telegramNode.id,
         target: analystNode.id,
       },
-      // Connect Analyst Agent to Trading Agent
+      // Connect Analyst Agent to Twitter Posting Agent
       {
         id: `edge-${edges.length + 5}`,
         source: analystNode.id,
-        target: tradingNode.id,
+        target: twitterPostNode.id,
       },
     ];
 
     // Add all new nodes and edges
-    setNodes([...nodes, instructionSticker, kolNode, twitterNode, discordNode, telegramNode, analystNode, tradingNode]);
+    setNodes([...nodes, instructionSticker, kolNode, twitterMonitorNode, discordNode, telegramNode, analystNode, twitterPostNode]);
     setEdges([...edges, ...newEdges]);
   };
 
-  // Update Real-Time Signal Monitoring flow layout
-  const handleAddSignalMonitoringFlow = () => {
-    // Create instruction sticker node
-    const instructionSticker = {
-      id: `node-${nodes.length + 1}`,
-      type: 'sticker',
-      position: { x: 100, y: 50 },
-      data: {
-        type: 'sticker',
-        label: `How to use Real-Time Signal Monitoring:
-1. Add KOL accounts in Twitter KOL List
-2. Configure Twitter Agent with CA Mode enabled
-3. Set alert parameters in Analyst Agent
-4. The system will monitor for signals and alert you
-5. View charts in K Chart node when signals are detected`,
-        className: 'instruction-label'
-      }
-    };
-
-    // Create Twitter KOL List node - Row 1
-    const kolNode = {
-      id: `node-${nodes.length + 2}`,
-      type: 'twitterKOL',
-      position: { x: 100, y: 200 },
-      data: {
-        type: 'twitterKOL',
-        onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 2}`, newData)
-      }
-    };
-
-    // Create Twitter Agent node - Row 2
-    const twitterNode = {
-      id: `node-${nodes.length + 3}`,
-      type: 'twitterAgent',
-      position: { x: 100, y: 400 },
-      data: {
-        type: 'twitterAgent',
-        pullConfig: {
-          isOriginalCA: true // Enable CA Mode by default
-        },
-        onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 3}`, newData)
-      }
-    };
-
-    // Create Analyst Agent node - Row 3
-    const analystNode = {
-      id: `node-${nodes.length + 4}`,
-      type: 'analystAgent',
-      position: { x: 450, y: 400 },
-      data: {
-        type: 'analystAgent',
-        onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 4}`, newData)
-      }
-    };
-
-    // Create Output nodes - Row 4
-    const webviewNode = {
-      id: `node-${nodes.length + 5}`,
-      type: 'webview',
-      position: { x: 450, y: 600 },
-      data: {
-        type: 'webview',
-        onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 5}`, newData)
-      }
-    };
-
-    const notificationNode = {
-      id: `node-${nodes.length + 6}`,
-      type: 'custom',
-      position: { x: 800, y: 400 },
-      data: {
-        type: 'custom',
-        framework: 'notification',
-        label: 'Signal Alerts',
-        onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 6}`, newData)
-      }
-    };
-
-    // Create edges with improved layout
-    const newEdges = [
-      // Connect KOL List to Twitter Agent
-      {
-        id: `edge-${edges.length + 1}`,
-        source: kolNode.id,
-        target: twitterNode.id,
-      },
-      // Connect Twitter Agent to Analyst Agent
-      {
-        id: `edge-${edges.length + 2}`,
-        source: twitterNode.id,
-        target: analystNode.id,
-      },
-      // Connect Analyst Agent to WebView Node
-      {
-        id: `edge-${edges.length + 3}`,
-        source: analystNode.id,
-        target: webviewNode.id,
-      },
-      // Connect Analyst Agent to Notification Node
-      {
-        id: `edge-${edges.length + 4}`,
-        source: analystNode.id,
-        target: notificationNode.id,
-      },
-    ];
-
-    // Add all new nodes and edges
-    setNodes([...nodes, instructionSticker, kolNode, twitterNode, analystNode, webviewNode, notificationNode]);
-    setEdges([...edges, ...newEdges]);
-  };
-
-  // Update Algorithmic Trading Strategies flow layout
+  // Update Algorithmic Trading Strategies flow layout with much more vertical space
   const handleAddAlgoTradingFlow = () => {
     // Create instruction sticker node
     const instructionSticker = {
@@ -670,7 +570,7 @@ export default function App() {
     const kolNode = {
       id: `node-${nodes.length + 2}`,
       type: 'twitterKOL',
-      position: { x: 100, y: 200 },
+      position: { x: 100, y: 300 }, // Significantly increased vertical spacing
       data: {
         type: 'twitterKOL',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 2}`, newData)
@@ -680,7 +580,7 @@ export default function App() {
     const twitterNode = {
       id: `node-${nodes.length + 3}`,
       type: 'twitterAgent',
-      position: { x: 100, y: 400 },
+      position: { x: 100, y: 600 }, // Significantly increased vertical spacing
       data: {
         type: 'twitterAgent',
         pullConfig: {
@@ -693,7 +593,7 @@ export default function App() {
     const smartMoneyNode = {
       id: `node-${nodes.length + 4}`,
       type: 'smartMoneyFollower',
-      position: { x: 450, y: 200 },
+      position: { x: 500, y: 300 }, // Increased horizontal spacing
       data: {
         type: 'smartMoneyFollower',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 4}`, newData)
@@ -704,7 +604,7 @@ export default function App() {
     const analystNode = {
       id: `node-${nodes.length + 5}`,
       type: 'analystAgent',
-      position: { x: 450, y: 400 },
+      position: { x: 500, y: 600 }, // Significantly increased vertical spacing
       data: {
         type: 'analystAgent',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 5}`, newData)
@@ -714,7 +614,7 @@ export default function App() {
     const backtestNode = {
       id: `node-${nodes.length + 6}`,
       type: 'custom',
-      position: { x: 800, y: 200 },
+      position: { x: 900, y: 300 }, // Increased horizontal spacing
       data: {
         type: 'custom',
         framework: 'backtest',
@@ -727,7 +627,7 @@ export default function App() {
     const strategyNode = {
       id: `node-${nodes.length + 7}`,
       type: 'custom',
-      position: { x: 800, y: 400 },
+      position: { x: 900, y: 600 }, // Significantly increased vertical spacing
       data: {
         type: 'custom',
         framework: 'strategy',
@@ -739,7 +639,7 @@ export default function App() {
     const tradingNode = {
       id: `node-${nodes.length + 8}`,
       type: 'tradingAgent',
-      position: { x: 1150, y: 400 },
+      position: { x: 1300, y: 600 }, // Increased horizontal spacing
       data: {
         type: 'tradingAgent',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 8}`, newData)
@@ -750,7 +650,7 @@ export default function App() {
     const webviewNode = {
       id: `node-${nodes.length + 9}`,
       type: 'webview',
-      position: { x: 1150, y: 200 },
+      position: { x: 1300, y: 300 }, // Increased horizontal spacing
       data: {
         type: 'webview',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 9}`, newData)
@@ -760,7 +660,7 @@ export default function App() {
     const performanceNode = {
       id: `node-${nodes.length + 10}`,
       type: 'custom',
-      position: { x: 1150, y: 600 },
+      position: { x: 1300, y: 900 }, // Significantly increased vertical spacing
       data: {
         type: 'custom',
         framework: 'performance',
@@ -831,7 +731,7 @@ export default function App() {
     setEdges([...edges, ...newEdges]);
   };
 
-  // Update Risk Management & Automated Alerts flow layout
+  // Update Risk Management & Automated Alerts flow layout with much more vertical space
   const handleAddRiskManagementFlow = () => {
     // Create instruction sticker node
     const instructionSticker = {
@@ -854,7 +754,7 @@ export default function App() {
     const smartMoneyNode = {
       id: `node-${nodes.length + 2}`,
       type: 'smartMoneyFollower',
-      position: { x: 100, y: 200 },
+      position: { x: 100, y: 300 }, // Significantly increased vertical spacing
       data: {
         type: 'smartMoneyFollower',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 2}`, newData)
@@ -864,7 +764,7 @@ export default function App() {
     const twitterNode = {
       id: `node-${nodes.length + 3}`,
       type: 'twitterAgent',
-      position: { x: 450, y: 200 },
+      position: { x: 500, y: 300 }, // Increased horizontal spacing
       data: {
         type: 'twitterAgent',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 3}`, newData)
@@ -875,7 +775,7 @@ export default function App() {
     const analystNode = {
       id: `node-${nodes.length + 4}`,
       type: 'analystAgent',
-      position: { x: 100, y: 400 },
+      position: { x: 100, y: 600 }, // Significantly increased vertical spacing
       data: {
         type: 'analystAgent',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 4}`, newData)
@@ -885,7 +785,7 @@ export default function App() {
     const riskManagerNode = {
       id: `node-${nodes.length + 5}`,
       type: 'custom',
-      position: { x: 450, y: 400 },
+      position: { x: 500, y: 600 }, // Significantly increased vertical spacing
       data: {
         type: 'custom',
         framework: 'riskManager',
@@ -898,7 +798,7 @@ export default function App() {
     const alertSystemNode = {
       id: `node-${nodes.length + 6}`,
       type: 'custom',
-      position: { x: 800, y: 200 },
+      position: { x: 900, y: 300 }, // Increased horizontal spacing
       data: {
         type: 'custom',
         framework: 'alertSystem',
@@ -910,7 +810,7 @@ export default function App() {
     const tradingNode = {
       id: `node-${nodes.length + 7}`,
       type: 'tradingAgent',
-      position: { x: 800, y: 400 },
+      position: { x: 900, y: 600 }, // Significantly increased vertical spacing
       data: {
         type: 'tradingAgent',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 7}`, newData)
@@ -920,7 +820,7 @@ export default function App() {
     const emergencyActionNode = {
       id: `node-${nodes.length + 8}`,
       type: 'custom',
-      position: { x: 800, y: 600 },
+      position: { x: 900, y: 900 }, // Significantly increased vertical spacing
       data: {
         type: 'custom',
         framework: 'emergencyAction',
@@ -933,7 +833,7 @@ export default function App() {
     const webviewNode = {
       id: `node-${nodes.length + 9}`,
       type: 'webview',
-      position: { x: 1150, y: 300 },
+      position: { x: 1300, y: 450 }, // Increased horizontal spacing and positioned between rows
       data: {
         type: 'webview',
         onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 9}`, newData)
@@ -943,7 +843,7 @@ export default function App() {
     const dashboardNode = {
       id: `node-${nodes.length + 10}`,
       type: 'custom',
-      position: { x: 1150, y: 500 },
+      position: { x: 1300, y: 750 }, // Increased horizontal spacing and positioned between rows
       data: {
         type: 'custom',
         framework: 'dashboard',
@@ -1006,6 +906,95 @@ export default function App() {
     // Add all new nodes and edges
     setNodes([...nodes, instructionSticker, smartMoneyNode, twitterNode, analystNode, 
       riskManagerNode, alertSystemNode, tradingNode, emergencyActionNode, webviewNode, dashboardNode]);
+    setEdges([...edges, ...newEdges]);
+  };
+
+  const handleAddPromptToMultiAgentFlow = () => {
+    // Create instruction sticker node
+    const instructionSticker = {
+      id: `node-${nodes.length + 1}`,
+      type: 'sticker',
+      position: { x: 100, y: 50 },
+      data: {
+        type: 'sticker',
+        label: `How to use Prompt to Multi-Agent:
+1. Enter a detailed description of the multi-agent system you want to create
+2. Select the AI model to use for generation
+3. Enter your API key for the selected model
+4. Click "Generate Multi-Agent System"
+5. The AI will design and create the multi-agent flow for you`,
+        className: 'instruction-label'
+      }
+    };
+
+    // Create the PromptToAgent node
+    const promptToAgentNode = {
+      id: `node-${nodes.length + 2}`,
+      type: 'promptToAgent',
+      position: { x: 100, y: 300 },
+      data: {
+        type: 'promptToAgent',
+        onChange: (newData) => handleNodeDataChange(`node-${nodes.length + 2}`, newData),
+        onGenerateFlow: (flow) => handleGenerateFlow(flow, `node-${nodes.length + 2}`)
+      }
+    };
+
+    // Add the new nodes
+    setNodes([...nodes, instructionSticker, promptToAgentNode]);
+  };
+
+  const handleGenerateFlow = (flow, sourceNodeId) => {
+    if (!flow || !flow.nodes || !flow.edges) {
+      console.error("Invalid flow description received");
+      return;
+    }
+
+    // Calculate starting node ID to avoid conflicts
+    const startNodeId = nodes.length + 3; // +2 for the existing nodes, +1 to start with the next one
+    
+    // Create a mapping of node IDs
+    const nodeIdMapping = {};
+    
+    // Create the new nodes
+    const newNodes = flow.nodes.map((nodeDesc, index) => {
+      const newId = `node-${startNodeId + index}`;
+      nodeIdMapping[`node-${index + 1}`] = newId; // Map the flow's node IDs to our actual node IDs
+      
+      return {
+        id: newId,
+        type: nodeDesc.type,
+        position: nodeDesc.position,
+        data: {
+          type: nodeDesc.type,
+          ...nodeDesc.config,
+          onChange: (newData) => handleNodeDataChange(newId, newData)
+        }
+      };
+    });
+    
+    // Create the new edges, mapping the source and target IDs
+    const newEdges = flow.edges.map((edge, index) => {
+      return {
+        id: `edge-${edges.length + index + 1}`,
+        source: nodeIdMapping[edge.source] || edge.source,
+        target: nodeIdMapping[edge.target] || edge.target
+      };
+    });
+    
+    // Add the flow title as a sticker node
+    const titleNode = {
+      id: `node-${startNodeId + newNodes.length}`,
+      type: 'sticker',
+      position: { x: 500, y: 50 },
+      data: {
+        type: 'sticker',
+        label: `${flow.title}\n\n${flow.description}`,
+        className: 'instruction-label'
+      }
+    };
+    
+    // Add all the new nodes and edges
+    setNodes([...nodes, ...newNodes, titleNode]);
     setEdges([...edges, ...newEdges]);
   };
 
@@ -1197,6 +1186,19 @@ export default function App() {
                 {/* Add Multi-agent Marketplace section */}
                 <div className="node-buttons-group">
                   <h4>Multi-agent Marketplace</h4>
+                  
+                  {/* Add the new Prompt to Multi-Agent button at the top */}
+                  <button
+                    className="import-agent-button prompt-to-agent-button"
+                    onClick={handleAddPromptToMultiAgentFlow}
+                  >
+                    <span className="button-icon">✨</span>
+                    From Prompt to Multi-Agent
+                  </button>
+                  <p className="agent-description">
+                    Let AI design and create a custom multi-agent system based on your description.
+                  </p>
+                  
                   <button
                     className="import-agent-button copy-transaction-button"
                     onClick={handleAddCopyTransactionFlow}
@@ -1216,18 +1218,7 @@ export default function App() {
                     Social Sentiment Monitor
                   </button>
                   <p className="agent-description">
-                    Monitors sentiment across Twitter, Discord, and Telegram to inform trading decisions.
-                  </p>
-                  
-                  <button
-                    className="import-agent-button signal-monitoring-button"
-                    onClick={handleAddSignalMonitoringFlow}
-                  >
-                    <span className="button-icon">🔔</span>
-                    Real-Time Signal Monitoring
-                  </button>
-                  <p className="agent-description">
-                    Monitors social feeds for signals and provides real-time alerts when influential figures post about tokens.
+                    Monitors sentiment across social platforms and posts analysis results to Twitter.
                   </p>
                   
                   <button

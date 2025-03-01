@@ -15,18 +15,16 @@ const openai = new OpenAIApi(configuration);
 
 async function fetchTokenInfo(tokenAddress) {
   try {
-    const response = await axios.get(`${SOLANA_TRACKER_API_BASE_URL}/tokens/${tokenAddress}`, {
+    const response = await axios.get(`${SOLANA_TRACKER_API_BASE_URL}/api/v1/token/${tokenAddress}`, {
       headers: {
-        'x-api-key': SOLANA_TRACKER_API_KEY,
-      },
+        'X-API-KEY': SOLANA_TRACKER_API_KEY
+      }
     });
+    
     return response.data;
   } catch (error) {
-    console.error('Error fetching token info from Solana Tracker:', error);
-    if (error.response) {
-      console.error("Solana Tracker API Response:", error.response.data);
-    }
-    throw new Error(`Failed to fetch token info for ${tokenAddress} from Solana Tracker: ${error.message}`);
+    console.error('Error fetching token info:', error.message);
+    return null;
   }
 }
 
@@ -48,7 +46,18 @@ async function fetchTokenHolders(tokenAddress) {
 }
 
 async function fetchRiskData(tokenAddress) {
-  // ... (same as before) ...
+  try {
+    const response = await axios.get(`${SOLANA_TRACKER_API_BASE_URL}/api/v1/risk/token/${tokenAddress}`, {
+      headers: {
+        'X-API-KEY': SOLANA_TRACKER_API_KEY
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching risk data:', error.message);
+    return null;
+  }
 }
 
 async function analyzePromptWithAI(prompt, contractAddress) {
@@ -104,87 +113,152 @@ async function analyzePromptWithAI(prompt, contractAddress) {
 
 async function analystAgentHandler(node) {
   try {
-    const { contractAddress, parameters } = node.data;
-
-    if (!contractAddress) {
-      return { error: "No contract address provided" };
+    console.log("Analyzing token:", node.data.contractAddress);
+    
+    // Check if contractAddress is provided
+    if (!node.data.contractAddress) {
+      return {
+        error: "No contract address provided",
+        analysisData: {
+          meetsCriteria: false,
+          name: "Unknown",
+          symbol: "Unknown",
+          contractAddress: "",
+          risk: {
+            score: 0,
+            rugged: false,
+            details: []
+          }
+        }
+      };
     }
-
-    // Ensure parameters has default values if undefined
-    const safeParameters = {
-      mktCap: parameters?.mktCap || [0, 1000],
-      liquidity: parameters?.liquidity || [0, 100],
-      top10: parameters?.top10 || [0, 100],
-      snipers: parameters?.snipers || [0, 70],
-      blueChip: parameters?.blueChip || [0, 100],
-      hasAudit: parameters?.hasAudit || false
-    };
-
-    // Fetch data from Solana Tracker
-    const tokenInfo = await fetchTokenInfo(contractAddress);
-    const tokenHolders = await fetchTokenHolders(contractAddress);
-
-    if (!tokenInfo || !tokenInfo.pools || tokenInfo.pools.length === 0) {
-      return { error: `Could not retrieve token info or pools for ${contractAddress}` };
+    
+    // Fetch token information
+    const tokenInfo = await fetchTokenInfo(node.data.contractAddress);
+    
+    // Handle case where token info couldn't be fetched
+    if (!tokenInfo) {
+      return {
+        error: "Failed to fetch token information",
+        analysisData: {
+          meetsCriteria: false,
+          name: "Unknown",
+          symbol: "Unknown",
+          contractAddress: node.data.contractAddress,
+          risk: {
+            score: 0,
+            rugged: false,
+            details: []
+          }
+        }
+      };
     }
-
-    // Extract relevant data from the Solana Tracker response
-    const tokenData = tokenInfo.token;
-    const poolData = tokenInfo.pools[0]; // Assuming we use the first pool for simplicity
-    const riskData = tokenInfo.risk;
-
-    const name = tokenData.name;
-    const symbol = tokenData.symbol;
-    const totalSupply = poolData.tokenSupply;
-    const price = poolData.price.usd;
-    const marketCap = poolData.marketCap.usd;
-    const liquidity = poolData.liquidity.usd;
-    const numHolders = tokenHolders.length; // Using top holders as an approximation.  Consider fetching *all* holders if needed.
-    const riskScore = riskData.score;
-    const rugged = riskData.rugged;
-    const riskDetails = riskData.risks;
-
-    // Top 10 holders calculation (using the top holders data)
-    let top10Percentage = 0;
-    if (tokenHolders && Array.isArray(tokenHolders)) {
-        top10Percentage = tokenHolders.slice(0, 10).reduce((sum, holder) => sum + (holder.percentage || 0), 0);
-    }
-
-    // Check if token meets criteria
-    const meetsCriteria =
-      marketCap >= (safeParameters.mktCap[0] * 1000000) &&  // Convert millions to USD
-      marketCap <= (safeParameters.mktCap[1] * 1000000) &&
-      liquidity >= (safeParameters.liquidity[0] * 1000000) && // Convert millions to USD
-      liquidity <= (safeParameters.liquidity[1] * 1000000) &&
-      top10Percentage >= safeParameters.top10[0] &&
-      top10Percentage <= safeParameters.top10[1];
-
+    
+    // Fetch risk information
+    const riskData = await fetchRiskData(node.data.contractAddress);
+    
+    // Extract parameters from node data
+    const parameters = node.data.parameters || {};
+    
+    // Default parameters if not specified
+    const mktCapRange = parameters.mktCap || [0, 1000]; // $0M to $1000M
+    const liquidityRange = parameters.liquidity || [0, 100]; // $0M to $100M
+    const top10Range = parameters.top10 || [0, 100]; // 0% to 100%
+    const snipersRange = parameters.snipers || [0, 100]; // 0 to 100 score
+    const blueChipRange = parameters.blueChip || [0, 100]; // 0% to 100%
+    const requiresAudit = parameters.hasAudit || false;
+    
+    // Extract relevant metrics from token data
+    const marketCap = tokenInfo.market_cap ? tokenInfo.market_cap / 1000000 : 0; // Convert to millions
+    const liquidity = tokenInfo.liquidity ? tokenInfo.liquidity / 1000000 : 0; // Convert to millions
+    const top10Percentage = tokenInfo.top_10_holders_percentage || 0;
+    const sniperScore = tokenInfo.sniper_score || 0;
+    const blueChipPercentage = tokenInfo.blue_chip_holders_percentage || 0;
+    const hasAudit = tokenInfo.has_audit || false;
+    
+    // Determine if token meets criteria
+    const meetsMktCap = marketCap >= mktCapRange[0] && marketCap <= mktCapRange[1];
+    const meetsLiquidity = liquidity >= liquidityRange[0] && liquidity <= liquidityRange[1];
+    const meetsTop10 = top10Percentage >= top10Range[0] && top10Percentage <= top10Range[1];
+    const meetsSniper = sniperScore >= snipersRange[0] && sniperScore <= snipersRange[1];
+    const meetsBlueChip = blueChipPercentage >= blueChipRange[0] && blueChipPercentage <= blueChipRange[1];
+    const meetsAudit = !requiresAudit || hasAudit;
+    
+    const meetsCriteria = meetsMktCap && meetsLiquidity && meetsTop10 && meetsSniper && meetsBlueChip && meetsAudit;
+    
+    // Prepare analysis results
     const analysisData = {
-      contractAddress: contractAddress,
-      name: name,
-      symbol: symbol,
-      price,
-      marketCap,
-      liquidity,
-      holders: numHolders,
-      top10Percentage,
       meetsCriteria,
-      totalSupply,
-      risk: {
-        score: riskScore,
-        rugged: rugged,
-        details: riskDetails
+      name: tokenInfo.name || "Unknown",
+      symbol: tokenInfo.symbol || "Unknown",
+      contractAddress: node.data.contractAddress,
+      metrics: {
+        marketCap,
+        liquidity,
+        top10Percentage,
+        sniperScore,
+        blueChipPercentage,
+        hasAudit
       },
-      holderMetrics: {
-        top10Holders: tokenHolders.slice(0,10)
+      checks: {
+        meetsMktCap,
+        meetsLiquidity,
+        meetsTop10,
+        meetsSniper,
+        meetsBlueChip,
+        meetsAudit
+      },
+      risk: riskData ? {
+        score: riskData.risk_score || 0,
+        rugged: riskData.is_rugged || false,
+        details: riskData.risk_details || []
+      } : {
+        score: 0,
+        rugged: false,
+        details: []
       }
     };
-
-    return { analysisData };
-
+    
+    // Return analysis results
+    return {
+      analysisData,
+      content: node.data.contractAddress,
+      summary: meetsCriteria ? 'Criteria passed' : 'Criteria not met'
+    };
   } catch (error) {
     console.error('Error in analyst agent handler:', error);
-    return { error: error.message };
+    
+    // Return structured error response with default analysisData
+    return {
+      error: error.message || "An error occurred during analysis",
+      analysisData: {
+        meetsCriteria: false,
+        name: "Error",
+        symbol: "ERR",
+        contractAddress: node.data.contractAddress || "",
+        metrics: {
+          marketCap: 0,
+          liquidity: 0,
+          top10Percentage: 0,
+          sniperScore: 0,
+          blueChipPercentage: 0,
+          hasAudit: false
+        },
+        checks: {
+          meetsMktCap: false,
+          meetsLiquidity: false,
+          meetsTop10: false,
+          meetsSniper: false,
+          meetsBlueChip: false,
+          meetsAudit: false
+        },
+        risk: {
+          score: 0,
+          rugged: false,
+          details: []
+        }
+      }
+    };
   }
 }
 
