@@ -36,8 +36,14 @@ export default function TradingAgentNode({ data }) {
           targetTokenAddress: content
         });
       }
+    } else {
+        setTargetTokenAddress('');
+        data.onChange({
+          ...data,
+          targetTokenAddress: ''
+        });
     }
-  }, [data.inputs]);
+  }, [data.inputs, data.onChange]);
 
   // Handle manual input of target token address
   const handleTargetTokenChange = (event) => {
@@ -420,10 +426,14 @@ export default function TradingAgentNode({ data }) {
               placeholder="Enter target token address"
               className="node-input"
             />
-            {data.inputs && data.inputs[0]?.output?.content && (
-              <div className="input-preview">
-                Connected Input: {data.inputs[0].output.content}
-              </div>
+            {data.inputs && data.inputs[0]?.output?.content && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(data.inputs[0].output.content) ? (
+                <div className="input-preview">
+                    Connected Input: {data.inputs[0].output.content}
+                </div>
+            ) : (
+                <div className="input-preview">
+                    No target account specified
+                </div>
             )}
           </div>
 

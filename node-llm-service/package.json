@@ -12,6 +12,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "@anthropic-ai/sdk": "^0.14.1",
         "@metaplex-foundation/js": "^0.20.1",
         "@project-serum/serum": "^0.13.65",
         "@solana/spl-token-registry": "^0.2.4574",

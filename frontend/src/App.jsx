@@ -1183,9 +1183,9 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Add Multi-agent Marketplace section */}
+                {/* Multi-agent Use Cases section */}
                 <div className="node-buttons-group">
-                  <h4>Multi-agent Marketplace</h4>
+                  <h4>Multi-agent Use Cases</h4>
                   
                   {/* Add the new Prompt to Multi-Agent button at the top */}
                   <button

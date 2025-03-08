@@ -26,11 +26,12 @@ export default function AnalystAgentNode({ data }) {
 
       if (inputFromTwitter) {
         setContractAddress(inputFromTwitter.output.content);
+        handleRunAnalysis(parameters, inputFromTwitter.output.content); // Pass CA directly
       }
     } else {
-        setContractAddress('');
+      setContractAddress(''); // Clear the address if no input
     }
-  }, [data.inputs]);
+  }, [data.inputs, data.onChange]); // Include data.onChange
 
   // Expose triggerAnalysis function
   useEffect(() => {
@@ -54,13 +55,9 @@ export default function AnalystAgentNode({ data }) {
   };
 
   const handleContractAddressChange = (event) => {
-    const address = event.target.value;
-    setContractAddress(address);
-    // Update the node's data with the new contract address
-    data.onChange({
-      ...data,
-      contractAddress: address
-    });
+    const newAddress = event.target.value;
+    setContractAddress(newAddress);
+    handleRunAnalysis(parameters, newAddress); // Pass CA directly
   };
 
   const handleOpenAIApiKeyChange = (event) => {
@@ -119,12 +116,12 @@ export default function AnalystAgentNode({ data }) {
       // Update component state
       setAnalysisData(result.analysisData);
       
-      // Update node data
+      // Update node data, including the output
       data.onChange({
         ...data,
         analysisData: result.analysisData,
         output: {
-          content: addressToUse,
+          content: result.analysisData.meetsCriteria ? addressToUse : "", // IMPORTANT: Send CA only if criteria are met
           summary: result.analysisData.meetsCriteria ? 'Criteria passed' : 'Criteria not met'
         }
       });
@@ -151,7 +148,7 @@ export default function AnalystAgentNode({ data }) {
         ...data,
         analysisData: defaultAnalysisData,
         output: {
-          content: addressToUse,
+          content: "", // Send empty string on error
           summary: 'Error: ' + error.message
         }
       });
@@ -193,22 +190,15 @@ export default function AnalystAgentNode({ data }) {
 
       // Update parameters based on AI's interpretation
       if (result.parameters) {
-        setParameters(prevParams => ({
-          ...prevParams,
-          ...result.parameters
-        }));
-        // Also update the node's data
+        setParameters(result.parameters);
         data.onChange({
           ...data,
-          parameters: {
-            ...parameters,
-            ...result.parameters
-          }
+          parameters: result.parameters
         });
       }
 
-      // Now, run the actual analysis with the updated parameters
-      handleRunAnalysis(result.parameters, contractAddress);
+      // Now run the actual analysis with the updated parameters
+      handleRunAnalysis(result.parameters);
 
     } catch (error) {
       console.error('Error analyzing prompt:', error);

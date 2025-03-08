@@ -1,8 +1,8 @@
-# Republic - AI Agent Orchestration Platform
+# Cuboids - AI Agent Orchestration Platform
 
-![Republic AI Agent Orchestration Platform](image.png)
+![Cuboids AI Agent Orchestration Platform](image.png)
 
-A powerful visual flow-based platform for orchestrating AI agents. Republic enables you to create, connect, and manage sophisticated AI agent workflows through an intuitive drag-and-drop interface, supporting multiple agent frameworks and seamless integration with various AI services.
+A powerful visual flow-based platform for orchestrating AI agents. Cuboids enables you to create, connect, and manage sophisticated AI agent workflows through an intuitive drag-and-drop interface, supporting multiple agent frameworks and seamless integration with various AI services.
 
 ## 🌟 Key Features
 
@@ -152,8 +152,8 @@ Note: For security, API keys in node configurations are encrypted at rest and ma
 
 1. **Clone the Repository**
 ```bash
-git clone https://github.com/Republic-AI/Republic.git
-cd republic
+git clone https://github.com/Republic-AI/Cuboids.git
+cd Cuboids
 ```
 
 2.  **Set up environment variables:**
@@ -186,7 +186,7 @@ cd republic
 
 This example demonstrates a pre-built multi-agent system for monitoring and copying transactions.
 
-1.  **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Marketplace" section.
+1.  **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Use Cases" section.
 2.  **Create the Flow:** Click the "**Monitor & Copy Transactions**" button. This will automatically create and connect the following nodes:
     *   **Instruction Sticker:** Provides instructions on how to use the flow.
     *   **Twitter KOL List:** Add Twitter accounts of Key Opinion Leaders (KOLs) to monitor.
@@ -205,7 +205,7 @@ This example demonstrates a pre-built multi-agent system for monitoring and copy
 
 This example demonstrates a multi-agent system for monitoring social sentiment across multiple platforms to inform trading decisions.
 
-1. **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Marketplace" section.
+1. **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Use Cases" section.
 2. **Create the Flow:** Click the "**Social Sentiment Monitor**" button. This will automatically create and connect the following nodes:
    * **Instruction Sticker:** Provides instructions on how to use the flow.
    * **Twitter KOL List:** Add Twitter accounts of Key Opinion Leaders (KOLs) to monitor.
@@ -225,32 +225,11 @@ This example demonstrates a multi-agent system for monitoring social sentiment a
 
 This "Social Sentiment Monitor" flow demonstrates how multiple social media agents can be combined with analytical capabilities to create a comprehensive market sentiment analysis system.
 
-### Real-Time Signal Monitoring
-
-This example demonstrates a multi-agent system for monitoring social feeds and providing real-time alerts when influential figures post about tokens or blockchain projects.
-
-1. **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Marketplace" section.
-2. **Create the Flow:** Click the "**Real-Time Signal Monitoring**" button. This will automatically create and connect the following nodes:
-   * **Instruction Sticker:** Provides instructions on how to use the flow.
-   * **Twitter KOL List:** Add Twitter accounts of Key Opinion Leaders (KOLs) to monitor.
-   * **Twitter Agent:** Fetches tweets from the specified KOLs with CA Mode enabled by default.
-   * **Analyst Agent:** Analyzes the extracted contract addresses and determines if they meet your criteria.
-   * **K Chart Node:** Displays a K-line chart for tokens that meet your criteria.
-   * **Signal Alerts Node:** Provides real-time notifications when signals are detected.
-3. **Configure the Nodes:**
-   * **Twitter KOL List:** Add the Twitter usernames of the KOLs you want to follow.
-   * **Twitter Agent:** Ensure CA Mode is checked (enabled by default).
-   * **Analyst Agent:** Set the parameters for token analysis and alert thresholds.
-   * **Signal Alerts Node:** Configure notification preferences (e.g., desktop, email, etc.).
-4. **Run the Flow:** The system will continuously monitor the specified KOL accounts, extract contract addresses from their tweets, analyze them in real-time, and alert you when significant signals are detected.
-
-This "Real-Time Signal Monitoring" flow serves as an automated alert mechanism, allowing you to quickly respond to market opportunities identified by influential figures in the space.
-
 ### Algorithmic Trading Strategies
 
 This example demonstrates a sophisticated multi-agent system for algorithmic trading that incorporates multiple data sources, backtesting, and adaptive strategy optimization.
 
-1. **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Marketplace" section.
+1. **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Use Cases" section.
 2. **Create the Flow:** Click the "**Algorithmic Trading Strategies**" button. This will automatically create and connect the following nodes:
    * **Instruction Sticker:** Provides instructions on how to use the flow.
    * **Data Sources:**
@@ -284,7 +263,7 @@ This "Algorithmic Trading Strategies" flow demonstrates how multiple agents can 
 
 This example demonstrates a multi-agent system focused on portfolio protection through continuous risk monitoring and automated responses.
 
-1. **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Marketplace" section.
+1. **Access the Multi-agent Marketplace:** In the left sidebar, click on the "Multi-agent Use Cases" section.
 2. **Create the Flow:** Click the "**Risk Management & Alerts**" button. This will automatically create and connect the following nodes:
    * **Instruction Sticker:** Provides instructions on how to use the flow.
    * **Portfolio Monitoring Layer:**
